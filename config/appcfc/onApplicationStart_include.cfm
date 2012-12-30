@@ -146,67 +146,67 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	
 		<cfset variables.tracepoint=variables.tracer.initTracepoint("Instantiating DI1")> 
 		
-
 		<cfscript>	
 			application.configBean=new mura.configBean().set(variables.iniProperties);
 
-			application.serviceFactory=new mura.bean.beanFactory("/mura",{
+			variables.serviceFactory=new mura.bean.beanFactory("/mura",{
 					recurse=true,
 					exclude=[],
 					strict=true,
 					transientPattern = "(Iterator|Bean|MuraScope|Event)$" 
 					});
 
-			application.serviceFactory.addBean("tempDir",application.configBean.getTempDir());
-			application.serviceFactory.addBean("useFileMode",application.configBean.getUseFileMode());
-			application.serviceFactory.addBean("configBean",application.configBean);
+			variables.serviceFactory.addBean("tempDir",application.configBean.getTempDir());
+			variables.serviceFactory.addBean("useFileMode",application.configBean.getUseFileMode());
+			variables.serviceFactory.addBean("configBean",application.configBean);
 
 			if(server.coldfusion.productName eq 'Adobe'){
-				application.serviceFactory.addAlias("contentGateway","contentGatewayAdobe");
+				variables.serviceFactory.addAlias("contentGateway","contentGatewayAdobe");
 			} else {
-				application.serviceFactory.addAlias("contentGateway","contentGatewayRailo");
+				variables.serviceFactory.addAlias("contentGateway","contentGatewayRailo");
 			}
 
-			application.serviceFactory.addBean('javaLoader',
+			variables.serviceFactory.addBean('javaLoader',
 						new mura.javaloader.JavaLoader(
 							loadPaths=[expandPath('/mura/lib/mura.jar'),expandPath('/mura/lib/jBCrypt-0.3')]
 						)
 					);
-			application.serviceFactory.addBean("fileWriter",
+			variables.serviceFactory.addBean("fileWriter",
 				new mura.fileWriter(mode=775,tempDir=application.configBean.getTempDir())
 			);
 
-			application.serviceFactory.addAlias("scriptProtectionFilter","Portcullis");
-			application.serviceFactory.addAlias("eventManager","pluginManager");
-			application.serviceFactory.addAlias("permUtility","permission");
-			application.serviceFactory.addAlias("content","contentBean");
-			application.serviceFactory.addAlias("feed","feedBean");
-			application.serviceFactory.addAlias("site","settingsBean");
-			application.serviceFactory.addAlias("user","userBean");
-			application.serviceFactory.addAlias("group","userBean");
-			application.serviceFactory.addAlias("address","addressBean");
-			application.serviceFactory.addAlias("category","categoryBean");
-			application.serviceFactory.addAlias("categoryFeed","categoryFeedBean");
-			application.serviceFactory.addAlias("userFeed","userFeedBean");
-			application.serviceFactory.addAlias("comment","contentCommentBean");
-			application.serviceFactory.addAlias("commentFeed","contentCommentFeedBean");
-			application.serviceFactory.addAlias("stats","contentStatsBean");
-			application.serviceFactory.addAlias("changeset","changesetBean");
-			application.serviceFactory.addAlias("bundle","settingsBundle");
-			application.serviceFactory.addAlias("mailingList","mailingListBean");
-			application.serviceFactory.addAlias("mailingListMember","memberBean");
-			application.serviceFactory.addAlias("groupDAO","userDAO");
-			application.serviceFactory.addAlias("placement","placementBean");
-			application.serviceFactory.addAlias("creative","creativeBean");
-			application.serviceFactory.addAlias("rate","rateBean");
-			application.serviceFactory.addAlias("favorite","favoriteBean");
-			application.serviceFactory.addAlias("campaign","campaignBean");
-			application.serviceFactory.addAlias("email","emailBean");
-			application.serviceFactory.addAlias("adZone","adZoneBean");
-			application.serviceFactory.addAlias("imageSize","settingsImageSizeBean");
-			application.serviceFactory.addAlias("imageSizeIterator","settingsImageSizeIterator");
-			application.serviceFactory.addAlias("$","MuraScope");
+			variables.serviceFactory.addAlias("scriptProtectionFilter","Portcullis");
+			variables.serviceFactory.addAlias("eventManager","pluginManager");
+			variables.serviceFactory.addAlias("permUtility","permission");
+			variables.serviceFactory.addAlias("content","contentBean");
+			variables.serviceFactory.addAlias("feed","feedBean");
+			variables.serviceFactory.addAlias("site","settingsBean");
+			variables.serviceFactory.addAlias("user","userBean");
+			variables.serviceFactory.addAlias("group","userBean");
+			variables.serviceFactory.addAlias("address","addressBean");
+			variables.serviceFactory.addAlias("category","categoryBean");
+			variables.serviceFactory.addAlias("categoryFeed","categoryFeedBean");
+			variables.serviceFactory.addAlias("userFeed","userFeedBean");
+			variables.serviceFactory.addAlias("comment","contentCommentBean");
+			variables.serviceFactory.addAlias("commentFeed","contentCommentFeedBean");
+			variables.serviceFactory.addAlias("stats","contentStatsBean");
+			variables.serviceFactory.addAlias("changeset","changesetBean");
+			variables.serviceFactory.addAlias("bundle","settingsBundle");
+			variables.serviceFactory.addAlias("mailingList","mailingListBean");
+			variables.serviceFactory.addAlias("mailingListMember","memberBean");
+			variables.serviceFactory.addAlias("groupDAO","userDAO");
+			variables.serviceFactory.addAlias("placement","placementBean");
+			variables.serviceFactory.addAlias("creative","creativeBean");
+			variables.serviceFactory.addAlias("rate","rateBean");
+			variables.serviceFactory.addAlias("favorite","favoriteBean");
+			variables.serviceFactory.addAlias("campaign","campaignBean");
+			variables.serviceFactory.addAlias("email","emailBean");
+			variables.serviceFactory.addAlias("adZone","adZoneBean");
+			variables.serviceFactory.addAlias("imageSize","settingsImageSizeBean");
+			variables.serviceFactory.addAlias("imageSizeIterator","settingsImageSizeIterator");
+			variables.serviceFactory.addAlias("$","MuraScope");
 
+			application.serviceFactory=variables.serviceFactory;
 		</cfscript>
 
 		<cfset variables.tracer.commitTracepoint(variables.tracepoint)>
@@ -254,12 +254,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		</cfif>		
 					
 		<cfset variables.basedir=expandPath("/muraWRM")/>
-					
-		<cfif StructKeyExists(SERVER,"bluedragon") and not findNoCase("Windows",server.os.name)>
-			<cfset variables.mapprefix="$" />
-		<cfelse>
-			<cfset variables.mapprefix="" />
-		</cfif>
+		<cfset variables.mapprefix="" />
 		
 		<cfif len(application.configBean.getValue('encryptionKey'))>
 			<cfset application.encryptionKey=application.configBean.getValue('encryptionKey')>
