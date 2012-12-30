@@ -62,7 +62,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfproperty name="kids" type="string" default="" required="true" />
 <cfproperty name="remoteID" type="string" default="" required="true" />
 <cfproperty name="isNew" type="numeric" default="1" required="true" />
-
+<!---
 <cfset variables.contentRenderer=getBean('contentRenderer')/>
 
 <cffunction name="init" returntype="any" output="false" access="public">
@@ -80,7 +80,6 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset variables.instance.entered=now()/>
 	<cfset variables.instance.subscribe=0/>
 	<cfset variables.instance.isApproved=0/>
-	<cfset variables.contentRenderer=application.contentRenderer/>
 	<cfset variables.instance.userID=""/>
 	<cfset variables.instance.path=""/>
 	<cfset variables.instance.kids=0/>
@@ -585,4 +584,5 @@ To Unsubscribe Click Here:
 <cffunction name="clone" output="false">
 	<cfreturn getBean("comment").setAllValues(structCopy(getAllValues()))>
 </cffunction>
+--->
 </cfcomponent>

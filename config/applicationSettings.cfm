@@ -210,8 +210,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfset this.datasource =  properties.getProperty("datasource","") >
 	</cfif>
 	
-	<cfset this.ormSettings=structNew()>
-	<cfset this.ormSettings.cfclocation=arrayNew(1)>
+	<cfset this.ormSettings={}>
+	<cfset this.ormSettings.cfclocation=['/mura']>
 	
 	<cfif this.ormenabled>
 		<cfswitch expression="#properties.getProperty('dbtype','')#">

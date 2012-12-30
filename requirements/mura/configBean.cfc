@@ -231,7 +231,6 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	</cfif>
 
 	<cfset variables.instance.reactorDBType=arguments.config.dbType>
-	<cfset variables.dbUtility=getBean("dbUtility")>
 
 	<cfreturn this />
 </cffunction>
@@ -568,26 +567,6 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfreturn this>
 </cffunction>
 
-<!--- <cffunction name="getDbTransactionLevel" returntype="any" access="public" output="false">
-	<cfreturn variables.instance.dbTransactionLevel />
-</cffunction>
-
-<cffunction name="setDbTransactionLevel" access="public" output="false">
-	<cfargument name="dbTransactionLevel" type="string" />
-	<cfif len(arguments.dbTransactionLevel)>
-		<cfset variables.instance.dbTransactionLevel = arguments.dbTransactionLevel />
-	</cfif>
-</cffunction> --->
-
-<cffunction name="getReactor" access="public" output="false" returntype="any">
-	
-	<cfif not isObject(variables.instance.reactor)>
-		<cfset startReactor() />
-	</cfif>
-	
-	<cfreturn variables.instance.reactor />
-</cffunction>
-
 <cffunction name="getDebuggingEnabled" returntype="any" access="public" output="false">
 	<cfreturn variables.instance.debuggingEnabled />
 </cffunction>
@@ -777,12 +756,6 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	</cfif>
 	<cfreturn this>
 </cffunction>
-
-<!---
-<cffunction name="createGUID" access="public" output="false" returntype="any">
-   <cfreturn insert("-", CreateUUID(), 23) />
-</cffunction>
---->
 
 <cffunction name="loadClassExtensionManager" returntype="any" access="public" output="false">
 	<cfset variables.instance.extensionManager=createObject("component","mura.extend.extendManager").init(this) />
@@ -1500,7 +1473,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cffunction name="getDbColumnCFType" output="false">
 	<cfargument name="column">
 	<cfargument name="table">
-	<cfset var datatype=variables.dbUtility.columnMetaData(argumentCollection=arguments).datatype>
+	<cfset var datatype=getBean('dbUtility').columnMetaData(argumentCollection=arguments).datatype>
 
 	<cfswitch expression="#arguments.rs.type_name#">
 			<cfcase value="varchar,nvarchar,varchar2">

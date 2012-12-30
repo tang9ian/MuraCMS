@@ -142,41 +142,76 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		
 		<cfset variables.iniProperties.webroot = expandPath("/muraWRM") />
 		
-		<cfinclude template="/muraWRM/config/coldspring.xml.cfm" />
-		
 		<cfset variables.tracer=createObject("component","mura.cfobject").init()>
 	
-		<!--- load the core services.xml --->
+		<cfset variables.tracepoint=variables.tracer.initTracepoint("Instantiating DI1")> 
 		
-		<cfset variables.tracepoint=variables.tracer.initTracepoint("Instantiating ColdSpring")> 
-		<cfset variables.serviceFactory=createObject("component","mura.bean.beanFactory").init(defaultProperties=variables.iniProperties) />
+
+		<cfscript>	
+			application.configBean=new mura.configBean().set(variables.iniProperties);
+
+			application.serviceFactory=new mura.bean.beanFactory("/mura",{
+					recurse=true,
+					exclude=[],
+					strict=true,
+					transientPattern = "(Iterator|Bean|MuraScope|Event)$" 
+					});
+
+			application.serviceFactory.addBean("tempDir",application.configBean.getTempDir());
+			application.serviceFactory.addBean("useFileMode",application.configBean.getUseFileMode());
+			application.serviceFactory.addBean("configBean",application.configBean);
+
+			if(server.coldfusion.productName eq 'Adobe'){
+				application.serviceFactory.addAlias("contentGateway","contentGatewayAdobe");
+			} else {
+				application.serviceFactory.addAlias("contentGateway","contentGatewayRailo");
+			}
+
+			application.serviceFactory.addBean('javaLoader',
+						new mura.javaloader.JavaLoader(
+							loadPaths=[expandPath('/mura/lib/mura.jar'),expandPath('/mura/lib/jBCrypt-0.3')]
+						)
+					);
+			application.serviceFactory.addBean("fileWriter",
+				new mura.fileWriter(mode=775,tempDir=application.configBean.getTempDir())
+			);
+
+			application.serviceFactory.addAlias("scriptProtectionFilter","Portcullis");
+			application.serviceFactory.addAlias("eventManager","pluginManager");
+			application.serviceFactory.addAlias("permUtility","permission");
+			application.serviceFactory.addAlias("content","contentBean");
+			application.serviceFactory.addAlias("feed","feedBean");
+			application.serviceFactory.addAlias("site","settingsBean");
+			application.serviceFactory.addAlias("user","userBean");
+			application.serviceFactory.addAlias("group","userBean");
+			application.serviceFactory.addAlias("address","addressBean");
+			application.serviceFactory.addAlias("category","categoryBean");
+			application.serviceFactory.addAlias("categoryFeed","categoryFeedBean");
+			application.serviceFactory.addAlias("userFeed","userFeedBean");
+			application.serviceFactory.addAlias("comment","contentCommentBean");
+			application.serviceFactory.addAlias("commentFeed","contentCommentFeedBean");
+			application.serviceFactory.addAlias("stats","contentStatsBean");
+			application.serviceFactory.addAlias("changeset","changesetBean");
+			application.serviceFactory.addAlias("bundle","settingsBundle");
+			application.serviceFactory.addAlias("mailingList","mailingListBean");
+			application.serviceFactory.addAlias("mailingListMember","memberBean");
+			application.serviceFactory.addAlias("groupDAO","userDAO");
+			application.serviceFactory.addAlias("placement","placementBean");
+			application.serviceFactory.addAlias("creative","creativeBean");
+			application.serviceFactory.addAlias("rate","rateBean");
+			application.serviceFactory.addAlias("favorite","favoriteBean");
+			application.serviceFactory.addAlias("campaign","campaignBean");
+			application.serviceFactory.addAlias("email","emailBean");
+			application.serviceFactory.addAlias("adZone","adZoneBean");
+			application.serviceFactory.addAlias("imageSize","settingsImageSizeBean");
+			application.serviceFactory.addAlias("imageSizeIterator","settingsImageSizeIterator");
+			application.serviceFactory.addAlias("$","MuraScope");
+
+		</cfscript>
+
 		<cfset variables.tracer.commitTracepoint(variables.tracepoint)>
-		
-		<cfset variables.tracepoint=variables.tracer.initTracepoint("Loading Coldspring XML")> 
-		<cfset variables.serviceFactory.loadBeansFromXMLRaw(variables.servicesXML,true) />
-		<cfset variables.tracer.commitTracepoint(variables.tracepoint)>
-		
-		<!--- If coldspring.custom.xml.cfm exists read it in an check it it is valid xml--->
-		<cfif fileExists(expandPath("/muraWRM/config/coldspring.custom.xml.cfm"))>	
-			<cffile action="read" variable="customvariables.servicesXML" file="#expandPath('/muraWRM/config/coldspring.custom.xml.cfm')#">
-			<cfif not findNoCase("<!-" & "--",customvariables.servicesXML)>
-				<cfif not findNoCase("<beans>",customvariables.servicesXML)>
-					<cfset customvariables.servicesXML= "<beans>" & customvariables.servicesXML & "</beans>">
-				</cfif>
-				<cfset customvariables.servicesXML=replaceNoCase(customvariables.servicesXML, "##mapdir##","mura","ALL")>
-				<cfset variables.tracepoint=variables.tracer.initTracepoint("Loading Custom Coldspring XML")> 
-				<cfset variables.serviceFactory.loadBeansFromXMLRaw(customvariables.servicesXML,true) />
-				<cfset variables.tracer.commitTracepoint(variables.tracepoint)>
-			</cfif>
-		</cfif>
-		
-		<cfset application.serviceFactory=variables.serviceFactory>
 		
 		<cfobjectcache action="clear" />
-		<cfset variables.tracepoint=variables.tracer.initTracepoint("Instantiating ConfigBean")> 
-		<cfset application.configBean=application.serviceFactory.getBean("configBean") />
-		<cfset application.configBean.set(variables.iniProperties)>
-		<cfset variables.tracer.commitTracepoint(variables.tracepoint)>
 		
 		<!---You can create an onGlobalConfig.cfm file that runs after the initial configBean loads, but before anything else is loaded --->
 		<cfif fileExists(ExpandPath("/muraWRM/config/onGlobalConfig.cfm"))>
@@ -210,7 +245,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfset variables.tracer.commitTracepoint(variables.tracepoint)>
 
 		<cfset variables.tracepoint=variables.tracer.initTracepoint("Instantiating resourceBundleFactory")> 
-		<cfset application.rbFactory=application.serviceFactory.getBean("resourceBundleFactory") />
+		<cfset application.rbFactory=new mura.resourceBundle.resourceBundleFactory() />
 		<cfset variables.tracer.commitTracepoint(variables.tracepoint)>
 			
 		<!---settings.custom.managers.cfm reference is for backwards compatibility --->
