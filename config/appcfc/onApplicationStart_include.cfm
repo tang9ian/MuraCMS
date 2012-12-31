@@ -159,8 +159,10 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			variables.serviceFactory.addBean("tempDir",application.configBean.getTempDir());
 			variables.serviceFactory.addBean("useFileMode",application.configBean.getUseFileMode());
 			variables.serviceFactory.addBean("configBean",application.configBean);
+			variables.serviceFactory.addBean("data","");
+			variables.serviceFactory.addBean("settings",{});
 
-			if(server.coldfusion.productName eq 'Adobe'){
+			if(server.coldfusion.productName eq 'Coldfusion Server'){
 				variables.serviceFactory.addAlias("contentGateway","contentGatewayAdobe");
 			} else {
 				variables.serviceFactory.addAlias("contentGateway","contentGatewayRailo");
@@ -225,13 +227,20 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		</cfif>
 		
 		<cfset application.appAutoUpdated=false>
-		
+				
 		<cfset variables.serviceList="settingsManager,contentManager,pluginManager,eventManager,contentRenderer,utility,contentUtility,contentGateway,categoryManager,clusterManager,contentServer,changesetManager,scriptProtectionFilter,permUtility,emailManager,loginManager,mailinglistManager,userManager,dataCollectionManager,advertiserManager,feedManager,sessionTrackingManager,favoriteManager,raterManager,dashboardManager,autoUpdater">
-	
+		
 		<!--- These application level services use the beanServicePlaceHolder to lazy load the bean --->
 		<cfloop list="#variables.serviceList#" index="variables.i">
+			
 			<cfset variables.tracepoint=variables.tracer.initTracepoint("Instantiating #variables.i#")> 	
+			<cftry>
 			<cfset application["#variables.i#"]=application.serviceFactory.getBean("#variables.i#") />
+			<cfcatch>
+				<cfdump var="#variables.i#">
+				<cfdump var="#cfcatch#" abort="true">
+			</cfcatch>
+			</cftry>
 			<cfset variables.tracer.commitTracepoint(variables.tracepoint)>
 		</cfloop>	
 		

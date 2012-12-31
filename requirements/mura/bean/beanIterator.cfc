@@ -49,9 +49,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfset variabes.beanClass="">
 
 <cffunction name="init" output="false">
-	<cfargument name="beanClass" default="">
 	<cfset super.init()>
-	<cfset setBeanClass(arguments.beanClass)>
 	<cfreturn this>
 </cffunction>
 
@@ -65,12 +63,6 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 <cffunction name="getBeanClass" output="false">
 	<cfreturn variables.beanClass>
-</cffunction>
-
-<cffunction name="packageRecord" access="public" output="false" returntype="any">
-	<cfset var bean=getBean(variabes.beanClass)>
-	<cfset bean.set(queryRowToStruct(variables.records,currentIndex()))>
-	<cfreturn bean>
 </cffunction>
 
 <cffunction name="packageRecord" access="public" output="false" returntype="any">

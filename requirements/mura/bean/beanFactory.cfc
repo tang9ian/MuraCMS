@@ -166,10 +166,12 @@ component {
 	// PRIVATE METHODS
 	
 	private boolean function beanIsTransient( string singleDir, string dir, string beanName ) {
-		return singleDir == 'bean' 
-			|| structKeyExists( variables.transients, dir ) 
-			|| ( structKeyExists( variables.config, "singletonPattern" ) && refindNoCase( variables.config.singletonPattern, beanName ) == 0 )
-			|| ( structKeyExists( variables.config, "transientPattern" ) && refindNoCase( variables.config.transientPattern, beanName ) > 0 );
+		return singleDir == 'bean' ||
+            structKeyExists( variables.transients, dir ) ||
+            ( structKeyExists( variables.config, "singletonPattern" ) &&
+              refindNoCase( variables.config.singletonPattern, beanName ) == 0 ) ||
+            ( structKeyExists( variables.config, "transientPattern" ) &&
+              refindNoCase( variables.config.transientPattern, beanName ) > 0 );
 	}
 
 
@@ -455,14 +457,12 @@ component {
 				    if ( structKeyExists( info.metadata, 'constructor' ) ) {
 					    var args = { };
 						for ( var arg in info.metadata.constructor ) {
-							if(info.metadata.constructor[arg]){
-								var argBean = resolveBeanCreate( arg, accumulator );
-								// this throws a non-intuitive exception unless we step in...
-								if ( structKeyExists( argBean, 'bean' ) ) {
-								    args[ arg ] = argBean.bean;
-	                            } else if ( info.metadata.constructor[ arg ] ) {
-									throw 'bean not found: #arg#; while resolving constructor arguments for #beanName#';
-								}
+							var argBean = resolveBeanCreate( arg, accumulator );
+							// this throws a non-intuitive exception unless we step in...
+							if ( structKeyExists( argBean, 'bean' ) ) {
+							    args[ arg ] = argBean.bean;
+                            } else if ( info.metadata.constructor[ arg ] ) {
+								throw 'bean not found: #arg#; while resolving constructor arguments for #beanName#';
 							}
 						}
 						var __ioc_newBean = evaluate( 'bean.init( argumentCollection = args )' );
@@ -527,8 +527,13 @@ component {
 				variables.transients[ transientFolder ] = true;
 			}
 		}
+
+        if ( structKeyExists( variables.config, 'singletonPattern' ) &&
+             structKeyExists( variables.config, 'transientPattern' ) ) {
+            throw 'singletonPattern and transientPattern are mutually exclusive';
+        }
 				
-		variables.config.version = '0.4.0';
+		variables.config.version = '0.4.1';
 	}
 	
 	

@@ -53,7 +53,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	
 	<cfset var initArgs=structNew()>
 	
-	<cfif structKeyExists(arguments,"data")>
+	<cfif structKeyExists(arguments,"data") and not (isSimpleValue(arguments.data) and not len(arguments.data))>
 		<cfif isObject(arguments.data)>
 			<cfset setEvent(arguments.data)>
 		<cfelse>
@@ -63,7 +63,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 				<cfset initArgs.siteID=arguments.data>
 			</cfif>
 			<cfset initArgs.muraScope=this>
-			<cfset setEvent(createObject("component","mura.event").init(initArgs,this))>
+			<cfset setEvent(createObject("component","mura.event").init(initArgs).setValue('MuraScope',this))>
 		</cfif>
 	</cfif>
 	
