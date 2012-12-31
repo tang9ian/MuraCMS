@@ -2,7 +2,7 @@
 
 <!--- Custom For Mura --->
 <cfif not isDefined("cffp")>
-	<cfset cffp = CreateObject("component","cfformprotect.cffpVerify").init() />
+	<cfset cffp = CreateObject("component","cffpVerify").init() />
 </cfif>
 <!--- End Custom --->
 

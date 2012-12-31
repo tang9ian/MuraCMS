@@ -2,13 +2,13 @@
 			there, if you don't have it in the web root --->
 
 <!--- Custom For Mura --->
-<cfset cffpPath = "#application.configBean.getContext()#/requirements/cfformprotect">
+<cfset cffpPath = "#application.configBean.getContext()#/tasks/widgets/cfformprotect">
 <!--- End Custom --->
 
 <!--- load the file that grabs all values from the ini file --->
 <cfinclude template="#cffpPath#/cffpConfig.cfm">
 
-<!--- Bas van der Graaf (bvdgraaf@e-dynamics.nl): Make sure JS is only included once when securing multiple forms with cfformprotect. --->
+<!--- Bas van der Graaf (bvdgraaf@e-dynamics.nl): Make sure JS is only included once when securing multiple forms with murawrm.tasks.widgets.cfformprotect. --->
 <cfif not structkeyExists(request,"cffpJS")>
 	<cfhtmlhead text="<script type='text/javascript' src='#cffpPath#/js/cffp.js'></script>">
 	<cfset request.cffpJS = true>
