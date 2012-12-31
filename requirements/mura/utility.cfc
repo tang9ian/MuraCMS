@@ -413,7 +413,7 @@ return list;
 
 <cffunction name="cfformprotect" output="false" returntype="any">
 	<cfargument name="event">
-	<cfset var cffp=CreateObject("component","murawrm.tasks.widgets.cfformprotect.cffpVerify").init()>
+	<cfset var cffp=CreateObject("component","cfformprotect.cffpVerify").init()>
 	<cfset var result=false>
 	<cfif len(event.getSite().getExtranetPublicRegNotify())>
 		<cfset cffp.updateConfig('emailServer', event.getSite().getMailServerIP())>

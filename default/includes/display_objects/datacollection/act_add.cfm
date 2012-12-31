@@ -60,7 +60,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 </cfscript>
 
 <cfif structKeyExists(variables.myRequest, "useProtect")>
-	<cfset variables.cffp = CreateObject("component","murawrm.tasks.widgets.cfformprotect.cffpVerify").init() />
+	<cfset variables.cffp = CreateObject("component","cfformprotect.cffpVerify").init() />
 	<cfif len(variables.rsform.responseSendTo)>
 		<cfset variables.cffp.updateConfig('emailServer', application.settingsManager.getSite($.event('siteID')).getMailServerIP())>
 		<cfset cffp.updateConfig('emailUserName', application.settingsManager.getSite($.event('siteID')).getMailserverUsername(true))>

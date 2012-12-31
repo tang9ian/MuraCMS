@@ -59,7 +59,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfif not $.currentUser().isLoggedIn()>
 	<cfthrow message="User must be logged in">
 </cfif>
-<cfset variables.cffp = CreateObject("component","murawrm.tasks.widgets.cfformprotect.cffpVerify").init() />
+<cfset variables.cffp = CreateObject("component","cfformprotect.cffpVerify").init() />
 <cfif $.siteConfig().getContactEmail() neq "">
 	<cfset variables.cffp.updateConfig('emailServer', $.siteConfig().getMailServerIP())>
 	<cfset variables.cffp.updateConfig('emailUserName', $.siteConfig().getMailserverUsername(true))>

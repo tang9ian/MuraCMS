@@ -42,7 +42,7 @@ a img {border: 0}
 <div>
   <p>
     <strong>For full details of how CFFormProtect works, see the project page at
-    <a href=http://murawrm.tasks.widgets.cfformprotect.riaforge.org/ target=_blank>http://murawrm.tasks.widgets.cfformprotect.riaforge<wbr>.org/</a></strong>
+    <a href=http://cfformprotect.riaforge.org/ target=_blank>http://cfformprotect.riaforge<wbr>.org/</a></strong>
   </p><br />
   <p>
   <span style=FONT-WEIGHT:bold>Installation<br>
@@ -53,7 +53,7 @@ a img {border: 0}
     </li>
 	<li>
 		On your form page, add this line of code:
-		&lt;cfset Cffp = CreateObject("component","murawrm.tasks.widgets.cfformprotect.cffpVerify").init() /&gt;
+		&lt;cfset Cffp = CreateObject("component","cfformprotect.cffpVerify").init() /&gt;
 	</li>
     <li>
       Put &lt;cfinclude template="/cfformprotect/cffp.cfm"&gt; somewhere between
@@ -62,7 +62,7 @@ a img {border: 0}
     <li>
       On your processing page include the following code:<br>
       &lt;cfset Cffp =
-      CreateObject("component","murawrm.tasks.widgets.cfformprotect.cffpVerify").init() /&gt;<br>
+      CreateObject("component","cfformprotect.cffpVerify").init() /&gt;<br>
       &lt;!--- now we can test the form submission ---&gt;<br>
       &lt;cfif Cffp.testSubmission(form)&gt;<br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;!--- The submission has passed

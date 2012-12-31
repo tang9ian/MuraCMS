@@ -123,7 +123,7 @@ to your own modified versions of Mura CMS.
 			</cfscript>
 
 			<!---<cfif structKeyExists(variables.myRequest, "useProtect")>--->
-				<cfset variables.cffp = CreateObject("component","murawrm.tasks.widgets.cfformprotect.cffpVerify").init() />
+				<cfset variables.cffp = CreateObject("component","cfformprotect.cffpVerify").init() />
 				<cfif $.siteConfig().getContactEmail() neq "">
 					<cfset variables.cffp.updateConfig('emailServer', $.siteConfig().getMailServerIP())>
 					<cfset variables.cffp.updateConfig('emailUserName', $.siteConfig().getMailserverUsername(true))>
