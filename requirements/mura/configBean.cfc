@@ -117,7 +117,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfset variables.instance.confirmSaveAsDraft=true />
 <cfset variables.instance.notifyWithVersionLink=true />
 <cfset variables.instance.scriptProtect=true />
-<cfset variables.instance.appreloadKey=application.appreloadKey />
+<cfset variables.instance.appreloadKey="appreloadkey" />
 <cfset variables.instance.loginStrikes=4 />
 <cfset variables.instance.encryptPasswords=true />
 <cfset variables.instance.sessionTimeout=180 />
@@ -183,6 +183,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset setFileDir(arguments.config.fileDir)/>
 	<cfset setDefaultLocale(arguments.config.locale)>
 	<cfset setServerPort(arguments.config.port)>
+	
+	<cfset variables.instance.appreloadKey=application.appreloadKey />
 	
 	<cfloop collection="#arguments.config#" item="prop">
 		<cfif not listFindNoCase("webroot,filedir,plugindir,locale,port,assetpath,context",prop)>

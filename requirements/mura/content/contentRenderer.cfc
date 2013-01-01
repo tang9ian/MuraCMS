@@ -74,7 +74,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <!--- renderHTMLHead has been deprecated in favor of renderHTMLQueues---->
 <cfset this.renderHTMLHead=true/>
 <cfset this.renderHTMLQueues=true/>
-<cfset this.enableMuraTag=application.configBean.getEnableMuraTag() />
+<cfset this.enableMuraTag=true />
 <cfset this.crumbdata=arrayNew(1)/>
 <cfset this.listFormat="dl">
 <cfset this.headline="h2"/>
@@ -120,6 +120,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfset this.showAdminToolBar=false>
 		<cfset this.showMemberToolBar=false>
 	</cfif>
+
+	<cfset this.enableMuraTag=application.configBean.getEnableMuraTag() />
 
 	<cfset variables.contentGateway=getBean('contentGateway')>
 
