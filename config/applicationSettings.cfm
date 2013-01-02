@@ -214,7 +214,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	</cfif>
 	
 	<cfset this.ormSettings={}>
-	<cfset this.ormSettings.cfclocation=['/mura']>
+	<cfset this.ormSettings.cfclocation=['/com/mura']>
 	
 	<cfif this.ormenabled>
 		<cfswitch expression="#properties.getProperty('dbtype','')#">
