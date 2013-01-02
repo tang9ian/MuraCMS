@@ -160,6 +160,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 	<cfset this.mappings["/cfformprotect"] = variables.mapPrefix & variables.baseDir & "/tasks/widgets/cfformprotect">
 	<cfset this.mappings["/mura"] = variables.mapPrefix & variables.baseDir & "/requirements/com/mura">
+	<cfset this.mappings["/com/mura"] = variables.mapPrefix & variables.baseDir & "/requirements/com/mura">
 	
 	<cfset request.userAgent = LCase( CGI.http_user_agent ) />
 	<!--- Should we even use sessions? --->
