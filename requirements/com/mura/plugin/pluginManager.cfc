@@ -574,7 +574,6 @@ select * from tplugins order by #arguments.orderby#
 </cffunction>
 
 <cffunction name="createAppCFCIncludes" output="false">
-	<cfset var mapPrefix="" />
 	<cfset var done=structNew()>
 	<cfset var mHash="">
 	<cfset var m="">
@@ -587,9 +586,6 @@ select * from tplugins order by #arguments.orderby#
 	<cfset var pluginmapping="">
 	
 	<cflock name="createAppCFCIncludes#application.instanceID#" type="exclusive" timeout="200">
-	<cfif StructKeyExists(SERVER,"bluedragon") and not findNoCase("Windows",server.os.name)>
-		<cfset mapPrefix="$" />
-	</cfif>
 	
 	<cffile action="delete" file="#baseDir#/mappings.cfm">
 	<cfset variables.fileWriter.writeFile(file="#baseDir#/mappings.cfm", output="<!--- Do Not Edit --->", addnewline="true")>
@@ -611,7 +607,7 @@ select * from tplugins order by #arguments.orderby#
 			<cfset m=listFirst(rsRequirements.name,"_")>
 			<cfset mHash=hash(m)>
 			<cfif not isNumeric(m) and not structKeyExists(done,mHash)>
-				<cfset variables.fileWriter.appendFile(file="#baseDir#/mappings.cfm", output='<cfset this.mappings["/#m#"] = variables.mapPrefix & variables.BaseDir & "/plugins/#rsRequirements.name#">')>
+				<cfset variables.fileWriter.appendFile(file="#baseDir#/mappings.cfm", output='<cfset this.mappings["/#m#"] = variables.BaseDir & "/plugins/#rsRequirements.name#">')>
 				<cfset done[mHash]=true>
 			</cfif>
 		
@@ -635,7 +631,7 @@ select * from tplugins order by #arguments.orderby#
 					<cfset currentPath=currentDir & "/" & p>
 					<cfif len(p) and directoryExists(currentPath)>
 						<cfset pluginmapping=currentConfig.plugin.mappings.mapping[m].xmlAttributes.name>
-						<cfset variables.fileWriter.appendFile(file="#baseDir#/mappings.cfm", output='<cfif not structKeyExists(this.mappings,"/#pluginmapping#")><cfset this.mappings["/#pluginmapping#"] = variables.mapPrefix & variables.BaseDir & "/plugins/#rsRequirements.name#/#p#"></cfif>')>
+						<cfset variables.fileWriter.appendFile(file="#baseDir#/mappings.cfm", output='<cfif not structKeyExists(this.mappings,"/#pluginmapping#")><cfset this.mappings["/#pluginmapping#"] = variables.BaseDir & "/plugins/#rsRequirements.name#/#p#"></cfif>')>
 					</cfif>
 				</cfif>
 				</cfloop>
@@ -651,7 +647,7 @@ select * from tplugins order by #arguments.orderby#
 				</cfif>
 				<cfset currentPath=currentDir & "/" & p>
 				<cfif len(p) and directoryExists(currentPath)>
-					<cfset variables.fileWriter.appendFile(file="#baseDir#/cfapplication.cfm", output='<cfset this.customtagpaths = listAppend(this.customtagpaths, mapPrefix & BaseDir & "/plugins/#rsRequirements.name#/#p#")>')>
+					<cfset variables.fileWriter.appendFile(file="#baseDir#/cfapplication.cfm", output='<cfset this.customtagpaths = listAppend(this.customtagpaths,BaseDir & "/plugins/#rsRequirements.name#/#p#")>')>
 				</cfif>
 				</cfloop>
 			</cfif>
@@ -680,7 +676,6 @@ select * from tplugins order by #arguments.orderby#
 
 
 <cffunction name="discover" output="false">
-	<cfset var mapPrefix="" />
 	<cfset var baseDir=variables.configBean.getPluginDir()>
 	<cfset var rsRequirements="">
 	<cfset var configXML="">

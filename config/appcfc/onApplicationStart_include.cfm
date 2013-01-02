@@ -273,7 +273,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	
 		<cfloop query="variables.rsRequirements">
 			<cfif variables.rsRequirements.type eq "dir" and variables.rsRequirements.name neq '.svn' and not structKeyExists(this.mappings,"/#variables.rsRequirements.name#")>
-				<cfset application.serviceFactory.getBean("fileWriter").appendFile(file="#variables.basedir#/config/mappings.cfm", output='<cfset this.mappings["/#variables.rsRequirements.name#"] = variables.mapprefix & variables.basedir & "/requirements/#variables.rsRequirements.name#">')>				
+				<cfset application.serviceFactory.getBean("fileWriter").appendFile(file="#variables.basedir#/config/mappings.cfm", output='<cfset this.mappings["/#variables.rsRequirements.name#"] = variables.basedir & "/requirements/#variables.rsRequirements.name#">')>				
 			</cfif>
 		</cfloop>	
 

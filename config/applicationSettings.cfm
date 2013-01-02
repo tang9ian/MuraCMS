@@ -128,20 +128,16 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset commitTracePoint(variables.tracePoint)>
 
 	<!--- define custom coldfusion mappings. Keys are mapping names, values are full paths  --->
-	<cfif StructKeyExists(SERVER,"bluedragon") and not findNoCase("Windows",server.os.name)>
-		<cfset mapPrefix="$" />
-	<cfelse>
-		<cfset mapPrefix="" />
-	</cfif>
-
+	<!--- This is here for older mappings.cfm files --->
+	<cfset mapPrefix="" />
 	<cfset this.mapPrefix=mapPrefix>
 	<cfset variables.mapPrefix=mapPrefix>
 	
 	<cfset this.mappings = structNew()>
-	<cfset this.mappings["/plugins"] = variables.mapPrefix & variables.baseDir & "/plugins">
-	<cfset this.mappings["/muraWRM"] = variables.mapPrefix & variables.baseDir>
-	<cfset this.mappings["/savaWRM"] = variables.mapPrefix & variables.baseDir>
-	<cfset this.mappings["/config"] = variables.mapPrefix & variables.baseDir & "/config">
+	<cfset this.mappings["/plugins"] = variables.baseDir & "/plugins">
+	<cfset this.mappings["/muraWRM"] = variables.baseDir>
+	<cfset this.mappings["/savaWRM"] = variables.baseDir>
+	<cfset this.mappings["/config"] = variables.baseDir & "/config">
 	
 	<cftry>
 		<cfinclude template="#properties.getProperty("context","")#/config/mappings.cfm">
@@ -158,10 +154,10 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		</cfcatch>
 	</cftry>
 
-	<cfset this.mappings["/cfformprotect"] = variables.mapPrefix & variables.baseDir & "/tasks/widgets/cfformprotect">
-	<cfset this.mappings["/mura"] = variables.mapPrefix & variables.baseDir & "/requirements/com/mura">
-	<cfset this.mappings["/com/mura"] = variables.mapPrefix & variables.baseDir & "/requirements/com/mura">
-	<cfset this.mappings["/org/cfstatic"] = variables.mapPrefix & variables.baseDir & "/requirements/org/cfstatic">
+	<cfset this.mappings["/cfformprotect"] = variables.baseDir & "/tasks/widgets/cfformprotect">
+	<cfset this.mappings["/mura"] = variables.baseDir & "/requirements/com/mura">
+	<cfset this.mappings["/com/mura"] = variables.baseDir & "/requirements/com/mura">
+	<cfset this.mappings["/org/cfstatic"] = variables.baseDir & "/requirements/org/cfstatic">
 	
 	<cfset request.userAgent = LCase( CGI.http_user_agent ) />
 	<!--- Should we even use sessions? --->
@@ -198,7 +194,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	
 	<!--- define a list of custom tag paths. --->
 	<cfset this.customtagpaths = properties.getProperty("customtagpaths","") />
-	<cfset this.customtagpaths = listAppend(this.customtagpaths,variables.mapPrefix & variables.baseDir  &  "/requirements/com/mura/customtags/")>
+	<cfset this.customtagpaths = listAppend(this.customtagpaths,variables.baseDir  &  "/requirements/com/mura/customtags/")>
 	
 	<cfset this.clientManagement = properties.getProperty("clientManagement","false") />
 	<cfset this.clientStorage = properties.getProperty("clientStorage","registry") />
