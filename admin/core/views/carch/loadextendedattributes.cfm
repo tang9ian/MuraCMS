@@ -31,7 +31,7 @@ Your custom code
  /admin/
  /tasks/
  /config/
- /requirements/mura/
+ /requirements/com/mura/
  /Application.cfc
  /index.cfm
  /MuraProxy.cfc
@@ -47,7 +47,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfset request.layout=false>
 <!---<cfset request.event=application.serviceFactory.getBean('$').init(request.event.getAllValues()).event()>--->
 <cfset returnsets=structNew()>
-<cfif isDefined("session.mura.editBean") and isInstanceOf(session.mura.editBean, "mura.content.contentBean") and session.mura.editBean.getContentHistID() eq rc.contentHistID>
+<cfif isDefined("session.mura.editBean") and isInstanceOf(session.mura.editBean, "com.mura.content.contentBean") and session.mura.editBean.getContentHistID() eq rc.contentHistID>
 	<cfset contentBean=session.mura.editBean>
 <cfelse>
 	<cfset contentBean=application.contentManager.getcontentVersion(rc.contentHistID,rc.siteID)/>
@@ -140,5 +140,5 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfset returnsets.hasSummary=subType.getHasSummary()>
 <cfset returnsets.hasBody=subType.getHasBody()>
 
-<cfoutput>#createObject("component","mura.json").encode(returnsets)#</cfoutput>
+<cfoutput>#createObject("component","com.mura.json").encode(returnsets)#</cfoutput>
 

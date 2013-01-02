@@ -31,7 +31,7 @@ Your custom code
  /admin/
  /tasks/
  /config/
- /requirements/mura/
+ /requirements/com/mura/
  /Application.cfc
  /index.cfm
  /MuraProxy.cfc
@@ -159,6 +159,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	</cftry>
 
 	<cfset this.mappings["/cfformprotect"] = variables.mapPrefix & variables.baseDir & "/tasks/widgets/cfformprotect">
+	<cfset this.mappings["/mura"] = variables.mapPrefix & variables.baseDir & "/requirements/com/mura">
 	
 	<cfset request.userAgent = LCase( CGI.http_user_agent ) />
 	<!--- Should we even use sessions? --->
@@ -195,7 +196,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	
 	<!--- define a list of custom tag paths. --->
 	<cfset this.customtagpaths = properties.getProperty("customtagpaths","") />
-	<cfset this.customtagpaths = listAppend(this.customtagpaths,variables.mapPrefix & variables.baseDir  &  "/requirements/mura/customtags/")>
+	<cfset this.customtagpaths = listAppend(this.customtagpaths,variables.mapPrefix & variables.baseDir  &  "/requirements/com/mura/customtags/")>
 	
 	<cfset this.clientManagement = properties.getProperty("clientManagement","false") />
 	<cfset this.clientStorage = properties.getProperty("clientStorage","registry") />

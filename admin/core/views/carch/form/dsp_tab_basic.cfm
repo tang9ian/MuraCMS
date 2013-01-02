@@ -31,7 +31,7 @@ Your custom code
  /admin/
  /tasks/
  /config/
- /requirements/mura/
+ /requirements/com/mura/
  /Application.cfc
  /index.cfm
  /MuraProxy.cfc
@@ -149,7 +149,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfelse>
 				<cfif application.configBean.getValue("htmlEditorType") eq "fckeditor">
 					<cfscript>
-						fckEditor = createObject("component", "mura.fckeditor");
+						fckEditor = createObject("component", "com.mura.fckeditor");
 						fckEditor.instanceName	= "body";
 						fckEditor.value			= '#rc.contentBean.getBody()#';
 						fckEditor.basePath		= "#application.configBean.getContext()#/wysiwyg/";

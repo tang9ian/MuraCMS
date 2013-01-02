@@ -30,7 +30,7 @@ a separately distributed license.
 /admin/
 /tasks/
 /config/
-/requirements/mura/
+/requirements/com/mura/
 You may copy and distribute such a combined work under the terms of GPL for Mura CMS, provided that you include
 the source code of that other code when and as the GNU GPL requires distribution of source code.
 
@@ -41,7 +41,7 @@ to your own modified versions of Mura CMS.
 --->
 <cfsilent>
 <cfset rsThemes=rc.siteBean.getThemes() />
-<cfset variables.pluginEvent=createObject("component","mura.event").init(request.event.getAllValues())/>
+<cfset variables.pluginEvent=createObject("component","com.mura.event").init(request.event.getAllValues())/>
 <cfset rsSites=application.settingsManager.getList() />
 <cfset extendSets=application.classExtensionManager.getSubTypeByName("Site","Default",rc.siteid).getExtendSets(inherit=true,container="Default",activeOnly=true) />
 <cfparam name="rc.action" default="">

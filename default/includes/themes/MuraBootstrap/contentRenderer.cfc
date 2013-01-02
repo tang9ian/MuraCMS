@@ -31,7 +31,7 @@ Your custom code
  /admin/
  /tasks/
  /config/
- /requirements/mura/
+ /requirements/com/mura/
  /Application.cfc
  /index.cfm
  /MuraProxy.cfc
@@ -45,7 +45,7 @@ modified version; it is your choice whether to do so, or to make such modified v
 version 2 without this exception.  You may, if you choose, apply this exception to your own modified versions of Mura CMS.
 --->
 
-<cfcomponent extends="mura.cfobject">
+<cfcomponent extends="com.mura.cfobject">
 
 	<!--- Add theme-specific methods here --->
 

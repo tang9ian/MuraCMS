@@ -1,5 +1,5 @@
 <!--- Be sure to reload Mura after making any changes or adding methods here. A site's local eventHandler.cfc does not need to be reinitialized via appreload, only theme-specific ones (like this) --->
-<cfcomponent extends="mura.cfobject" output="false">
+<cfcomponent extends="com.mura.cfobject" output="false">
 
 	<cffunction name="onRequestStart" output="false">
 		<cfargument name="$" hint="mura scope" />

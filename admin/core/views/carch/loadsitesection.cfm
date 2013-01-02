@@ -31,7 +31,7 @@ Your custom code
  /admin/
  /tasks/
  /config/
- /requirements/mura/
+ /requirements/com/mura/
  /Application.cfc
  /index.cfm
  /MuraProxy.cfc
@@ -66,7 +66,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset rc.sortdirection=rc.rstop.sortdirection>
 </cfif>
 
-<cfset variables.pluginEvent=createObject("component","mura.event").init(event.getAllValues())/>	
+<cfset variables.pluginEvent=createObject("component","com.mura.event").init(event.getAllValues())/>	
 <cfset request.rowNum=0>
 <cfset request.menulist=rc.contentID>
 <cfset crumbdata=application.contentManager.getCrumbList(rc.contentID,rc.siteid)>
@@ -80,7 +80,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cf_dsp_nest topid="#rc.contentID#" parentid="#rc.contentID#"  rsnest="#rsNext#" locking="#application.settingsManager.getSite(rc.siteid).getlocking()#" nestlevel="1" perm="#perm#" siteid="#rc.siteid#" moduleid="#rc.moduleid#" restricted="#r#" viewdepth="1" nextn="#session.mura.nextN#" startrow="#rc.startrow#" sortBy="#rc.sortBy#" sortDirection="#rc.sortDirection#" pluginEvent="#pluginEvent#" isSectionRequest="true">
 </cfsavecontent>
 
-<cfoutput>#createObject("component","mura.json").encode(data)#</cfoutput>
+<cfoutput>#createObject("component","com.mura.json").encode(data)#</cfoutput>
 
 <cfelse>
 	<cfset session.openSectionList=listDeleteAt(session.openSectionList,sectionFound)>

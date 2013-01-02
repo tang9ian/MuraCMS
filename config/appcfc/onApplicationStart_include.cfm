@@ -31,7 +31,7 @@ Your custom code
  /admin/
  /tasks/
  /config/
- /requirements/mura/
+ /requirements/com/mura/
  /Application.cfc
  /index.cfm
  /MuraProxy.cfc
@@ -142,7 +142,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		
 		<cfset variables.iniProperties.webroot = expandPath("/muraWRM") />
 		
-		<cfset variables.tracer=createObject("component","mura.cfobject").init()>
+		<cfset variables.tracer=createObject("component","com.mura.cfobject").init()>
 	
 		<cfset variables.tracepoint=variables.tracer.initTracepoint("Instantiating DI1")> 
 		
@@ -343,7 +343,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		</cfif>
 		<cfset application.pluginstemp=application.plugins>
 		<cfset application.plugins=structNew()>
-		<cfset variables.pluginEvent=createObject("component","mura.event").init()>		
+		<cfset variables.pluginEvent=createObject("component","com.mura.event").init()>		
 
 		<cftry>	
 			<cfset application.pluginManager.executeScripts(runat='onApplicationLoad',event= variables.pluginEvent)>

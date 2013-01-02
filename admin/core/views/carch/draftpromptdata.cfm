@@ -31,7 +31,7 @@ Your custom code
  /admin/
  /tasks/
  /config/
- /requirements/mura/
+ /requirements/com/mura/
  /Application.cfc
  /index.cfm
  /MuraProxy.cfc
@@ -45,5 +45,5 @@ modified version; it is your choice whether to do so, or to make such modified v
 version 2 without this exception.  You may, if you choose, apply this exception to your own modified versions of Mura CMS.
 --->
 <cfcontent type="application/json">
-<cfoutput>#createObject("component","mura.json").encode(application.contentManager.getDraftPromptData(rc.contentid,rc.siteid))#</cfoutput>
+<cfoutput>#createObject("component","com.mura.json").encode(application.contentManager.getDraftPromptData(rc.contentid,rc.siteid))#</cfoutput>
 <cfabort>

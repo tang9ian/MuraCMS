@@ -31,7 +31,7 @@ Your custom code
  /admin/
  /tasks/
  /config/
- /requirements/mura/
+ /requirements/com/mura/
  /Application.cfc
  /index.cfm
  /MuraProxy.cfc
@@ -47,7 +47,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfset event=request.event>
 <cfinclude template="js.cfm">
 <cfhtmlhead text="#session.dateKey#">
-<cfset variables.pluginEvent=createObject("component","mura.event").init(event.getAllValues())/>
+<cfset variables.pluginEvent=createObject("component","com.mura.event").init(event.getAllValues())/>
 
 <cfoutput>
   <h1>#application.rbFactory.getKeyValue(session.rb,'email.createeditemail')#</h1>
@@ -164,12 +164,12 @@ version 2 without this exception.  You may, if you choose, apply this exception 
         <div class="controls">
           <cfset rsPluginScripts=application.pluginManager.getScripts("onHTMLEdit",rc.siteID)>
           <cfif rsPluginScripts.recordcount>
-            <cfset variables.pluginEvent=createObject("component","mura.event").init(event.getAllValues())/>
+            <cfset variables.pluginEvent=createObject("component","com.mura.event").init(event.getAllValues())/>
 #application.pluginManager.renderScripts("onHTMLEdit",rc.siteid,pluginEvent,rsPluginScripts)#
             <cfelse>
             <cfif application.configBean.getValue("htmlEditorType") eq "fckeditor">
               <cfscript>
-		fckEditor = createObject("component", "mura.fckeditor");
+		fckEditor = createObject("component", "com.mura.fckeditor");
 		fckEditor.instanceName	= "bodyHTML";
 		fckEditor.value			= '#rc.emailBean.getBodyHTML()#';
 		fckEditor.basePath		= "#application.configBean.getContext()#/wysiwyg/";

@@ -31,7 +31,7 @@ Your custom code
  /admin/
  /tasks/
  /config/
- /requirements/mura/
+ /requirements/com/mura/
  /Application.cfc
  /index.cfm
  /MuraProxy.cfc
@@ -430,7 +430,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			</cfif>
 			<cfset current.setSortBy(rc.sortBy)>
 			<cfset current.setSortDirection(rc.sortDirection)>
-			<cfset variables.pluginEvent=createObject("component","mura.event").init(event.getAllValues())/>
+			<cfset variables.pluginEvent=createObject("component","com.mura.event").init(event.getAllValues())/>
 			<cfset variables.pluginEvent.setValue("contentBean")>
 			<cfset application.pluginManager.announceEvent("onBeforeContentSort",pluginEvent)>
 		</cfif>

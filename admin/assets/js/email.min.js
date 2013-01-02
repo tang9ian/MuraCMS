@@ -31,7 +31,7 @@
 	 /admin/
 	 /tasks/
 	 /config/
-	 /requirements/mura/
+	 /requirements/com/mura/
 	 /Application.cfc
 	 /index.cfm
 	 /MuraProxy.cfc

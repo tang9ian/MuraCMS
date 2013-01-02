@@ -31,7 +31,7 @@ Your custom code
  /admin/
  /tasks/
  /config/
- /requirements/mura/
+ /requirements/com/mura/
  /Application.cfc
  /index.cfm
  /MuraProxy.cfc
@@ -267,5 +267,5 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 </cfoutput>
 </cfsavecontent>
 <cfset data.type=feed.getType()>
-<cfoutput>#createObject("component","mura.json").encode(data)#</cfoutput>
+<cfoutput>#createObject("component","com.mura.json").encode(data)#</cfoutput>
 <cfabort>

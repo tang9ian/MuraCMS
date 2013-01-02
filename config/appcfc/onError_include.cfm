@@ -31,7 +31,7 @@ Your custom code
  /admin/
  /tasks/
  /config/
- /requirements/mura/
+ /requirements/com/mura/
  /Application.cfc
  /index.cfm
  /MuraProxy.cfc
@@ -53,7 +53,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfset local.pluginEvent=request.event>
 	<cfelse>
 		<cftry>
-		<cfset local.pluginEvent=createObject("component","mura.event")>
+		<cfset local.pluginEvent=createObject("component","com.mura.event")>
 		<cfcatch></cfcatch>
 		</cftry>
 	</cfif>
