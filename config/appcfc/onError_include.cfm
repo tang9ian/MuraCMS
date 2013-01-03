@@ -31,7 +31,7 @@ Your custom code
  /admin/
  /tasks/
  /config/
- /requirements/com/mura/
+ /requirements/mura/
  /Application.cfc
  /index.cfm
  /MuraProxy.cfc
@@ -53,7 +53,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfset local.pluginEvent=request.event>
 	<cfelse>
 		<cftry>
-		<cfset local.pluginEvent=createObject("component","com.mura.event")>
+		<cfset local.pluginEvent=createObject("component","mura.event")>
 		<cfcatch></cfcatch>
 		</cftry>
 	</cfif>
@@ -72,6 +72,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfif not application.configBean.getDebuggingEnabled()>
 		<cfset mailto=application.configBean.getMailserverusername()>
 		<cfcontent reset="true">
+		<cfheader statuscode="500" statustext="An Error Occurred" />
 		<cfif len(application.configBean.getValue("errorTemplate"))>
 			<cfinclude template="#application.configBean.getValue('errorTemplate')#">
 		<cfelse>
@@ -80,6 +81,6 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfabort>
 	</cfif>
 </cfif>
-		
+<cfheader statuscode="500" statustext="An Error Occurred" />		
 <cfdump var="#arguments.exception#">
 <cfabort>	

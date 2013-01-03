@@ -31,7 +31,7 @@ Your custom code
  /admin/
  /tasks/
  /config/
- /requirements/com/mura/
+ /requirements/mura/
  /Application.cfc
  /index.cfm
  /MuraProxy.cfc
@@ -143,7 +143,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		
 		<cfset variables.iniProperties.webroot = expandPath("/muraWRM") />
 		
-		<cfset variables.tracer=createObject("component","com.mura.cfobject").init()>
+		<cfset variables.tracer=createObject("component","mura.cfobject").init()>
 	
 		<cfset variables.tracepoint=variables.tracer.initTracepoint("Instantiating DI1")> 
 		
@@ -171,7 +171,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 			variables.serviceFactory.addBean('javaLoader',
 						new mura.javaloader.JavaLoader(
-							loadPaths=[expandPath('/com/mura/lib/mura.jar'),expandPath('/com/mura/lib/jBCrypt-0.3')]
+							loadPaths=[expandPath('/mura/lib/mura.jar'),expandPath('/mura/lib/jBCrypt-0.3')]
 						)
 					);
 			variables.serviceFactory.addBean("fileWriter",
@@ -207,10 +207,10 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			variables.serviceFactory.addAlias("adZone","adZoneBean");
 			variables.serviceFactory.addAlias("imageSize","settingsImageSizeBean");
 			variables.serviceFactory.addAlias("imageSizeIterator","settingsImageSizeIterator");
-			variables.serviceFactory.addAlias("approvalChain","approvalChainBean");
+			variables.serviceFactory.addAlias("chain","chainBean");
 			variables.serviceFactory.addAlias("$","MuraScope");
 
-			//variables.serviceFactory.declareBean(beanName="chain",dottedPath="com.mura.content.approval.chain",isSingleton=false);
+			//variables.serviceFactory.declareBean(beanName="chain",dottedPath="mura.content.approval.chain",isSingleton=false);
 
 			application.serviceFactory=variables.serviceFactory;
 		</cfscript>
@@ -353,7 +353,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		</cfif>
 		<cfset application.pluginstemp=application.plugins>
 		<cfset application.plugins=structNew()>
-		<cfset variables.pluginEvent=createObject("component","com.mura.event").init()>		
+		<cfset variables.pluginEvent=createObject("component","mura.event").init()>		
 
 		<cftry>	
 			<cfset application.pluginManager.executeScripts(runat='onApplicationLoad',event= variables.pluginEvent)>

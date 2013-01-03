@@ -6,7 +6,7 @@
 		<cfset application.scriptProtectionFilter.scan(form,"form",request.remoteAddr)>
 		<!---cfset application.scriptProtectionFilter.scan(cookie,"cookie",cgi.remote_addr)>--->
 		<cfif application.scriptProtectionFilter.isBlocked(request.remoteAddr) eq true>
-			<cfset application.eventManager.announceEvent("onGlobalThreatDetect",createObject("component","com.mura.event"))>
+			<cfset application.eventManager.announceEvent("onGlobalThreatDetect",createObject("component","mura.event"))>
 		</cfif> 
 	</cfif> 
 </cfif>

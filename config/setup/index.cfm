@@ -30,7 +30,7 @@ a separately distributed license.
 /admin/
 /tasks/
 /config/
-/requirements/com/mura/
+/requirements/mura/
 
 You may copy and distribute such a combined work under the terms of GPL for Mura CMS, provided that you include
 the source code of that other code when and as the GNU GPL requires distribution of source code.
@@ -50,7 +50,7 @@ to your own modified versions of Mura CMS.
 <!--- get settings path --->
 <cfset settingsPath = variables.baseDir & "/config/settings.ini.cfm" />
 <!--- load settings into iniFile instance --->
-<cfset settingsini=createobject("component","com.mura.IniFile").init(settingsPath)>
+<cfset settingsini=createobject("component","mura.IniFile").init(settingsPath)>
 <!--- get current file --->
 <cfset currentFile = getFileFromPath( getBaseTemplatePath() ) />
 <cfset webRoot = replaceNoCase( CGI.script_name, currentFile, "" ) />

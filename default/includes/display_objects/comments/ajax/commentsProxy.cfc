@@ -1,4 +1,4 @@
-<cfcomponent extends="com.mura.cfobject">
+<cfcomponent extends="mura.cfobject">
 
 <cffunction name="get" access="remote" output="true">
 	<cfargument name="commentID">
@@ -8,7 +8,7 @@
 	<cfset var data=comment.setCommentID(arguments.commentID).load().getAllValues()>
 	
 	
-	<cfoutput>#createobject("component","com.mura.json").encode(data)#</cfoutput>
+	<cfoutput>#createobject("component","mura.json").encode(data)#</cfoutput>
 	<cfabort>
 </cffunction>
 

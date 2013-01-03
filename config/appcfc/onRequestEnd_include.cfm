@@ -31,7 +31,7 @@ Your custom code
  /admin/
  /tasks/
  /config/
- /requirements/com/mura/
+ /requirements/mura/
  /Application.cfc
  /index.cfm
  /MuraProxy.cfc
@@ -50,5 +50,5 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfelseif isDefined("request.event")>
 	<cfset application.eventManager.announceEvent("onGlobalRequestEnd",request.event)>
 <cfelse>
-	<cfset application.eventManager.announceEvent("onGlobalRequestEnd",createObject("component","com.mura.cfobject"))>
+	<cfset application.eventManager.announceEvent("onGlobalRequestEnd",createObject("component","mura.cfobject"))>
 </cfif>

@@ -31,7 +31,7 @@ Your custom code
  /admin/
  /tasks/
  /config/
- /requirements/com/mura/
+ /requirements/mura/
  /Application.cfc
  /index.cfm
  /MuraProxy.cfc
@@ -142,7 +142,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
      	<cfset pluginEvent=request.event>
      <cfelse>
      	<cfset params.siteID=session.siteID>
-     	<cfset pluginEvent=createObject("component","com.mura.event")>
+     	<cfset pluginEvent=createObject("component","mura.event")>
      	<cfset pluginEvent.init(params)>
      </cfif>
      #application.pluginManager.renderEvent("onAdminModuleNav",pluginEvent)#

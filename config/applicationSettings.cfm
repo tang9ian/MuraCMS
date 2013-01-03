@@ -31,7 +31,7 @@ Your custom code
  /admin/
  /tasks/
  /config/
- /requirements/com/mura/
+ /requirements/mura/
  /Application.cfc
  /index.cfm
  /MuraProxy.cfc
@@ -139,7 +139,6 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset this.mappings["/savaWRM"] = variables.baseDir>
 	<cfset this.mappings["/config"] = variables.baseDir & "/config">
 	
-	<!---
 	<cftry>
 		<cfinclude template="#properties.getProperty("context","")#/config/mappings.cfm">
 		<cfset hasMainMappings=true>
@@ -147,7 +146,6 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfset hasMainMappings=false>
 		</cfcatch>
 	</cftry>
-	--->
 	<cfset hasMainMappings=true>
 	
 	<cftry>
@@ -159,9 +157,6 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	</cftry>
 
 	<cfset this.mappings["/cfformprotect"] = variables.baseDir & "/tasks/widgets/cfformprotect">
-	<cfset this.mappings["/mura"] = variables.baseDir & "/requirements/com/mura">
-	<cfset this.mappings["/com/mura"] = variables.baseDir & "/requirements/com/mura">
-	<cfset this.mappings["/org/cfstatic"] = variables.baseDir & "/requirements/org/cfstatic">
 	
 	<cfset request.userAgent = LCase( CGI.http_user_agent ) />
 	<!--- Should we even use sessions? --->
@@ -198,7 +193,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	
 	<!--- define a list of custom tag paths. --->
 	<cfset this.customtagpaths = properties.getProperty("customtagpaths","") />
-	<cfset this.customtagpaths = listAppend(this.customtagpaths,variables.baseDir  &  "/requirements/com/mura/customtags/")>
+	<cfset this.customtagpaths = listAppend(this.customtagpaths,variables.baseDir  &  "/requirements/mura/customtags/")>
 	
 	<cfset this.clientManagement = properties.getProperty("clientManagement","false") />
 	<cfset this.clientStorage = properties.getProperty("clientStorage","registry") />
@@ -216,7 +211,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	</cfif>
 	
 	<cfset this.ormSettings={}>
-	<cfset this.ormSettings.cfclocation=['/com/mura']>
+	<cfset this.ormSettings.cfclocation=['/mura']>
 	
 	<cfif this.ormenabled>
 		<cfswitch expression="#properties.getProperty('dbtype','')#">

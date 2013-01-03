@@ -31,7 +31,7 @@ Your custom code
  /admin/
  /tasks/
  /config/
- /requirements/com/mura/
+ /requirements/mura/
  /Application.cfc
  /index.cfm
  /MuraProxy.cfc
@@ -94,7 +94,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset icon=icon & " " & rc.rsTop.subtype>
 </cfif>
 
-<cfset variables.pluginEvent=createObject("component","com.mura.event").init(event.getAllValues())/>	
+<cfset variables.pluginEvent=createObject("component","mura.event").init(event.getAllValues())/>	
 </cfsilent>
 
 <cfsavecontent variable="data.html">
@@ -336,5 +336,5 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 </cfsavecontent>
 <cfset data.perm=perm>
 <cfset data.sortBy=rc.sortBy>
-<cfoutput>#createObject("component","com.mura.json").encode(data)#</cfoutput>
+<cfoutput>#createObject("component","mura.json").encode(data)#</cfoutput>
 

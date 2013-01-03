@@ -31,7 +31,7 @@ Your custom code
  /admin/
  /tasks/
  /config/
- /requirements/com/mura/
+ /requirements/mura/
  /Application.cfc
  /index.cfm
  /MuraProxy.cfc
@@ -49,7 +49,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfif isDefined("arguments.ApplicationScope")>
 	<cfset session=arguments.SessionScope>
 	<cfset application=arguments.ApplicationScope>
-	<cfset local.pluginEvent=createObject("component","com.mura.event")>
+	<cfset local.pluginEvent=createObject("component","mura.event")>
 	<cfset local.pluginEvent.setValue("ApplicationScope",arguments.ApplicationScope)>	 
 	<cfset local.pluginEvent.setValue("SessionScope",arguments.SessionScope)>
 	<cfif structKeyExists(arguments.SessionScope,"mura") and len(arguments.SessionScope.mura.siteid)>

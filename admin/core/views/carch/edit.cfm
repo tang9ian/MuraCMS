@@ -31,7 +31,7 @@ Your custom code
  /admin/
  /tasks/
  /config/
- /requirements/com/mura/
+ /requirements/mura/
  /Application.cfc
  /index.cfm
  /MuraProxy.cfc
@@ -46,7 +46,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 --->
 <cfset event=request.event>
 <cfinclude template="js.cfm">
-<cfset variables.pluginEvent=createObject("component","com.mura.event").init(event.getAllValues())/>
+<cfset variables.pluginEvent=createObject("component","mura.event").init(event.getAllValues())/>
 <cfset pageLevelList="Page,Folder,Calendar,Gallery"/>
 <cfset extendedList="Page,Folder,Calendar,Gallery,Link,File,Component"/>
 <cfset isExtended=false>

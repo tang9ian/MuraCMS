@@ -31,7 +31,7 @@ Your custom code
  /admin/
  /tasks/
  /config/
- /requirements/com/mura/
+ /requirements/mura/
  /Application.cfc
  /index.cfm
  /MuraProxy.cfc
@@ -212,7 +212,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 				url.method eq "reload"
 			)
 	)>
-	<cfset variables.tracePoint=initTracePoint("com.mura.content.changesets.changesetManager.publishBySchedule()")>
+	<cfset variables.tracePoint=initTracePoint("mura.content.changesets.changesetManager.publishBySchedule()")>
 	<cfset application.changesetManager.publishBySchedule()>
 	<cfset commitTracePoint(variables.tracePoint)>
 </cfif>

@@ -31,7 +31,7 @@ Your custom code
  /admin/
  /tasks/
  /config/
- /requirements/com/mura/
+ /requirements/mura/
  /Application.cfc
  /index.cfm
  /MuraProxy.cfc
@@ -53,7 +53,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfquery name="rsNonDefault" dbtype="query">
 select * from rsSubTypes where subType <> 'Default'
 </cfquery>
-<cfset variables.pluginEvent=createObject("component","com.mura.event").init(event.getAllValues())/>
+<cfset variables.pluginEvent=createObject("component","mura.event").init(event.getAllValues())/>
 <cfset rsPluginScripts=application.pluginManager.getScripts("onUserEdit",rc.siteID)>
 <cfset tabLabelList='#application.rbFactory.getKeyValue(session.rb,'user.basic')#,#application.rbFactory.getKeyValue(session.rb,'user.addressinformation')#,#application.rbFactory.getKeyValue(session.rb,'user.groupmemberships')#,#application.rbFactory.getKeyValue(session.rb,'user.interests')#'>
 <cfset tablist="tabBasic,tabAddressinformation,tabGroupmemberships,tabInterests">
@@ -72,7 +72,7 @@ select * from rsSubTypes where subType <> 'Default'
 	</div>
 	
 	<cfif len(rc.userBean.getUsername())>
-		<cfset strikes=createObject("component","com.mura.user.userstrikes").init(rc.userBean.getUsername(),application.configBean)>
+		<cfset strikes=createObject("component","mura.user.userstrikes").init(rc.userBean.getUsername(),application.configBean)>
 		<cfif structKeyExists(rc,"removeBlock")>
 			<cfset strikes.clear()>
 		</cfif>
