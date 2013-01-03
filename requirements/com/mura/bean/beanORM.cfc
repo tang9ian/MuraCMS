@@ -111,6 +111,7 @@ component output="false" persistent="false" extends="com.mura.bean.bean" {
     	local.pluginManager=getBean('pluginManager');
     	local.event=new com.mura.event({bean=this});
     	local.objName=getEventClassName();
+    	local.pluginManager.announceEvent('on#local.objName#Save',local.event);
     	local.pluginManager.announceEvent('onBefore#local.objName#Save',local.event);
     	
     	if(structIsEmpty(variables.errors)){
@@ -130,6 +131,7 @@ component output="false" persistent="false" extends="com.mura.bean.bean" {
     	}
 
     	local.objName=getEventClassName();
+    	local.pluginManager.announceEvent('on#local.objName#Delete',local.event);
     	local.pluginManager.announceEvent('onBefore#local.objName#Delete',local.event);
     	entityDelete(local.obj);
     	ormFlush()
