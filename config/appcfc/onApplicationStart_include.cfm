@@ -206,9 +206,10 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			variables.serviceFactory.addAlias("adZone","adZoneBean");
 			variables.serviceFactory.addAlias("imageSize","settingsImageSizeBean");
 			variables.serviceFactory.addAlias("imageSizeIterator","settingsImageSizeIterator");
+			variables.serviceFactory.addAlias("chain","chainBean");
 			variables.serviceFactory.addAlias("$","MuraScope");
 
-			variables.serviceFactory.declareBean(beanName="chain",dottedPath="com.mura.content.approval.chain",isSingleton=false);
+			//variables.serviceFactory.declareBean(beanName="chain",dottedPath="com.mura.content.approval.chain",isSingleton=false);
 
 			application.serviceFactory=variables.serviceFactory;
 		</cfscript>
