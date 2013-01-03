@@ -107,8 +107,17 @@ component output="false" persistent="false" extends="com.mura.bean.bean" {
 		} else {
     		local.obj=this;
     	}
-    	entitySave(local.obj);
-    	ormFlush()
+
+    	local.pluginManager=getBean('pluginManager');
+    	local.event=new com.mura.event({bean=this});
+    	local.objName=getEventClassName();
+    	local.pluginManager.announceEvent('onBefore#local.objName#Save',local.event);
+    	
+    	if(structIsEmpty(variables.errors)){
+    		entitySave(local.obj);
+    		ormFlush();
+    		local.pluginManager.announceEvent('onAfter#local.objName#Save',local.event);
+    	}
     	return local.obj;
     }
 
@@ -119,8 +128,12 @@ component output="false" persistent="false" extends="com.mura.bean.bean" {
 		} else {
     		local.obj=this;
     	}
+
+    	local.objName=getEventClassName();
+    	local.pluginManager.announceEvent('onBefore#local.objName#Delete',local.event);
     	entityDelete(local.obj);
     	ormFlush()
+    	local.pluginManager.announceEvent('onAfter#local.objName#Delete',local.event);
     	return local.obj;
     }
 
@@ -134,5 +147,15 @@ component output="false" persistent="false" extends="com.mura.bean.bean" {
 
     	return this;
     } 
+
+    private function getEventClassName(){
+    	local.objName =listLast(getComponentMetaData(this).name,".");
+
+    	if(len(local.objName) gt 4 and right(local.objName,4) eq 'Bean'){
+    		local.objName=left(local.objName,len(local.objName)-4);
+    	}
+
+    	return local.objName;
+    }
 
 }
