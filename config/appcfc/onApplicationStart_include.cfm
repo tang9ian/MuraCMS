@@ -170,7 +170,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 			variables.serviceFactory.addBean('javaLoader',
 						new mura.javaloader.JavaLoader(
-							loadPaths=[expandPath('/mura/lib/mura.jar'),expandPath('/mura/lib/jBCrypt-0.3')]
+							loadPaths=[expandPath('/com/mura/lib/mura.jar'),expandPath('/com/mura/lib/jBCrypt-0.3')]
 						)
 					);
 			variables.serviceFactory.addBean("fileWriter",
