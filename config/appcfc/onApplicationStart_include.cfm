@@ -227,7 +227,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfset application.configBean.applyDbUpdates() />
 			<cfset variables.tracer.commitTracepoint(variables.tracepoint)>
 
-			<cfif isDefined('url.ormreload')>
+			<cfif isDefined('url.ormreload') or application.appAutoUpdated>
 				<cfset variables.tracepoint=variables.tracer.initTracepoint("Reloading ORM")> 
 				<cfset ormreload()>
 				<cfset variables.tracer.commitTracepoint(variables.tracepoint)>
