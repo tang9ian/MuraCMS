@@ -46,8 +46,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 --->
 <cfcomponent extends="com.mura.cfobject" output="false">
 
-<cfproperty name="errors" type="struct" default="{}" required="true" />
-<cfproperty name="siteID" type="String" default="" required="true" />
+<cfproperty name="errors" type="struct" persistent="false" required="true" />
+<cfproperty name="siteID" type="String" persistent="false" default="" ormType="varchar" length="25"required="true" />
 <cfproperty name="fromMuraCache" type="boolean" default="false" required="true" />
 
 <cffunction name="init" output="false">

@@ -208,6 +208,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			variables.serviceFactory.addAlias("imageSizeIterator","settingsImageSizeIterator");
 			variables.serviceFactory.addAlias("$","MuraScope");
 
+			variables.serviceFactory.declareBean(beanName="chain",dottedPath="com.mura.content.approval.chain",isSingleton=false);
+
 			application.serviceFactory=variables.serviceFactory;
 		</cfscript>
 
@@ -224,6 +226,12 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfset variables.tracepoint=variables.tracer.initTracepoint("Checking/Applying DB updates")> 
 			<cfset application.configBean.applyDbUpdates() />
 			<cfset variables.tracer.commitTracepoint(variables.tracepoint)>
+
+			<cfif isDefined('url.ormreload')>
+				<cfset variables.tracepoint=variables.tracer.initTracepoint("Reloading ORM")> 
+				<cfset ormreload()>
+				<cfset variables.tracer.commitTracepoint(variables.tracepoint)>
+			</cfif>
 		</cfif>
 		
 		<cfset application.appAutoUpdated=false>
