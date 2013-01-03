@@ -82,7 +82,7 @@ component output="false" persistent="false" extends="com.mura.bean.bean" {
 		        local.pName = local.md.properties[i].name; 
 		      
 		        if(!structkeyExists(local.processed,local.pName) && structKeyExists(this,"get#local.pName#") && (!structKeyExists(local.md.properties[i],'persistent') OR local.md.properties[i].persistent)){
-		       	 	 writeDump(var=local.md.properties[i]);
+		       	 	//writeDump(var=local.md.properties[i]);
 		       	 	local.properties[local.pName]=evaluate("get#local.pName#()"); 
 		       	 	local.processed[local.pName]=true;
 		      	} 
@@ -90,7 +90,7 @@ component output="false" persistent="false" extends="com.mura.bean.bean" {
 		    } 
 		  } 
 
-		 abort;
+		//abort;
 		structAppend(properties,variables.instance,false);
 		return properties; 
 	}
