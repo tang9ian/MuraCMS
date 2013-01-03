@@ -57,7 +57,7 @@ component output="false" persistent="false" extends="com.mura.bean.bean" {
 
 		 for(local.pName in arguments.data){
 		 	 if(not structKeyExists(this,"set#local.pName#")){
-		 	 	variables.instance[local.pName]=arguments.data[local.pName]
+		 	 	variables.instance[local.pName]=arguments.data[local.pName];
 		 	 }
 
 		 }
@@ -110,7 +110,7 @@ component output="false" persistent="false" extends="com.mura.bean.bean" {
 
     	local.pluginManager=getBean('pluginManager');
     	local.event=new com.mura.event({bean=this});
-    	local.objName=getEventClassName();
+    	local.objName=getORMClassName();
     	local.pluginManager.announceEvent('on#local.objName#Save',local.event);
     	local.pluginManager.announceEvent('onBefore#local.objName#Save',local.event);
     	
@@ -132,11 +132,11 @@ component output="false" persistent="false" extends="com.mura.bean.bean" {
 
     	local.pluginManager=getBean('pluginManager');
     	local.event=new com.mura.event({bean=this});
-    	local.objName=getEventClassName();
+    	local.objName=getORMClassName();
     	local.pluginManager.announceEvent('on#local.objName#Delete',local.event);
     	local.pluginManager.announceEvent('onBefore#local.objName#Delete',local.event);
     	entityDelete(local.obj);
-    	ormFlush()
+    	ormFlush();
     	local.pluginManager.announceEvent('onAfter#local.objName#Delete',local.event);
     	return local.obj;
     }
@@ -152,8 +152,8 @@ component output="false" persistent="false" extends="com.mura.bean.bean" {
     	return this;
     } 
 
-    private function getEventClassName(){
-    	local.objName =listLast(getComponentMetaData(this).name,".");
+    function getORMClassName(){
+    	local.objName =listLast(getMetaData(this).name,".");
 
     	if(len(local.objName) gt 4 and right(local.objName,4) eq 'Bean'){
     		local.objName=left(local.objName,len(local.objName)-4);
