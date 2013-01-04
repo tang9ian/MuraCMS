@@ -157,6 +157,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	</cftry>
 
 	<cfset this.mappings["/cfformprotect"] = variables.baseDir & "/tasks/widgets/cfformprotect">
+	<cfset this.mappings["/hyrule"] = variables.baseDir & "/requirements/hyrule">
 	
 	<cfset request.userAgent = LCase( CGI.http_user_agent ) />
 	<!--- Should we even use sessions? --->

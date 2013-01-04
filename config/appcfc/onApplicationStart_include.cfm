@@ -178,6 +178,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 				new mura.fileWriter(mode=775,tempDir=application.configBean.getTempDir())
 			);
 
+			variables.serviceFactory.addBean('validationService', new hyrule.system.core.Hyrule() );
+
 			variables.serviceFactory.addAlias("scriptProtectionFilter","Portcullis");
 			variables.serviceFactory.addAlias("eventManager","pluginManager");
 			variables.serviceFactory.addAlias("permUtility","permission");
@@ -207,10 +209,11 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			variables.serviceFactory.addAlias("adZone","adZoneBean");
 			variables.serviceFactory.addAlias("imageSize","settingsImageSizeBean");
 			variables.serviceFactory.addAlias("imageSizeIterator","settingsImageSizeIterator");
-			variables.serviceFactory.addAlias("chain","chainBean");
 			variables.serviceFactory.addAlias("$","MuraScope");
-
-			//variables.serviceFactory.declareBean(beanName="chain",dottedPath="mura.content.approval.chain",isSingleton=false);
+			variables.serviceFactory.addAlias("approvalchain","approvalchainBean");
+			variables.serviceFactory.addAlias("approvalRequest","approvalRequestBean");
+			variables.serviceFactory.addAlias("approvalAction","approvalActionBean");
+			variables.serviceFactory.addAlias("approvalChainAssignment","approvalChainAssignmentBean");
 
 			application.serviceFactory=variables.serviceFactory;
 		</cfscript>
@@ -238,11 +241,10 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		
 		<cfset application.appAutoUpdated=false>
 				
-		<cfset variables.serviceList="settingsManager,contentManager,pluginManager,eventManager,contentRenderer,utility,contentUtility,contentGateway,categoryManager,clusterManager,contentServer,changesetManager,scriptProtectionFilter,permUtility,emailManager,loginManager,mailinglistManager,userManager,dataCollectionManager,advertiserManager,feedManager,sessionTrackingManager,favoriteManager,raterManager,dashboardManager,autoUpdater">
+		<cfset variables.serviceList="validationService,settingsManager,contentManager,pluginManager,eventManager,contentRenderer,utility,contentUtility,contentGateway,categoryManager,clusterManager,contentServer,changesetManager,scriptProtectionFilter,permUtility,emailManager,loginManager,mailinglistManager,userManager,dataCollectionManager,advertiserManager,feedManager,sessionTrackingManager,favoriteManager,raterManager,dashboardManager,autoUpdater">
 		
 		<!--- These application level services use the beanServicePlaceHolder to lazy load the bean --->
-		<cfloop list="#variables.serviceList#" index="variables.i">
-			
+		<cfloop list="#variables.serviceList#" index="variables.i">			
 			<cfset variables.tracepoint=variables.tracer.initTracepoint("Instantiating #variables.i#")> 	
 			<cftry>
 			<cfset application["#variables.i#"]=application.serviceFactory.getBean("#variables.i#") />

@@ -180,8 +180,17 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 </cffunction>
 
 <cffunction name="validate" access="public" output="false">
-	<cfset variables.instance.errors=structnew() />
-	<cfreturn this>
+	<cfscript>
+	variables.instance.errors=structnew();
+
+	local.errors=getBean('validationService').validate(this);
+
+	for(local.error in local.errors){
+		variables.instance.errors['#local.error.getProperty()#']=local.error.getMessage();
+	}
+	
+	return this;
+	</cfscript>
 </cffunction>
 
 <cffunction name="setErrors" output="false" access="public">
@@ -194,6 +203,10 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 <cffunction name="getErrors" output="false" access="public">
 	<cfreturn variables.instance.errors>
+</cffunction>
+
+<cffunction name="hasErrors" output="false" access="public">
+	<cfreturn structIsEmpty(variables.instance.errors)>
 </cffunction>
 
 <cffunction name="setlastUpdateBy" access="public" output="false">

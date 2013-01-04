@@ -5,12 +5,8 @@ component output="false" persistent="false" extends="mura.bean.bean" {
 	property name="siteID" type="String" default="" required="true";
 
 	function init(){
-		variables.errors={};
 		variables.instance={};
-	}
-
-	function validate(){
-		return variables.errors;
+		variables.instance.errors={};	
 	}
 
 	function setSiteID(siteID){
@@ -65,6 +61,10 @@ component output="false" persistent="false" extends="mura.bean.bean" {
 		return this;
 	}
 
+	function valueExists(valueKey){
+		return structKeyExists(variables,arguments.valueKey) Or structKeyExists(variables.instance,arguments.valueKey);
+	}
+
 	struct function getAllValues(){ 
 		var properties = {}; 	
 		local.processed={};
@@ -92,6 +92,8 @@ component output="false" persistent="false" extends="mura.bean.bean" {
 
 		//abort;
 		structAppend(properties,variables.instance,false);
+		structDelete(properties,'errors');
+		
 		return properties; 
 	}
 
