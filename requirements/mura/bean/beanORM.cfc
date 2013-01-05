@@ -1,7 +1,7 @@
 component output="false" persistent="false" extends="mura.bean.bean" {
 
-	property name="instance" type="struct" persistent="false" required="true" setter="false" getter="false";
-	property name="fromMuraCache" type="boolean" default="false" persistent="false" required="true" setter="false" getter="false";
+	property name="instance" type="struct" persistent="false" setter="false" getter="false";
+	property name="fromMuraCache" type="boolean" default="false" persistent="false" setter="false" getter="false";
 	property name="siteID" type="String" default="" required="true";
 
 	function init(){
@@ -13,15 +13,6 @@ component output="false" persistent="false" extends="mura.bean.bean" {
 		if(len(arguments.siteID)){
 			variables.siteID=arguments.siteID;
 		}
-	}
-
-	function getErrors(){
-		return variables.errors;
-	}
-
-	function setErrors(errors){
-		variables.errors=arguments.errors;
-		return this;
 	}
 
 	function setAllValues(struct data){
@@ -102,25 +93,33 @@ component output="false" persistent="false" extends="mura.bean.bean" {
 		return this;
 	}
 
+	function validate(){
+		super.validate();
+		if(hasErrors()){
+			request.muraORMError=true;
+		}
+	}
+
 	function save(){
 		if (ArrayLen(EntityLoadByExample(this))){ 
-		   local.obj=ORMGetSession().merge(this); 
-			
+		   local.obj=ORMGetSession().merge(this); 			
 		} else {
     		local.obj=this;
     	}
+
+    	validate();
 
     	local.pluginManager=getBean('pluginManager');
     	local.event=new mura.event({bean=this});
     	local.objName=getORMClassName();
     	local.pluginManager.announceEvent('on#local.objName#Save',local.event);
     	local.pluginManager.announceEvent('onBefore#local.objName#Save',local.event);
-    	
-    	if(structIsEmpty(variables.errors)){
+
+    	if(!hasErrors()){
     		entitySave(local.obj);
-    		ormFlush();
     		local.pluginManager.announceEvent('onAfter#local.objName#Save',local.event);
     	}
+
     	return local.obj;
     }
 
@@ -138,7 +137,6 @@ component output="false" persistent="false" extends="mura.bean.bean" {
     	local.pluginManager.announceEvent('on#local.objName#Delete',local.event);
     	local.pluginManager.announceEvent('onBefore#local.objName#Delete',local.event);
     	entityDelete(local.obj);
-    	ormFlush();
     	local.pluginManager.announceEvent('onAfter#local.objName#Delete',local.event);
     	return local.obj;
     }

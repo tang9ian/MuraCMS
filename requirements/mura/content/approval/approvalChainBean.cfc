@@ -9,7 +9,7 @@ component persistent="true" extends="mura.bean.beanORM" table="tapprovalchains" 
     property name="lastupdateby" ormtype="string" length="50";
     property name="lastupdatebyid" ormtype="string" length="35";
 
-    property name="assignments" fieldtype="one-to-many" cfc="approvalAssignmentBean"
+    property name="assignments" fieldtype="one-to-many" cfc="approvalChainAssignmentBean"
 		fkcolumn="chainID" type="array" singularname="assignment" orderby="orderno asc"
 		inverse="true" cascade="delete";
 

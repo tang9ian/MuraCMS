@@ -46,9 +46,9 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 --->
 <cfcomponent extends="mura.cfobject" output="false">
 
-<cfproperty name="errors" type="struct" persistent="false" required="true" />
+<cfproperty name="errors" type="struct" persistent="false" />
 <cfproperty name="siteID" type="String" persistent="false" default="" ormType="varchar" length="25"required="true" />
-<cfproperty name="fromMuraCache" type="boolean" default="false" required="true" />
+<cfproperty name="fromMuraCache" type="boolean" default="false" />
 
 <cffunction name="init" output="false">
 	<cfset super.init(argumentCollection=arguments)>
@@ -183,8 +183,9 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfscript>
 	variables.instance.errors=structnew();
 
-	local.errors=getBean('validationService').validate(this);
+	local.errors=getBean('validationService').validate(this).getErrors();
 
+	//writeDump(var= local.errors,abort=true);
 	for(local.error in local.errors){
 		variables.instance.errors['#local.error.getProperty()#']=local.error.getMessage();
 	}
@@ -206,7 +207,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 </cffunction>
 
 <cffunction name="hasErrors" output="false" access="public">
-	<cfreturn structIsEmpty(variables.instance.errors)>
+	<cfreturn not structIsEmpty(variables.instance.errors)>
 </cffunction>
 
 <cffunction name="setlastUpdateBy" access="public" output="false">
