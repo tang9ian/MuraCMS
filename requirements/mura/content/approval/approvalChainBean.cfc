@@ -1,7 +1,7 @@
 component persistent="true" extends="mura.bean.beanORM" table="tapprovalchains" {
 
 	property name="chainID" ormtype="string" length="35" fieldtype="id" generator="assigned";
-    property name="siteID" ormtype="string" length="25" default="" required="true";
+    property name="siteID" ormtype="string" length="25" default="" required=true;
     property name="name" ormtype="string" length="100" required=true;
     property name="description" ormtype="text";
     property name="created" ormtype="timestamp";
@@ -20,11 +20,6 @@ component persistent="true" extends="mura.bean.beanORM" table="tapprovalchains" 
     function init() {
     	super.init();
     	variables.chainID=createUUID();
-
-    	if(isDefined("session.mura") and session.mura.isLoggedIn){
-			variables.lastupdateby = left(session.mura.fname & " " & session.mura.lname,50);
-			variables.lastupdatebyid = session.mura.userID;
-		}
     }
 
 }

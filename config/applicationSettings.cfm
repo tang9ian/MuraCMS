@@ -199,8 +199,9 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	
 	<cfset this.clientManagement = properties.getProperty("clientManagement","false") />
 	<cfset this.clientStorage = properties.getProperty("clientStorage","registry") />
-	
-	
+	<cfset this.ormSettings={}>
+	<cfset this.ormenabled=false>
+
 	<!--- You can't depend on 9 supporting datasource as struct --->
 	<cfif listFirst(SERVER.COLDFUSION.PRODUCTVERSION) gt 9 
 		or listGetAt(SERVER.COLDFUSION.PRODUCTVERSION,3) gt 0>
@@ -218,8 +219,11 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		</cfif>
 	</cfif>
 	
-	<cfset this.ormSettings={}>
-	<cfset this.ormSettings.cfclocation=['/mura']>
+	<cfif this.ormenabled>
+		<cfset this.ormSettings.cfclocation=['/mura']>
+	<cfelse>
+		<cfset this.ormSettings.cfclocation=[]>
+	</cfif>
 	
 	<cfif this.ormenabled>
 		<cfswitch expression="#properties.getProperty('dbtype','')#">
