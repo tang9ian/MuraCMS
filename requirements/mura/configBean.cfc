@@ -115,7 +115,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfset variables.instance.confirmSaveAsDraft=true />
 <cfset variables.instance.notifyWithVersionLink=true />
 <cfset variables.instance.scriptProtect=true />
-<cfset variables.instance.appreloadKey=application.appreloadKey />
+<cfset variables.instance.appreloadKey="appreload" />
 <cfset variables.instance.loginStrikes=4 />
 <cfset variables.instance.encryptPasswords=true />
 <cfset variables.instance.sessionTimeout=180 />
@@ -227,8 +227,6 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfif not len(variables.instance.readOnlyDbUsername)>
 		<cfset variables.instance.readOnlyDbUsername=variables.instance.dbUsername>
 	</cfif>
-
-	<cfset variables.dbUtility=getBean("dbUtility")>
 
 	<cfreturn this />
 </cffunction>

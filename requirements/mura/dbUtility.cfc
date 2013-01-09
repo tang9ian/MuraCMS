@@ -6,9 +6,7 @@
 	<cfset variables.tableIndexLookUp=structNew()>
 
 <cffunction name="init" output="false">
-	<cfargument name="table" default="">
 		<cfset purgeCache()>
-		<cfset setTable(arguments.table)>
 		<cfreturn this>
 </cffunction>
 
