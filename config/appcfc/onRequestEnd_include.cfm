@@ -52,10 +52,11 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfelse>
 	<cfset application.eventManager.announceEvent("onGlobalRequestEnd",createObject("component","mura.cfobject"))>
 </cfif>
-
+<!---
 <cfif not request.muraORMError>
 	<cfset ormFlush()>
 	<cfset ormFlush()>
 <cfelse>
 	<cfset ormClearSession()>
 </cfif>
+--->
