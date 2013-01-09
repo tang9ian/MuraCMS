@@ -96,8 +96,6 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfset variables.instance.sessionHistory=1 />
 <cfset variables.instance.clearSessionHistory=1 />
 <cfset variables.instance.extensionManager=""/>
-<cfset variables.instance.reactorDbType=""/>
-<cfset variables.instance.reactor=""/>
 <cfset variables.instance.locale="Server" />
 <cfset variables.instance.imageInterpolation="highestQuality" />
 <cfset variables.instance.clusterIPList="" />
@@ -117,7 +115,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfset variables.instance.confirmSaveAsDraft=true />
 <cfset variables.instance.notifyWithVersionLink=true />
 <cfset variables.instance.scriptProtect=true />
-<cfset variables.instance.appreloadKey="appreloadkey" />
+<cfset variables.instance.appreloadKey=application.appreloadKey />
 <cfset variables.instance.loginStrikes=4 />
 <cfset variables.instance.encryptPasswords=true />
 <cfset variables.instance.sessionTimeout=180 />
@@ -184,8 +182,6 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset setDefaultLocale(arguments.config.locale)>
 	<cfset setServerPort(arguments.config.port)>
 	
-	<cfset variables.instance.appreloadKey=application.appreloadKey />
-	
 	<cfloop collection="#arguments.config#" item="prop">
 		<cfif not listFindNoCase("webroot,filedir,plugindir,locale,port,assetpath,context",prop)>
 			<cfif structKeyExists(this,"set#prop#")>
@@ -232,40 +228,9 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfset variables.instance.readOnlyDbUsername=variables.instance.dbUsername>
 	</cfif>
 
-	<cfset variables.instance.reactorDBType=arguments.config.dbType>
+	<cfset variables.dbUtility=getBean("dbUtility")>
 
 	<cfreturn this />
-</cffunction>
-
-<cffunction name="startReactor" output="false" returntype="any">
-	<cfset var reactorXML = "" />
-	<cfset var reactorDir = "" />
-	
-	<cfset reactorDir="#getDirectoryFromPath(getCurrentTemplatePath())#reactor#getFileDelim()##getDatasource()#" />
-	
-	<cfif not DirectoryExists(reactorDir)>
-		<cfdirectory action="create" directory="#reactorDir#">
-	</cfif>
-	
-<cfsavecontent variable="reactorXML">
-<cfoutput><reactor>
-	<config>
-		<project value="#getDatasource()#" />
-		<dsn value="#getDatasource()#" />
-		<type value="#variables.instance.reactorDBType#" />
-		<Username value="#getDBUsername()#" />
-		<password value="#getDBpassword()#" />
-		<mapping value="/#getMapDir()#/reactor/#getDatasource()#" />	
-		<cfif getMode() eq 'Development'><mode value="development" /><cfelse><mode value="production" /></cfif>	
-	</config>
-	<objects/>		
-</reactor></cfoutput>
-</cfsavecontent>
-	
-	<cffile action="write" file="#getTempDirectory()##getDatasource()#.xml"	output="#reactorXML#">
-	<cfset variables.instance.reactor = createObject("component","reactor.reactorFactory").init("#getTempDirectory()##getDatasource()#.xml") />
-	<cffile action="delete" file="#getTempDirectory()##getDatasource()#.xml">
-	
 </cffunction>
 
 <cffunction name="getMode" returntype="any" access="public" output="false">
@@ -759,6 +724,12 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfreturn this>
 </cffunction>
 
+<!---
+<cffunction name="createGUID" access="public" output="false" returntype="any">
+   <cfreturn insert("-", CreateUUID(), 23) />
+</cffunction>
+--->
+
 <cffunction name="loadClassExtensionManager" returntype="any" access="public" output="false">
 	<cfset variables.instance.extensionManager=createObject("component","mura.extend.extendManager").init(this) />
 	<cfreturn this>
@@ -771,6 +742,38 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset var rsUpdates ="" />
 	<cfset var dbUtility=getBean("dbUtility") />
 	<cfset var i ="" />
+	<cfset var MSSQLversion=0 />
+	<cfset var MSSQLlob="[nvarchar](max) NULL" />
+
+	<cfif variables.instance.dbtype eq 'MSSQL'>
+
+		<cftry>
+			<cfquery name="MSSQLversion"  datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+				SELECT CONVERT(varchar(100), SERVERPROPERTY('ProductVersion')) as version
+			</cfquery>
+			<cfset MSSQLversion=listFirst(MSSQLversion.version,".")>
+			<cfcatch></cfcatch>
+		</cftry>
+
+		<cfif not MSSQLversion>
+			<cfquery name="MSSQLversion" datasource="#getDatasource()#" username="#getDBUsername()#" password="#getDbPassword()#">
+				EXEC sp_MSgetversion
+			</cfquery>
+		
+			<cftry>
+				<cfset MSSQLversion=left(MSSQLversion.CHARACTER_VALUE,1)>
+				<cfcatch>
+					<cfset MSSQLversion=mid(MSSQLversion.COMPUTED_COLUMN_1,1,find(".",MSSQLversion.COMPUTED_COLUMN_1)-1)>
+				</cfcatch>
+			</cftry>
+		</cfif>
+
+		<cfif MSSQLversion neq 8>
+			<cfset MSSQLlob="[nvarchar](max)">
+		<cfelse>
+			<cfset MSSQLlob="[ntext]">
+		</cfif>		
+	</cfif>
 	
 	<cfdirectory action="list" directory="#getDirectoryFromPath(getCurrentTemplatePath())#dbUpdates" name="rsUpdates" filter="*.cfm" sort="name asc">
 
@@ -801,6 +804,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 					WHERE table_name=UPPER('#arguments.table#')
 			</cfquery>
 			</cfcase>
+			<!---
 			<cfcase value="nuodb">
 				<cfquery
 				name="rs" 
@@ -826,6 +830,23 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 					is_nullable, 
 					precision data_precision
 					FROM rs
+			</cfquery>
+			</cfcase>
+			--->
+			<cfcase value="mssql">
+			<cfquery
+				name="rs" 
+				datasource="#getDatasource()#"
+				username="#getDbUsername()#"
+				password="#getDbPassword()#">
+					select column_name,
+					character_maximum_length column_size,
+					data_type type_name,
+					column_default column_default_value,
+					is_nullable,
+					numeric_precision data_precision
+					from INFORMATION_SCHEMA.COLUMNS
+					where TABLE_NAME='#arguments.table#'
 			</cfquery>
 			</cfcase>
 			<cfdefaultcase>
@@ -1475,7 +1496,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cffunction name="getDbColumnCFType" output="false">
 	<cfargument name="column">
 	<cfargument name="table">
-	<cfset var datatype=getBean('dbUtility').columnMetaData(argumentCollection=arguments).datatype>
+	<cfset var datatype=variables.dbUtility.columnMetaData(argumentCollection=arguments).datatype>
 
 	<cfswitch expression="#arguments.rs.type_name#">
 			<cfcase value="varchar,nvarchar,varchar2">
