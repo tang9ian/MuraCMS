@@ -12,13 +12,13 @@
          <div class="control-group">
             <label class="control-label">Height</label>
             <div class="controls">
-                <input id="custom-image-height" class="span4" type="text" value="#rc.customImage.getHeight()#"  maxlength="20"/>
+                <input id="custom-image-height" class="span4" type="text" value="#rc.customImage.getHeight()#" maxlength="20"/>
             </div>
         </div>
        	<div class="control-group">
             <label class="control-label">Width</label>
             <div class="controls">
-                <input id="custom-image-width" class="span4" type="text" value="#rc.customImage.getWidth()#"  maxlength="20"/>
+                <input id="custom-image-width" class="span4" type="text" value="#rc.customImage.getWidth()#" maxlength="20"/>
              </div>
         </div>
 	</div>
