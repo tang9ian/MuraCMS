@@ -54,6 +54,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfparam name="application.instanceID" default="#createUUID()#" />
 <cfparam name="application.CFVersion" default="#listFirst(SERVER.COLDFUSION.PRODUCTVERSION)#" />
 <cfparam name="application.setupComplete" default="false">
+<cfset request.muraAppreloaded=true>
+
 <!--- this is here for CF8 compatibility --->
 <cfset variables.baseDir=this.baseDir>
 <cfprocessingdirective pageencoding="utf-8"/>
@@ -97,7 +99,6 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		
 		<cfset application.appInitialized=false>
 		<cfset request.muraShowTrace=true>
-		<cfset request.muraAppreloaded=true>
 		
 		<cfset variables.iniPath = "#variables.basedir#/config/settings.ini.cfm" />
 		
