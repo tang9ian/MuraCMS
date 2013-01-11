@@ -113,6 +113,9 @@ CKEDITOR.editorConfig = function( config )
 
 	// Remove the Resize plugin as it does not make sense to use it in conjunction with the AutoGrow plugin.
 	//removePlugins : 'resize';
+
+	config.protectedSource.push( /<i[\s\S]*?\>/g ); //allows beginning <i> tag
+	config.protectedSource.push( /<\/i[\s\S]*?\>/g ); //allows ending </i> tag
 	
 	config.entities_additional = "";
 	//config.protectedSource.push( /\[mura\][\s\S]*?\[\/mura\]/g );
