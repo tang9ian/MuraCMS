@@ -53,7 +53,7 @@
 }*/
 
 
-var searchParams={
+var $searchParams={
 	addSearchParam: function(){
 		
 		var num =$('#searchParams > .controls').length;
@@ -94,7 +94,9 @@ var searchParams={
 				$(buttons[1]).show();
 				params.find("select:first").hide();
 		} else {
-				
+			
+			self=this;
+
 			params.each(function(index){
 					if(index==0){
 						var buttons =$(params[index]).find("a");
@@ -114,7 +116,7 @@ var searchParams={
 							$(buttons[1]).show();
 						}
 						
-						 searchParams.setSearchParamNames(params[index],index + 1);
+						 self.setSearchParamNames(params[index],index + 1);
 					}
 				}
 			);

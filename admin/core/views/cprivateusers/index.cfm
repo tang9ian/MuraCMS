@@ -93,7 +93,7 @@ if (window.opener)	{
 
 function goAndClose(userid)	{
 
-	mainwin.location.href='../../index.cfm?muraAction=cPrivateUsers.addtogroup&siteid=#URLEncodedFormat(url.siteid)#&groupid=#URLEncodedFormat(url.groupid)#&routeid=#URLEncodedFormat(url.groupid)#&userid='+userid;
+	mainwin.location.href='../../index.cfm?muraAction=cPrivateUsers.addtogroup&siteid=#esapiEncode('url',url.siteid)#&groupid=#esapiEncode('url',url.groupid)#&routeid=#esapiEncode('url',url.groupid)#&userid='+userid;
 
 	window.close();
 }
@@ -113,7 +113,7 @@ function goAndClose(userid)	{
 
 	<div class="input-append">
 	    <input style="width: 208px;" name="search" required="true" message="#application.rbFactory.getKeyValue(session.rb,'user.lastnameorcompanyrequired')#" type="text" />
-	    <button type="button" class="btn" onclick="submitForm(document.forms.form1);" value="#application.rbFactory.getKeyValue(session.rb,'user.search')#" /><i class="icon-search"></i></button>
+	    <button type="button" class="btn" onclick="submitForm(document.forms.form1);" value="#application.rbFactory.getKeyValue(session.rb,'user.search')#"><i class="icon-search"></i></button>
 	</div>
 
 <!---

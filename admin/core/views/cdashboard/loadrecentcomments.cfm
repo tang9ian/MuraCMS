@@ -48,7 +48,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfinclude template="act_defaults.cfm">
 <cfset comments=application.contentManager.getRecentCommentsIterator(rc.siteID,5,false) />
 <cfoutput>
-<table class="table table-striped table-condensed table-bordered mura-table-grid">
+<table class="mura-table-grid">
 	<thead>
 	<tr>
 		<th class="var-width">#application.rbFactory.getKeyValue(session.rb,"dashboard.comments")#</th>
@@ -57,6 +57,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	</tr>
 	</thead>
 	<tbody>
+	<cfif comments.hasNext()>
 	<cfloop condition="comments.hasNext()">
 		<cfset comment=comments.next()>
 		<!---
@@ -66,17 +67,22 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfset content=application.serviceFactory.getBean("content").loadBy(contentID=comment.getContentID(),siteID=session.siteID)>
 		<tr>
 			<cfset args=arrayNew(1)>
-			<cfset args[1]="<strong>#HTMLEditFormat(comment.getName())#</strong>">
-			<cfset args[2]="<strong>#HTMLEditFormat(content.getMenuTitle())#</strong>">
-			<td class="var-width">#application.rbFactory.getResourceBundle(session.rb).messageFormat(application.rbFactory.getKeyValue(session.rb,"dashboard.comments.description"),args)#</td>
+			<cfset args[1]="<strong>#esapiEncode('html',comment.getName())#</strong>">
+			<cfset args[2]="<strong>#esapiEncode('html',content.getMenuTitle())#</strong>">
+			<td class="var-width">#left(application.rbFactory.getResourceBundle(session.rb).messageFormat(application.rbFactory.getKeyValue(session.rb,"dashboard.comments.description"),args),116)#</td>
 			<td class="dateTime">#LSDateFormat(comment.getEntered(),session.dateKeyFormat)# #LSTimeFormat(comment.getEntered(),"short")#</td>
 			<td class="actions">
 			<ul>
-				<li class="preview"><a title="#application.rbFactory.getKeyValue(session.rb,"dashboard.view")#" href="##" onclick="return preview('#JSStringFormat(content.getURL(complete=1,queryString='##comment-#comment.getCommentID()#'))#','#content.getTargetParams()#');"><i class="icon-globe"></i></a></li>
+				<li class="preview"><a title="#application.rbFactory.getKeyValue(session.rb,"dashboard.view")#" href="##" onclick="return preview('#esapiEncode('javascript',content.getURL(complete=1,queryString='##comment-#comment.getCommentID()#'))#','#esapiEncode('javascript',content.getTargetParams())#');"><i class="icon-globe"></i></a></li>
 			</ul>
 			</td>
 		</tr>
 		</cfloop>
+		<cfelse>
+		<tr>
+		<td class="noResults" colspan="3">#application.rbFactory.getKeyValue(session.rb,"dashboard.comments.nocomments")#</td>
+		</tr>
+		</cfif>
 	</tbody>
 	</table>
 </cfoutput>

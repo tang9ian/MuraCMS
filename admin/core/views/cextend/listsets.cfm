@@ -46,50 +46,83 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 --->
 <cfinclude template="js.cfm">
 <cfset rslist=application.classExtensionManager.getSubTypes(siteID=rc.siteID,activeOnly=false) />
-<h1>Class Extension Attribute Sets</h1>
-
-<cfoutput>
-
-
 <cfset subType=application.classExtensionManager.getSubTypeByID(rc.subTypeID)>
 <cfset extendSets=subType.getExtendSets()/>
 
-<div id="nav-module-specific" class="btn-group">
-<a class="btn" href="index.cfm?muraAction=cExtend.listSubTypes&siteid=#URLEncodedFormat(rc.siteid)#"><i class="icon-circle-arrow-left"></i> Back to Class Extensions</a>
+<cfset showRelatedContentSets = not listFindNoCase("1,2,User,Group,Address,Site,Component,Form", subType.getType())>
 
-<a class="btn" href="index.cfm?muraAction=cExtend.editSubType&subTypeID=#rc.subTypeID#&siteid=#URLEncodedFormat(rc.siteid)#"><i class="icon-pencil"></i> Edit Class Extension</a>
-<a class="btn" href="index.cfm?muraAction=cExtend.editSet&subTypeID=#rc.subTypeID#&siteid=#URLEncodedFormat(rc.siteid)#&extendSetID="><i class="icon-plus-sign"></i> Add Attribute Set</a>
-</div>
-
-<h2><i class="#application.settingsManager.getSite(rc.siteID).getContentRenderer().iconClassByContentType(type=subType.getType(),subtype=subType.getSubType())#"></i> #application.classExtensionManager.getTypeAsString(subType.getType())#/#subType.getSubType()#</h2>
-
-</cfoutput>
-<cfif arrayLen(extendSets)>
-<ul class="nav nav-pills">
-<li><a href="javascript:;" style="display:none;" id="saveSort" onclick="extendManager.saveExtendSetSort('attr-set');return false;"><i class="icon-check"></i> Save Order</a></li>
-<li><a href="javascript:;"  id="showSort" onclick="extendManager.showSaveSort('attr-set');return false;"><i class="icon-move"></i> Reorder</a></li>
-</ul>
+<cfif showRelatedContentSets>
+	<cfset relatedContentsets = subType.getRelatedContentSets(includeInheritedSets=false)>
 </cfif>
 
+<h1>Class Extension Overview</h1>
+<cfoutput>
+	<div id="nav-module-specific" class="btn-group">
+		<a class="btn" href="./?muraAction=cExtend.listSubTypes&siteid=#esapiEncode('url',rc.siteid)#"><i class="icon-circle-arrow-left"></i> Back to Class Extensions</a>
+		<a class="btn" href="./?muraAction=cExtend.editSubType&subTypeID=#esapiEncode('url',rc.subTypeID)#&siteid=#esapiEncode('url',rc.siteid)#"><i class="icon-pencil"></i> Edit Class Extension</a>
+		<cfif showRelatedContentSets>
+		
+		<div class="btn-group">
+	      <a class="btn dropdown-toggle" data-toggle="dropdown" href="##">
+	         <i class="icon-plus-sign"></i> Add <span class="caret"></span>
+	       </a>
+	       <ul class="dropdown-menu">
+	          <li><a href="./?muraAction=cExtend.editSet&subTypeID=#esapiEncode('url',rc.subTypeID)#&siteid=#esapiEncode('url',rc.siteid)#&extendSetID=">Add Attribute Set</a></li>
+	          <li><a href="./?muraAction=cExtend.editRelatedContentSet&subTypeID=#esapiEncode('url',rc.subTypeID)#&siteid=#esapiEncode('url',rc.siteid)#&relatedContentSetID=">Add Related Content Set</a></li>
+	       </ul>
+	   </div>
+		<cfelse>
+			<a class="btn" href="./?muraAction=cExtend.editSet&subTypeID=#esapiEncode('url',rc.subTypeID)#&siteid=#esapiEncode('url',rc.siteid)#&extendSetID="><i class="icon-plus-sign"></i> Add Attribute Set</a>
+		</cfif>
+		</div>
+	</div>
+	<h2><i class="#subtype.getIconClass(includeDefault=true)# icon-large"></i> #application.classExtensionManager.getTypeAsString(subType.getType())# / #subType.getSubType()#</h2>
+</cfoutput>
+
+<h3>Extended Attribute Sets <cfif arrayLen(extendSets) gt 1>(<a href="javascript:;" style="display:none;" id="saveSort" onclick="extendManager.saveExtendSetSort('attr-set');return false;"><i class="icon-check"></i>Save Order</a><a href="javascript:;"  id="showSort" onclick="extendManager.showSaveSort('attr-set');return false;"><i class="icon-move"></i>Reorder</a>)</cfif></h3>
 <cfif arrayLen(extendSets)>
 
-<ul id="attr-set" class="attr-list">
-<cfloop from="1" to="#arrayLen(extendSets)#" index="s">	
-<cfset extendSetBean=extendSets[s]/>
-<cfoutput>
-	<li extendSetID="#extendSetBean.getExtendSetID()#">
-		<span id="handle#s#" class="handle" style="display:none;"><i class="icon-move"></i></span>
-		<p>#extendSetBean.getName()#</p>
-		<div class="btns">
-			<a title="Edit" href="index.cfm?muraAction=cExtend.editAttributes&subTypeID=#rc.subTypeID#&extendSetID=#extendSetBean.getExtendSetID()#&siteid=#URLEncodedFormat(rc.siteid)#"><i class="icon-pencil"></i></a>
-			<a title="Delete" href="index.cfm?muraAction=cExtend.updateSet&action=delete&subTypeID=#rc.subTypeID#&extendSetID=#extendSetBean.getExtendSetID()#&siteid=#URLEncodedFormat(rc.siteid)#" onclick="return confirmDialog('Delete  #jsStringFormat("'#extendSetBean.getname()#'")#?',this.href)"><i class="icon-remove-sign"></i></a>
-		</div>
-	</li>
-</cfoutput>
-</cfloop>
-</ul>
- 
-<cfelse>
-<p class="alert">There are currently no available attribute sets.</p>
+	<ul id="attr-set" class="attr-list">
+		<cfloop from="1" to="#arrayLen(extendSets)#" index="s">	
+			<cfset extendSetBean=extendSets[s]/>
+			<cfoutput>
+				<li extendSetID="#extendSetBean.getExtendSetID()#">
+					<span id="handle#s#" class="handle" style="display:none;"><i class="icon-move"></i></span>
+					<p>#extendSetBean.getName()#</p>
+					<div class="btns">
+						<a title="Edit" href="./?muraAction=cExtend.editAttributes&subTypeID=#esapiEncode('url',rc.subTypeID)#&extendSetID=#extendSetBean.getExtendSetID()#&siteid=#esapiEncode('url',rc.siteid)#"><i class="icon-pencil"></i></a>
+						<a title="Delete" href="./?muraAction=cExtend.updateSet&action=delete&subTypeID=#esapiEncode('url',rc.subTypeID)#&extendSetID=#extendSetBean.getExtendSetID()#&siteid=#esapiEncode('url',rc.siteid)##rc.$.renderCSRFTokens(context=extendSetBean.getExtendSetID(),format='url')#" onclick="return confirmDialog('Delete  #esapiEncode("javascript","'#extendSetBean.getname()#'")#?',this.href)"><i class="icon-remove-sign"></i></a>
+					</div>
+				</li>
+			</cfoutput>
+		</cfloop>
+	</ul>
+ <cfelse>
+	<p class="alert">There are currently no available attribute sets.</p>
+</cfif>
+
+<cfif showRelatedContentSets>
+	<cfif arrayLen(relatedContentsets)>
+		<hr />
+		<h3>Related Content Sets <cfif arrayLen(relatedContentsets) gt 1>(<a href="javascript:;" style="display:none;" id="saveRelatedSort" onclick="extendManager.saveRelatedSetSort('related-set');return false;"><i class="icon-check"></i> Save Order</a><a href="javascript:;"  id="showRelatedSort" onclick="extendManager.showRelatedSaveSort('related-set');return false;"><i class="icon-move"></i> Reorder</a>)</cfif></h3>
+		
+		<ul id="related-set" class="attr-list">
+			<cfloop from="1" to="#arrayLen(relatedContentsets)#" index="s">	
+				<cfset rcsBean=relatedContentsets[s]/>
+				<cfoutput>
+					<li relatedContentSetID="#rcsBean.getRelatedContentSetID()#">
+						<span id="handleRelated#s#" class="handleRelated" style="display:none;"><i class="icon-move"></i></span>
+						<p>#rcsBean.getName()#</p>
+						<div class="btns">
+							<a title="Edit" href="./?muraAction=cExtend.editRelatedContentSet&subTypeID=#esapiEncode('url',rc.subTypeID)#&relatedContentSetID=#rcsBean.getRelatedContentSetID()#&siteid=#esapiEncode('url',rc.siteid)#"><i class="icon-pencil"></i></a>
+							<a title="Delete" href="./?muraAction=cExtend.updateRelatedContentSet&action=delete&subTypeID=#esapiEncode('url',rc.subTypeID)#&relatedContentSetID=#rcsBean.getRelatedContentSetID()#&siteid=#esapiEncode('url',rc.siteid)##rc.$.renderCSRFTokens(context=rcsBean.getRelatedContentSetID(),format='url')#" onclick="return confirmDialog('Delete  #esapiEncode("javascript","'#rcsBean.getname()#'")#?',this.href)"><i class="icon-remove-sign"></i></a>
+						</div>
+					</li>
+				</cfoutput>
+			</cfloop>
+		</ul>
+	<cfelse>
+		<p class="alert">There are currently no Related Content sets.</p>
+	</cfif>
 </cfif>
 

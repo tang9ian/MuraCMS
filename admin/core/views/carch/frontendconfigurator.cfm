@@ -18,6 +18,13 @@
 	</cfif>
 	<cfset assignChangesets=rc.perm eq 'editor' and hasChangesets>
 	<cfset $=event.getValue("MuraScope")>
+	
+	<cfif isDefined('arguments.rc.locknode') and arguments.rc.locknode>
+		<cfset stats=arguments.rc.contentBean.getStats()>
+		<cfif not len(stats.getLockID()) or stats.getLockID() eq session.mura.userid>
+			<cfset stats.setLockID(session.mura.userID).setLockType('node').save()>
+		</cfif>
+	</cfif>
 </cfsilent>
 <cfoutput>
 <cfif rc.compactDisplay eq "true">
@@ -46,7 +53,7 @@ jQuery(document).ready(function(){
 	
 	<cfif yesNoFormat(draftcheck.showdialog) and draftcheck.historyid neq rc.contentBean.getContentHistID()>
 	<p class="alert">
-	#application.rbFactory.getKeyValue(session.rb,'sitemanager.draftprompt.inline')#: <strong><a href="?muraAction=cArch.edit&moduleID=#URLEncodedFormat(rc.contentBean.getModuleID())#&siteID=#URLEncodedFormat(rc.contentBean.getSiteID())#&topID=#URLEncodedFormat(rc.contentBean.getContentID())#&contentID=#URLEncodedFormat(rc.contentBean.getContentID())#&return=#URLEncodedFormat(rc.return)#&contentHistID=#draftcheck.historyID#&parentID=#URLEncodedFormat(rc.contentBean.getParentID())#&startrow=#URLEncodedFormat(rc.startrow)#&compactDisplay=true&homeID=#HTMLEditFormat(rc.homeBean.getContentID())#">#application.rbFactory.getKeyValue(session.rb,'sitemanager.draftprompt.gotolatest')#</a></strong>
+	#application.rbFactory.getKeyValue(session.rb,'sitemanager.draftprompt.inline')#: <strong><a href="?muraAction=cArch.edit&moduleID=#esapiEncode('url',rc.contentBean.getModuleID())#&siteID=#esapiEncode('url',rc.contentBean.getSiteID())#&topID=#esapiEncode('url',rc.contentBean.getContentID())#&contentID=#esapiEncode('url',rc.contentBean.getContentID())#&return=#esapiEncode('url',rc.return)#&contentHistID=#draftcheck.historyID#&parentID=#esapiEncode('url',rc.contentBean.getParentID())#&startrow=#esapiEncode('url',rc.startrow)#&compactDisplay=true&homeID=#esapiEncode('html',rc.homeBean.getContentID())#">#application.rbFactory.getKeyValue(session.rb,'sitemanager.draftprompt.gotolatest')#</a></strong>
 	<p>
 	</cfif>
 	</cfif>
@@ -54,8 +61,8 @@ jQuery(document).ready(function(){
 	<cfif hasChangesets and (not currentChangeset.getIsNew() or pendingChangesets.recordcount)>
 	<p class="alert">
 	<cfif pendingChangesets.recordcount>#application.rbFactory.getKeyValue(session.rb,"sitemanager.content.changesetnodenotify")#: 
-	<cfloop query="pendingChangesets"><a href="?muraAction=cArch.edit&moduleID=#URLEncodedFormat(rc.contentBean.getModuleID())#&siteID=#URLEncodedFormat(rc.contentBean.getSiteID())#&topID=#URLEncodedFormat(rc.contentBean.getContentID())#&contentID=#URLEncodedFormat(rc.contentBean.getContentID())#&return=#URLEncodedFormat(rc.return)#&contentHistID=#pendingChangesets.contentHistID#&parentID=#URLEncodedFormat(rc.contentBean.getParentID())#&startrow=#URLEncodedFormat(rc.startrow)#&compactDisplay=true&homeID=#HTMLEditFormat(rc.homeBean.getContentID())#">"#HTMLEditFormat(pendingChangesets.changesetName)#"</a><cfif pendingChangesets.currentrow lt pendingChangesets.recordcount>, </cfif></cfloop><br/></cfif>
-	<cfif not currentChangeset.getIsNew()>#application.rbFactory.getKeyValue(session.rb,"sitemanager.content.changesetversionnotify")#: "#HTMLEditFormat(currentChangeset.getName())#"</cfif>
+	<cfloop query="pendingChangesets"><a href="?muraAction=cArch.edit&moduleID=#esapiEncode('url',rc.contentBean.getModuleID())#&siteID=#esapiEncode('url',rc.contentBean.getSiteID())#&topID=#esapiEncode('url',rc.contentBean.getContentID())#&contentID=#esapiEncode('url',rc.contentBean.getContentID())#&return=#esapiEncode('url',rc.return)#&contentHistID=#pendingChangesets.contentHistID#&parentID=#esapiEncode('url',rc.contentBean.getParentID())#&startrow=#esapiEncode('url',rc.startrow)#&compactDisplay=true&homeID=#esapiEncode('html',rc.homeBean.getContentID())#">"#esapiEncode('html_attr',pendingChangesets.changesetName)#"</a><cfif pendingChangesets.currentrow lt pendingChangesets.recordcount>, </cfif></cfloop><br/></cfif>
+	<cfif not currentChangeset.getIsNew()>#application.rbFactory.getKeyValue(session.rb,"sitemanager.content.changesetversionnotify")#: "#esapiEncode('html_attr',currentChangeset.getName())#"</cfif>
 	</p>
 	</cfif>
 	</div>
@@ -68,13 +75,13 @@ jQuery(document).ready(function(){
 	</cfif>
 
 	<div class="form-actions">	
-		<input type="button" class="btn" id="saveConfigDraft" value="#HTMLEditFormat(application.rbFactory.getKeyValue(session.rb,"sitemanager.content.savedraft"))#"/>
-		<input type="button" class="btn" id="previewConfigDraft" value="#HTMLEditFormat(application.rbFactory.getKeyValue(session.rb,"sitemanager.content.preview"))#"/>
+		<input type="button" class="btn" id="saveConfigDraft" value="#esapiEncode('html_attr',application.rbFactory.getKeyValue(session.rb,"sitemanager.content.savedraft"))#"/>
+		<input type="button" class="btn" id="previewConfigDraft" value="#esapiEncode('html_attr',application.rbFactory.getKeyValue(session.rb,"sitemanager.content.preview"))#"/>
 		<cfif assignChangesets>
-			<input type="button" class="btn" onclick="saveToChangeset('#rc.contentBean.getChangesetID()#','#HTMLEditFormat(rsDisplayObject.siteid)#','');return false;" value="#application.rbFactory.getKeyValue(session.rb,"sitemanager.content.savetochangeset")#" />	
+			<input type="button" class="btn" onclick="saveToChangeset('#rc.contentBean.getChangesetID()#','#esapiEncode('html',rsDisplayObject.siteid)#','');return false;" value="#application.rbFactory.getKeyValue(session.rb,"sitemanager.content.savetochangeset")#" />	
 		</cfif>
 		<cfif rc.perm eq 'editor' and not $.siteConfig('EnforceChangesets')>
-			<input type="button" class="btn" id="publishConfig" value="#HTMLEditFormat(application.rbFactory.getKeyValue(session.rb,"sitemanager.content.publish"))#"/>
+			<input type="button" class="btn" id="publishConfig" value="#esapiEncode('html_attr',application.rbFactory.getKeyValue(session.rb,"sitemanager.content.publish"))#"/>
 		</cfif>
 	</div>
 </div>
@@ -82,6 +89,9 @@ jQuery(document).ready(function(){
 siteManager.configuratorMode='frontEnd';
 
 jQuery(document).ready(function(){
+
+	$('##configurator .load-inline').spin(spinnerArgs2);
+
 	if(jQuery("##ProxyIFrame").length){
 		jQuery("##ProxyIFrame").load(
 			function(){
@@ -95,77 +105,105 @@ jQuery(document).ready(function(){
 	<cfswitch expression="#rsDisplayObject.object#">
 		<cfcase value="feed,feed_no_summary,remoteFeed">	
 			siteManager.initFeedConfigurator({
-						'object':'#JSStringFormat(rsDisplayObject.object)#',
-						'objectid':'#JSStringFormat(rsDisplayObject.objectid)#',
-						'name':'#JSStringFormat(rsDisplayObject.name)#',
-						'regionid':'#JSStringFormat(rsDisplayObject.columnid)#',
+						'object':'#esapiEncode('javascript',rsDisplayObject.object)#',
+						'objectid':'#esapiEncode('javascript',rsDisplayObject.objectid)#',
+						'name':'#esapiEncode('javascript',rsDisplayObject.name)#',
+						'regionid':'#esapiEncode('javascript',rsDisplayObject.columnid)#',
 						'context':'#application.configBean.getContext()#',
-						'params':'#JSStringFormat(rsDisplayObject.params)#',
-						'siteid':'#JSStringFormat(rsDisplayObject.siteid)#',
-						'contenthistid':'#JSStringFormat(rc.contentBean.getContentHistID())#',
-						'contentid':'#JSStringFormat(rc.contentBean.getContentID())#',
-						'parentid':'#JSStringFormat(rc.contentBean.getParentID())#'		
+						'params':'#esapiEncode('javascript',rsDisplayObject.params)#',
+						'siteid':'#esapiEncode('javascript',rsDisplayObject.siteid)#',
+						'contenthistid':'#esapiEncode('javascript',rc.contentBean.getContentHistID())#',
+						'contentid':'#esapiEncode('javascript',rc.contentBean.getContentID())#',
+						'parentid':'#esapiEncode('javascript',rc.contentBean.getParentID())#'		
 					});
 		</cfcase>
 		<cfcase value="feed_slideshow,feed_slideshow_no_summary">	
 			siteManager.initSlideShowConfigurator({
-						'object':'#JSStringFormat(rsDisplayObject.object)#',
-						'objectid':'#JSStringFormat(rsDisplayObject.objectid)#',
-						'name':'#JSStringFormat(rsDisplayObject.name)#',
-						'regionid':'#JSStringFormat(rsDisplayObject.columnid)#',
+						'object':'#esapiEncode('javascript',rsDisplayObject.object)#',
+						'objectid':'#esapiEncode('javascript',rsDisplayObject.objectid)#',
+						'name':'#esapiEncode('javascript',rsDisplayObject.name)#',
+						'regionid':'#esapiEncode('javascript',rsDisplayObject.columnid)#',
 						'context':'#application.configBean.getContext()#',
-						'params':'#JSStringFormat(rsDisplayObject.params)#',
-						'siteid':'#JSStringFormat(rsDisplayObject.siteid)#',
-						'contenthistid':'#JSStringFormat(rc.contentBean.getContentHistID())#',
-						'contentid':'#JSStringFormat(rc.contentBean.getContentID())#',
-						'parentid':'#JSStringFormat(rc.contentBean.getParentID())#'
+						'params':'#esapiEncode('javascript',rsDisplayObject.params)#',
+						'siteid':'#esapiEncode('javascript',rsDisplayObject.siteid)#',
+						'contenthistid':'#esapiEncode('javascript',rc.contentBean.getContentHistID())#',
+						'contentid':'#esapiEncode('javascript',rc.contentBean.getContentID())#',
+						'parentid':'#esapiEncode('javascript',rc.contentBean.getParentID())#'
 					});
 		</cfcase>
 		<cfcase value="category_summary,category_summary_rss">	
 			siteManager.initCategorySummaryConfigurator({
-						'object':'#JSStringFormat(rsDisplayObject.object)#',
-						'objectid':'#JSStringFormat(rsDisplayObject.objectid)#',
-						'name':'#JSStringFormat(rsDisplayObject.name)#',
-						'regionid':'#JSStringFormat(rsDisplayObject.columnid)#',
+						'object':'#esapiEncode('javascript',rsDisplayObject.object)#',
+						'objectid':'#esapiEncode('javascript',rsDisplayObject.objectid)#',
+						'name':'#esapiEncode('javascript',rsDisplayObject.name)#',
+						'regionid':'#esapiEncode('javascript',rsDisplayObject.columnid)#',
 						'context':'#application.configBean.getContext()#',
-						'params':'#JSStringFormat(rsDisplayObject.params)#',
-						'siteid':'#JSStringFormat(rsDisplayObject.siteid)#',
-						'contenthistid':'#JSStringFormat(rc.contentBean.getContentHistID())#',
-						'contentid':'#JSStringFormat(rc.contentBean.getContentID())#',
-						'parentid':'#JSStringFormat(rc.contentBean.getParentID())#'		
+						'params':'#esapiEncode('javascript',rsDisplayObject.params)#',
+						'siteid':'#esapiEncode('javascript',rsDisplayObject.siteid)#',
+						'contenthistid':'#esapiEncode('javascript',rc.contentBean.getContentHistID())#',
+						'contentid':'#esapiEncode('javascript',rc.contentBean.getContentID())#',
+						'parentid':'#esapiEncode('javascript',rc.contentBean.getParentID())#'		
+					});
+		</cfcase>
+		<cfcase value="tag_cloud">	
+			siteManager.initTagCloudConfigurator({
+						'object':'#esapiEncode('javascript',rsDisplayObject.object)#',
+						'objectid':'#esapiEncode('javascript',rsDisplayObject.objectid)#',
+						'name':'#esapiEncode('javascript',rsDisplayObject.name)#',
+						'regionid':'#esapiEncode('javascript',rsDisplayObject.columnid)#',
+						'context':'#application.configBean.getContext()#',
+						'params':'#esapiEncode('javascript',rsDisplayObject.params)#',
+						'siteid':'#esapiEncode('javascript',rsDisplayObject.siteid)#',
+						'contenthistid':'#esapiEncode('javascript',rc.contentBean.getContentHistID())#',
+						'contentid':'#esapiEncode('javascript',rc.contentBean.getContentID())#',
+						'parentid':'#esapiEncode('javascript',rc.contentBean.getParentID())#'		
+					});
+		</cfcase>
+		<cfcase value="site_map">	
+			siteManager.initSiteMapConfigurator({
+						'object':'#esapiEncode('javascript',rsDisplayObject.object)#',
+						'objectid':'#esapiEncode('javascript',rsDisplayObject.objectid)#',
+						'name':'#esapiEncode('javascript',rsDisplayObject.name)#',
+						'regionid':'#esapiEncode('javascript',rsDisplayObject.columnid)#',
+						'context':'#application.configBean.getContext()#',
+						'params':'#esapiEncode('javascript',rsDisplayObject.params)#',
+						'siteid':'#esapiEncode('javascript',rsDisplayObject.siteid)#',
+						'contenthistid':'#esapiEncode('javascript',rc.contentBean.getContentHistID())#',
+						'contentid':'#esapiEncode('javascript',rc.contentBean.getContentID())#',
+						'parentid':'#esapiEncode('javascript',rc.contentBean.getParentID())#'		
 					});
 		</cfcase>
 		<cfcase value="related_content,related_section_content">	
 			siteManager.initRelatedContentConfigurator({
-						'object':'#JSStringFormat(rsDisplayObject.object)#',
-						'objectid':'#JSStringFormat(rsDisplayObject.objectid)#',
-						'name':'#JSStringFormat(rsDisplayObject.name)#',
-						'regionid':'#JSStringFormat(rsDisplayObject.columnid)#',
+						'object':'#esapiEncode('javascript',rsDisplayObject.object)#',
+						'objectid':'#esapiEncode('javascript',rsDisplayObject.objectid)#',
+						'name':'#esapiEncode('javascript',rsDisplayObject.name)#',
+						'regionid':'#esapiEncode('javascript',rsDisplayObject.columnid)#',
 						'context':'#application.configBean.getContext()#',
-						'params':'#JSStringFormat(rsDisplayObject.params)#',
-						'siteid':'#JSStringFormat(rsDisplayObject.siteid)#',
-						'contenthistid':'#JSStringFormat(rc.contentBean.getContentHistID())#',
-						'contentid':'#JSStringFormat(rc.contentBean.getContentID())#',
-						'parentid':'#JSStringFormat(rc.contentBean.getParentID())#'		
+						'params':'#esapiEncode('javascript',rsDisplayObject.params)#',
+						'siteid':'#esapiEncode('javascript',rsDisplayObject.siteid)#',
+						'contenthistid':'#esapiEncode('javascript',rc.contentBean.getContentHistID())#',
+						'contentid':'#esapiEncode('javascript',rc.contentBean.getContentID())#',
+						'parentid':'#esapiEncode('javascript',rc.contentBean.getParentID())#'		
 					});
 		</cfcase>
 		<cfcase value="plugin">	
-			var configurator=siteManager.getPluginConfigurator('#JSStringFormat(rsDisplayObject.objectid)#');
+			var configurator=siteManager.getPluginConfigurator('#esapiEncode('javascript',rsDisplayObject.objectid)#');
 			window[configurator](
 				{
-					'object':'#JSStringFormat(rsDisplayObject.object)#',
-					'objectid':'#JSStringFormat(rsDisplayObject.objectid)#',
-					'name':'#JSStringFormat(rsDisplayObject.name)#',
-					'regionid':'#JSStringFormat(rsDisplayObject.columnid)#',
+					'object':'#esapiEncode('javascript',rsDisplayObject.object)#',
+					'objectid':'#esapiEncode('javascript',rsDisplayObject.objectid)#',
+					'name':'#esapiEncode('javascript',rsDisplayObject.name)#',
+					'regionid':'#esapiEncode('javascript',rsDisplayObject.columnid)#',
 					'context':'#application.configBean.getContext()#',
-					'params':'#JSStringFormat(rsDisplayObject.params)#',
-					'siteid':'#JSStringFormat(rc.contentBean.getSiteID())#',
-					'contenthistid':'#JSStringFormat(rc.contentBean.getContentHistID())#',
-					'contentid':'#JSStringFormat(rc.contentBean.getContentID())#',
-					'parentid':'#JSStringFormat(rc.contentBean.getParentID())#'
+					'params':'#esapiEncode('javascript',rsDisplayObject.params)#',
+					'siteid':'#esapiEncode('javascript',rc.contentBean.getSiteID())#',
+					'contenthistid':'#esapiEncode('javascript',rc.contentBean.getContentHistID())#',
+					'contentid':'#esapiEncode('javascript',rc.contentBean.getContentID())#',
+					'parentid':'#esapiEncode('javascript',rc.contentBean.getParentID())#'
 				}
 			);
-			jQuery("##configuratorHeader").html('#JSStringFormat(rsDisplayObject.name)#');
+			jQuery("##configuratorHeader").html('#esapiEncode('javascript',rsDisplayObject.name)#');
 		</cfcase>
 	</cfswitch>
 		
@@ -181,24 +219,25 @@ jQuery(document).ready(function(){
 			
 			if (siteManager.availableObjectValidate(siteManager.availableObject.params)) {
 				jQuery("##configurator").html('<div class="load-inline"></div>');
+				$('##configurator .load-inline').spin(spinnerArgs2);
 				jQuery(".form-actions").hide();
 				jQuery("##configuratorNotices").hide();
 				
-				jQuery.post("./index.cfm?muraAction=cArch.updateObjectParams", {
-					'contenthistid': '#JSStringFormat(rsDisplayObject.contentHistID)#',
-					'objectid': '#JSStringFormat(rsDisplayObject.objectid)#',
-					'regionid': '#JSStringFormat(rsDisplayObject.columnid)#',
-					'orderno': '#JSStringFormat(rsDisplayObject.orderno)#',
-					'siteid': '#JSStringFormat(rsDisplayObject.siteid)#',
+				jQuery.post("./index.cfm?muraAction=cArch.updateObjectParams#rc.$.renderCSRFTokens(context=rsDisplayObject.contentHistID & 'add',format='url')#", {
+					'contenthistid': '#esapiEncode('javascript',rsDisplayObject.contentHistID)#',
+					'objectid': '#esapiEncode('javascript',rsDisplayObject.objectid)#',
+					'regionid': '#esapiEncode('javascript',rsDisplayObject.columnid)#',
+					'orderno': '#esapiEncode('javascript',rsDisplayObject.orderno)#',
+					'siteid': '#esapiEncode('javascript',rsDisplayObject.siteid)#',
 					'params': JSON.stringify(siteManager.availableObject.params),
 					'approved': 1,
-					'object': '#JSStringFormat(rsDisplayObject.object)#',
-					'name': '#JSStringFormat(rsDisplayObject.name)#',
+					'object': '#esapiEncode('javascript',rsDisplayObject.object)#',
+					'name': '#esapiEncode('javascript',rsDisplayObject.name)#',
 					'changesetid': '',
 					'removepreviouschangeset': false,
 					'preview': 0
 				}, function(){
-					frontEndProxy.post({cmd:'setLocation',location:'#jsStringFormat(rc.homeBean.getURL())#'});
+					frontEndProxy.post({cmd:'setLocation',location:'#esapiEncode('javascript',rc.homeBean.getURL())#'});
 				});
 			}
 		});
@@ -210,24 +249,25 @@ jQuery(document).ready(function(){
 			
 			if (siteManager.availableObjectValidate(siteManager.availableObject.params)) {
 				jQuery("##configurator").html('<div class="load-inline"></div>');
+				$('##configurator .load-inline').spin(spinnerArgs2);
 				jQuery(".form-actions").hide();
 				jQuery("##configuratorNotices").hide();
 				
 				jQuery.post("./index.cfm?muraAction=cArch.updateObjectParams", {
-					'contenthistid': '#JSStringFormat(rsDisplayObject.contentHistID)#',
-					'objectid': '#JSStringFormat(rsDisplayObject.objectid)#',
-					'regionid': '#JSStringFormat(rsDisplayObject.columnid)#',
-					'orderno': '#JSStringFormat(rsDisplayObject.orderno)#',
-					'siteid': '#JSStringFormat(rsDisplayObject.siteid)#',
+					'contenthistid': '#esapiEncode('javascript',rsDisplayObject.contentHistID)#',
+					'objectid': '#esapiEncode('javascript',rsDisplayObject.objectid)#',
+					'regionid': '#esapiEncode('javascript',rsDisplayObject.columnid)#',
+					'orderno': '#esapiEncode('javascript',rsDisplayObject.orderno)#',
+					'siteid': '#esapiEncode('javascript',rsDisplayObject.siteid)#',
 					'params': JSON.stringify(siteManager.availableObject.params),
 					'approved': 0,
-					'object': '#JSStringFormat(rsDisplayObject.object)#',
-					'name': '#JSStringFormat(rsDisplayObject.name)#',
+					'object': '#esapiEncode('javascript',rsDisplayObject.object)#',
+					'name': '#esapiEncode('javascript',rsDisplayObject.name)#',
 					'changesetid': '',
 					'removepreviouschangeset': false,
 					'preview': 0
 				}, function(){
-					frontEndProxy.post({cmd:'setLocation',location:'#jsStringFormat(rc.homeBean.getURL())#'});
+					frontEndProxy.post({cmd:'setLocation',location:'#esapiEncode('javascript',rc.homeBean.getURL())#'});
 				});
 			}
 		});
@@ -239,20 +279,21 @@ jQuery(document).ready(function(){
 				
 			if (siteManager.availableObjectValidate(siteManager.availableObject.params)) {
 				jQuery("##configurator").html('<div class="load-inline"></div>');
+				$('##configurator .load-inline').spin(spinnerArgs2);
 				jQuery(".form-actions").hide();
 				jQuery("##configuratorNotices").hide();
 				
 				jQuery.post("./index.cfm?muraAction=cArch.updateObjectParams",
 				{
-					'contenthistid':'#JSStringFormat(rsDisplayObject.contentHistID)#',
-					'objectid':'#JSStringFormat(rsDisplayObject.objectid)#',
-					'regionid':'#JSStringFormat(rsDisplayObject.columnid)#',
-					'orderno':'#JSStringFormat(rsDisplayObject.orderno)#',
-					'siteid':'#JSStringFormat(rsDisplayObject.siteid)#',
+					'contenthistid':'#esapiEncode('javascript',rsDisplayObject.contentHistID)#',
+					'objectid':'#esapiEncode('javascript',rsDisplayObject.objectid)#',
+					'regionid':'#esapiEncode('javascript',rsDisplayObject.columnid)#',
+					'orderno':'#esapiEncode('javascript',rsDisplayObject.orderno)#',
+					'siteid':'#esapiEncode('javascript',rsDisplayObject.siteid)#',
 					'params': JSON.stringify(siteManager.availableObject.params),
 					'approved':0,
-					'object':'#JSStringFormat(rsDisplayObject.object)#',
-					'name': '#JSStringFormat(rsDisplayObject.name)#',
+					'object':'#esapiEncode('javascript',rsDisplayObject.object)#',
+					'name': '#esapiEncode('javascript',rsDisplayObject.name)#',
 					'changesetid':'',
 					'removepreviouschangeset':false,
 					'preview':1	
@@ -261,7 +302,7 @@ jQuery(document).ready(function(){
 				function(raw){
 					var resp=eval( "(" + raw + ")" );
 					<cfset str=rc.homeBean.getURL()>
-					var loc="#JSStringFormat(str)#";
+					var loc="#esapiEncode('javascript',str)#";
 					<cfif find("?",str)>
 					loc=loc + "&";
 					<cfelse>
@@ -286,23 +327,24 @@ function saveConfiguratorToChangeset(changesetid,removepreviouschangeset){
 			
 			if (siteManager.availableObjectValidate(siteManager.availableObject.params)) {
 				jQuery("##configurator").html('<div class="load-inline"></div>');
+				$('##configurator .load-inline').spin(spinnerArgs2);
 				jQuery(".form-actions").hide();
 				
 				jQuery.post("./index.cfm?muraAction=cArch.updateObjectParams", {
-					'contenthistid': '#JSStringFormat(rsDisplayObject.contentHistID)#',
-					'objectid': '#JSStringFormat(rsDisplayObject.objectid)#',
-					'regionid': '#JSStringFormat(rsDisplayObject.columnid)#',
-					'orderno': '#JSStringFormat(rsDisplayObject.orderno)#',
-					'siteid': '#JSStringFormat(rsDisplayObject.siteid)#',
+					'contenthistid': '#esapiEncode('javascript',rsDisplayObject.contentHistID)#',
+					'objectid': '#esapiEncode('javascript',rsDisplayObject.objectid)#',
+					'regionid': '#esapiEncode('javascript',rsDisplayObject.columnid)#',
+					'orderno': '#esapiEncode('javascript',rsDisplayObject.orderno)#',
+					'siteid': '#esapiEncode('javascript',rsDisplayObject.siteid)#',
 					'params': JSON.stringify(siteManager.availableObject.params),
 					'approved': 0,
-					'object': '#JSStringFormat(rsDisplayObject.object)#',
-					'name': '#JSStringFormat(rsDisplayObject.name)#',
+					'object': '#esapiEncode('javascript',rsDisplayObject.object)#',
+					'name': '#esapiEncode('javascript',rsDisplayObject.name)#',
 					'changesetid': changesetid,
 					'removepreviouschangeset': removepreviouschangeset,
 					'preview': 0
 				}, function(){
-					frontEndProxy.post({cmd:'setLocation',location:'#jsStringFormat(rc.homeBean.getURL())#'});
+					frontEndProxy.post({cmd:'setLocation',location:'#esapiEncode('javascript',rc.homeBean.getURL())#'});
 				});
 				
 			}
@@ -311,7 +353,7 @@ function saveConfiguratorToChangeset(changesetid,removepreviouschangeset){
 	
 }
 
-var draftremovalnotice=<cfif application.configBean.getPurgeDrafts() and event.getValue("suppressDraftNotice") neq "true" and rc.contentBean.hasDrafts()><cfoutput>'#jsStringFormat(application.rbFactory.getKeyValue(session.rb,"sitemanager.content.draftremovalnotice"))#'</cfoutput><cfelse>""</cfif>;
+var draftremovalnotice=<cfif application.configBean.getPurgeDrafts() and event.getValue("suppressDraftNotice") neq "true" and rc.contentBean.hasDrafts()><cfoutput>'#esapiEncode('javascript',application.rbFactory.getKeyValue(session.rb,"sitemanager.content.draftremovalnotice"))#'</cfoutput><cfelse>""</cfif>;
 </script>
 <cfinclude template="dsp_configuratorJS.cfm">
 </cfoutput>

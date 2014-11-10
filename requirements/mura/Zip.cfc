@@ -94,6 +94,9 @@
 			var entryPath = "";
 			var entryFile = "";
 			var skip="no";
+
+			arguments.excludeDirs=PathFormat(arguments.excludeDirs);
+
 			try
 			{
 				/* Initialize Zip file */
@@ -515,7 +518,7 @@
 
 			/* Open Zip file */
 			zipFile.init(arguments.zipFilePath);
-
+			
 			/* Zip file entries */
 			entries = zipFile.entries();
 

@@ -132,6 +132,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfif not isArray(bean) and not bean.getIsNew()>
 				<cfset cacheFactory.get( key, structCopy(bean.getAllValues()) ) />
 			</cfif>
+			<cfset commitTracePoint(initTracePoint(detail="DATA CACHE MISS: {class: userBean, key: #key#}"))>
 			<cfreturn bean/>
 		<cfelse>
 			<cftry>
@@ -140,12 +141,14 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 				</cfif>
 				<cfset bean.setAllValues( structCopy(cacheFactory.get( key )) )>
 				<cfset bean.setValue("extendAutoComplete",false)>
+				<cfset commitTracePoint(initTracePoint(detail="DATA CACHE HIT: {class: userBean, key: #key#}"))>
 				<cfreturn bean />
 				<cfcatch>
 					<cfset bean=variables.userDAO.read(arguments.userid,bean)>
 					<cfif not isArray(bean) and not bean.getIsNew()>
 						<cfset cacheFactory.get( key, structCopy(bean.getAllValues()) ) />
 					</cfif>
+					<cfset commitTracePoint(initTracePoint(detail="DATA CACHE HIT: {class: userBean, key: #key#}"))>
 					<cfreturn bean/>
 				</cfcatch>
 			</cftry>
@@ -177,6 +180,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfif not isArray(bean) and not bean.getIsNew()>
 				<cfset cacheFactory.get( key, structCopy(bean.getAllValues()) ) />
 			</cfif>
+			<cfset commitTracePoint(initTracePoint(detail="DATA CACHE MISS: {class: userBean, key: #key#}"))>
 			<cfreturn bean/>
 		<cfelse>
 			<cftry>
@@ -185,12 +189,14 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 				</cfif>
 				<cfset bean.setAllValues( structCopy(cacheFactory.get( key )) )>
 				<cfset bean.setValue("extendAutoComplete",false)>
+				<cfset commitTracePoint(initTracePoint(detail="DATA CACHE HIT: {class: userBean, key: #key#}"))>
 				<cfreturn bean />
 				<cfcatch>
 					<cfset bean=variables.userDAO.readByUsername(arguments.username,arguments.siteid,bean) />
 					<cfif not isArray(bean) and not bean.getIsNew()>
 						<cfset cacheFactory.get( key, structCopy(bean.getAllValues()) ) />
 					</cfif>
+					<cfset commitTracePoint(initTracePoint(detail="DATA CACHE HIT: {class: userBean, key: #key#}"))>
 					<cfreturn bean/>
 				</cfcatch>
 			</cftry>
@@ -219,6 +225,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfif not isArray(bean) and not bean.getIsNew()>
 				<cfset cacheFactory.get( key, structCopy(bean.getAllValues()) ) />
 			</cfif>
+			<cfset commitTracePoint(initTracePoint(detail="DATA CACHE MISS: {class: userBean, key: #key#}"))>
 			<cfreturn bean/>
 		<cfelse>
 			<cftry>
@@ -227,12 +234,14 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 				</cfif>
 				<cfset bean.setAllValues( structCopy(cacheFactory.get( key )) )>
 				<cfset bean.setValue("extendAutoComplete",false)>
+				<cfset commitTracePoint(initTracePoint(detail="DATA CACHE HIT: {class: userBean, key: #key#}"))>
 				<cfreturn bean />
 				<cfcatch>
 					<cfset bean=variables.userDAO.readByGroupName(arguments.groupname,arguments.siteid,arguments.isPublic,bean)  />
 					<cfif not isArray(bean) and not bean.getIsNew()>
 						<cfset cacheFactory.get( key, structCopy(bean.getAllValues()) ) />
 					</cfif>
+					<cfset commitTracePoint(initTracePoint(detail="DATA CACHE HIT: {class: userBean, key: #key#}"))>
 					<cfreturn bean/>
 				</cfcatch>
 			</cftry>
@@ -260,6 +269,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfif not isArray(bean) and not bean.getIsNew()>
 				<cfset cacheFactory.get( key, structCopy(bean.getAllValues()) ) />
 			</cfif>
+			<cfset commitTracePoint(initTracePoint(detail="DATA CACHE MISS: {class: userBean, key: #key#}"))>
 			<cfreturn bean/>
 		<cfelse>
 			<cftry>
@@ -268,12 +278,14 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 				</cfif>
 				<cfset bean.setAllValues( structCopy(cacheFactory.get( key )) )>
 				<cfset bean.setValue("extendAutoComplete",false)>
+				<cfset commitTracePoint(initTracePoint(detail="DATA CACHE HIT: {class: userBean, key: #key#}"))>
 				<cfreturn bean />
 				<cfcatch>
 					<cfset bean=variables.userDAO.readByRemoteID(arguments.remoteID,arguments.siteid,bean) />
 					<cfif not isArray(bean) and not bean.getIsNew()>
 						<cfset cacheFactory.get( key, structCopy(bean.getAllValues()) ) />
 					</cfif>
+					<cfset commitTracePoint(initTracePoint(detail="DATA CACHE HIT: {class: userBean, key: #key#}"))>
 					<cfreturn bean/>
 				</cfcatch>
 			</cftry>
@@ -385,6 +397,9 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset userBean=variables.userDAO.read(arguments.data.userid)/>
 	
 	<cfset userBean.set(arguments.data) />
+	<cfset var addObjects=userBean.getAddObjects()>
+	<cfset var removeObjects=userBean.getRemoveObjects()>
+
 	<cfset userBean.validate()>
 
 	<!--- <cfif userBean.getType() eq 2 and  userBean.getAddressID() neq ''> --->
@@ -444,6 +459,25 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		Not need due to extended attributes now not using ext[pluginID] based form field names.
 		<cfset userBean=read(userID=userBean.getUserID())>
 		--->
+
+		<cfscript>
+			var obj='';
+
+			if(arrayLen(addObjects)){
+				for(obj in addObjects){	
+					obj.save();
+				}
+			}
+
+			if(arrayLen(removeObjects)){
+				for(obj in removeObjects){	
+					obj.delete();
+				}
+			}
+
+			userBean.setAddObjects([]);
+			userBean.setRemoveObjects([]);
+		</cfscript>
 		
 		<cfif  userBean.getType() eq 1>	
 			<cfset pluginEvent.setValue("groupBean",userBean)/>			
@@ -486,6 +520,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset pluginEvent.init(arguments.data)>
 	
 	<cfset userBean.set(arguments.data) />
+	<cfset var addObjects=userBean.getAddObjects()>
 	<cfset userBean.validate()>
 	
 	<!--- MAKE SURE ALL REQUIRED DATA IS THERE--->
@@ -556,6 +591,17 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		
 		<cfset userBean.purgeExtendedData()>
 		<cfset userBean.setIsNew(0)>
+
+		<cfscript>
+			if(arrayLen(addObjects)){
+				for(var obj in addObjects){	
+					obj.save();
+				}
+			}
+
+			userBean.setAddObjects([]);
+			userBean.setRemoveObjects([]);
+		</cfscript>
 		
 		<cfif  userBean.getType() eq 1>	
 			<cfset pluginEvent.setValue("groupBean",userBean)/>			
@@ -919,16 +965,17 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 </cffunction>
 
 <cffunction name="setUserStructDefaults" output="false" access="public" returntype="void">
-<cfset var user="">
-<cfif not structKeyExists(session,"mura")>
-	<cfif yesNoFormat(variables.configBean.getValue("useLegacySessions")) 
-			and len(getAuthUser()) and isValid("UUID",listFirst(getAuthUser(),"^"))>
-		<cfset user=read(listFirst(getAuthUser(),"^"))>
-		<cfset variables.userUtility.setUserStruct(user.getAllValues())>
-	<cfelse>
-		<cfset variables.userUtility.setUserStruct()>
+	<cfset var user="">
+	<cfif not structKeyExists(session,"mura")>
+		<cfif yesNoFormat(variables.configBean.getValue("useLegacySessions")) 
+				and len(getAuthUser()) and isValid("UUID",listFirst(getAuthUser(),"^"))>
+			<cfset user=read(listFirst(getAuthUser(),"^"))>
+			<cfset variables.userUtility.setUserStruct(user.getAllValues())>
+		<cfelse>
+			<cfset variables.userUtility.setUserStruct()>
+		</cfif>
 	</cfif>
-</cfif>
+	<cfparam name="session.mura.membershipids" default="" />
 </cffunction>
 
 <cffunction name="getIterator" returntype="any" output="false">
@@ -951,7 +998,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfreturn true>
 	</cfif>
 
-	<cfquery name="rsLookUp" datasource="#variables.configBean.getReadOnlyDatasource()#" username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
+	<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rsLookUp')#">
 		select siteID 
 		from tsettings 
 		where publicUserPoolID=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#">
@@ -963,7 +1010,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		</cfif>
 	</cfloop>
 
-	<cfquery name="rsLookUp" datasource="#variables.configBean.getReadOnlyDatasource()#" username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
+	<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rsLookUp')#">
 		select siteID 
 		from tsettings 
 		where privateUserPoolID=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#">
@@ -984,7 +1031,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 	<cfset var rsLookUp="">
 
-	<cfquery name="rsLookUp" datasource="#variables.configBean.getReadOnlyDatasource()#" username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
+	<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rsLookUp')#">
 		select siteID
 		from tsettings 
 		where publicUserPoolID=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#">
@@ -1001,4 +1048,15 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 </cffunction>
 
+<cffunction name="readUserPassword" output="false">
+	<cfargument name="userid">
+
+	<cfset var rs="">
+
+	<cfquery name="rs">
+	select password from tusers where userID=<cfqueryparam value="#arguments.userID#">
+	</cfquery>
+
+	<cfreturn rs.password>
+</cffunction>
 </cfcomponent>

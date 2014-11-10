@@ -50,7 +50,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 <cfinclude template="dsp_secondary_menu.cfm">
 
-<table class="table table-striped table-condensed table-bordered mura-table-grid"> 
+<table class="mura-table-grid"> 
 <thead>
 <tr>
 <th class="add">&nbsp;</td>
@@ -62,7 +62,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 </tr>
 <thead>
 <tbody class="nest">
-<cf_dsp_nest siteID="#rc.siteID#" parentID="" nestLevel="0" >
+<cf_dsp_nest siteID="#rc.siteID#" parentID="" nestLevel="0" muraScope="#rc.$#">
 </tbody>
 </table>
 </cfoutput>

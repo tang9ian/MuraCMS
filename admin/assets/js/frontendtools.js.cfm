@@ -1,18 +1,33 @@
 <cfcontent reset="yes" type="application/javascript">
+<cfscript>
+	if(structKeyExists(server,'railo')){
+		backportdir='';
+		include "/mura/backport/backport.cfm";
+	} else {
+		backportdir='/mura/backport/';
+		include "#backportdir#backport.cfm";
+	}
+</cfscript>
 <cfif isDefined("url.siteID")>
 <cfset isIeSix=FindNoCase('MSIE 6','#CGI.HTTP_USER_AGENT#') GREATER THAN 0>
 <cfset $=application.serviceFactory.getBean("MuraScope").init(url.siteID)>
+<cfparam name="session.siteid" default="#url.siteid#">
+<cfif not structKeyExists(session,"rb")>
+	<cfset application.rbFactory.resetSessionLocale()>
+</cfif>
 <cfparam name="Cookie.fetDisplay" default="">
-<cfoutput>	
+<cfoutput>
 	var adminProxy;
 	var adminDomain=<cfif len($.globalConfig('admindomain'))>"#$.globalConfig('admindomain')#"<cfelse>location.hostname</cfif>;
 	var adminProtocal=<cfif application.configBean.getAdminSSL() or application.utility.isHTTPS()>"https://";<cfelse>"http://"</cfif>;
 	var adminProxyLoc=adminProtocal + adminDomain + "#$.globalConfig('serverPort')##$.globalConfig('context')#/admin/assets/js/porthole/proxy.html";
+	var adminLoc=adminProtocal + adminDomain + "#$.globalConfig('serverPort')##$.globalConfig('context')#/admin/";
 	var frontEndProxyLoc= location.protocol + "//" + location.hostname + "#$.globalConfig('serverPort')#";
-	
+
 	function onAdminMessage(messageEvent){
 
-		if (messageEvent.origin == adminProtocal + adminDomain + "#$.globalConfig('serverPort')#") {
+		if (messageEvent.origin == 'http://' + adminDomain + "#$.globalConfig('serverPort')#"
+			|| messageEvent.origin == 'https://' + adminDomain + "#$.globalConfig('serverPort')#") {
 			
 			var parameters=messageEvent.data;
 		
@@ -25,16 +40,18 @@
 					frontEndModalWidth=frontEndModalWidthStandard;
 				}
 				resizeFrontEndToolsModal();	
+			} else if(parameters["cmd"] == "close"){
+				closeFrontEndToolsModal();
 			} else if(parameters["cmd"] == "setLocation"){
 				window.location=decodeURIComponent(parameters["location"]);
 			} else if(parameters["cmd"] == "setHeight"){
 				resizeFrontEndToolsModal(decodeURIComponent(parameters["height"]));
+			} else if(parameters["cmd"] == "autoScroll"){
+				autoScroll(parameters["y"]);
 			}
 		}			
 	}
 
-	var adminProxy;
-	
 	function initAdminProxy(){
 			adminProxy = new Porthole.WindowProxy(adminProxyLoc, 'frontEndToolsModaliframe');
 			adminProxy.addEventListener(onAdminMessage);
@@ -44,12 +61,35 @@
 	var frontEndModalWidthConfigurator=600;
 	var frontEndModalHeight=0;
 	var frontEndModalWidth=0;
-	var frontEndModalIE8=jQuery.browser.msie && +$.browser.version === 8;
+	var frontEndModalIE8=document.all && document.querySelector && !document.addEventListener;
+	
+	function autoScroll(y){
+		var st = $(window).scrollTop();
+	    var o = $('##frontEndToolsModalBody').offset().top;
+	    var t = $(window).scrollTop() + 80;
+	    var b = $(window).height() - 50 + $(window).scrollTop();
+	    var adjY = y + o;
+
+		if (adjY > b) {
+	        //Down
+	        scrollTop(adjY, st + 35);
+		} else if (adjY < t) {
+	        //Up
+	        scrollTop(adjY, st - 35);
+	    }
+	}
+
+	function scrollTop(y, top){
+		$('html, body').stop().animate({
+	        'scrollTop': top
+	    }, 50);
+	}
 
 	function openFrontEndToolsModal(a){
-		var src=a.href + "&frontEndProxyLoc=" + frontEndProxyLoc;
+		var src=a.href;
 		var isModal=jQuery(a).attr("data-configurator");
 		var width=jQuery(a).attr("data-modal-width");
+		var ispreview=jQuery(a).attr("data-modal-preview");
 
 		frontEndModalHeight=0;
 		frontEndModalWidth=0;
@@ -58,28 +98,74 @@
 			frontEndModalWidth = width;
 		}
 
-		if(!frontEndModalHeight){
-			if (isModal == undefined) {
-				frontEndModalWidth = frontEndModalWidthStandard;
-			} else if (isModal == "true") {
-				frontEndModalWidth=frontEndModalWidthConfigurator;
-			} else {
-				frontEndModalWidth = frontEndModalWidthStandard;
-			}
-		}
-		
 		closeFrontEndToolsModal();
 		
+		if(ispreview){
+			if(src.indexOf("?") == -1) {
+				src = src + '?muraadminpreview';
+			} else {
+				src = src + '&muraadminpreview';
+			}
+
+			frontEndModalHeight=600;
+			frontEndModalWidth=1075;
+
+			var $tools='<div id="mura-preview-device-selector">';
+				$tools=$tools+'<p>Preview Mode</p>';
+				$tools=$tools+'<a class="mura-device-standard active" title="Desktop" data-height="600" data-width="1075" data-mobileformat="false"><i class="icon-desktop"></i></a>';
+				$tools=$tools+'<a class="mura-device-tablet" title="Tablet" data-height="600" data-width="768" data-mobileformat="false"><i class="icon-tablet"></i></a>';
+				$tools=$tools+'<a class="mura-device-tablet-landscape" title="Tablet Landscape" data-height="480" data-width="1024" data-mobileformat="false"><i class="icon-tablet icon-rotate-270"></i></a>';
+				$tools=$tools+'<a class="mura-device-phone" title="Phone" data-height="480" data-width="320" data-mobileformat="true"><i class="icon-mobile-phone"></i></a>';
+				$tools=$tools+'<a class="mura-device-phone-landscape" title="Phone Landscape" data-height="250" data-width="520" data-mobileformat="true"><i class="icon-mobile-phone icon-rotate-270"></i></a>';
+				$tools=$tools+'<a id="preview-close" title="Close" href="##" onclick="closeFrontEndToolsModal();"><i class="icon-remove-sign"></i></a>';
+				$tools=$tools+'</div>';
+
+		} else {
+			if(!frontEndModalHeight){
+				if (isModal == undefined) {
+					frontEndModalWidth = frontEndModalWidthStandard;
+				} else if (isModal == "true") {
+					frontEndModalWidth=frontEndModalWidthConfigurator;
+				} else {
+					frontEndModalWidth = frontEndModalWidthStandard;
+				}
+			}
+
+			src=src + "&frontEndProxyLoc=" + frontEndProxyLoc;
+			var $tools='';
+		}
+
+
 		jQuery("##frontEndToolsModalTarget").html('<div id="frontEndToolsModalContainer">' +
-		'<div id="frontEndToolsModalBody">' +
-		'<a id="frontEndToolsModalClose" style="display:none;" href="javascript:closeFrontEndToolsModal();"><i class="icon-remove-sign"></i></a>' +
+		'<div id="frontEndToolsModalBody">' + $tools +
 		'<iframe src="' + src + '" id="frontEndToolsModaliframe" scrolling="false" frameborder="0" style="overflow:hidden" name="frontEndToolsModaliframe"></iframe>' +
 		'</div>' +
 		'</div>');
 		
-		frontEndModalHeight=0;
-		jQuery("##frontEndToolsModalBody").css("top",($(document).scrollTop()+50) + "px")
-		resizeFrontEndToolsModal(0);
+		if(ispreview){
+			$('##mura-preview-device-selector a').bind('click', function () {
+				var data=$(this).data();
+
+				frontEndModalWidth=data.width;
+			   	frontEndModalHeight=data.height;
+
+			   	$('##frontEndToolsModaliframe').attr('src',src + '&mobileFormat=' + data.mobileformat);
+			    $('##mura-preview-device-selector a').removeClass('active');
+			    $(this).addClass('active');
+
+			    resizeFrontEndToolsModal(data.height);
+			    return false;
+			});
+
+			jQuery("##frontEndToolsModalBody").css("top",($(document).scrollTop()+80) + "px")
+			resizeFrontEndToolsModal(frontEndModalHeight);
+		} else{
+			frontEndModalHeight=0;
+			jQuery("##frontEndToolsModalBody").css("top",($(document).scrollTop()+50) + "px")
+			resizeFrontEndToolsModal(0);
+			}
+
+		
 		
 	}
 	
@@ -136,8 +222,6 @@
 		</cfif>
 	}
 	
-	
-
 	function toggleAdminToolbar(){
 		$("##frontEndTools").animate({opacity: "toggle"});
 		$('HTML').toggleClass('mura-edit-mode');
@@ -186,10 +270,14 @@
 					}
 				);
 			});
-			
+
 			resizeEditableObjects();
 			checkToolbarDisplay();
 			initAdminProxy();
+			
+			if(frontEndModalIE8){
+				$("##adminQuickEdit").remove();
+			}
 		}
 	);
 
@@ -206,13 +294,21 @@
 		inited: false,
 		init: function(){
 
+			<cfif $.siteConfig('hasLockableNodes')>
+				<cfset stats=node.getStats()>
+				<cfif stats.getLockType() eq 'node' and stats.getLockID() neq session.mura.userid>
+					alert('#esapiEncode('javascript',application.rbFactory.getKeyValue(session.rb,"sitemanager.draftprompt.contentislockedbyanotheruser"))#');
+					return false;
+				</cfif>
+			</cfif>
 			if(muraInlineEditor.inited){
 				return false;
 			}
 
 			CKEDITOR.disableAutoInline=true;
 			muraInlineEditor.inited=true;
-			$('##adminSave').fadeIn();	
+			$('##adminSave').show();
+			$('##adminStatus').hide();		
 			$('.mura-editable').removeClass('inactive');
 
 			$('.mura-editable-attribute').each(
@@ -259,7 +355,7 @@
 						var editor=CKEDITOR.inline( 
 						document.getElementById( attribute.attr('id') ),
 						{
-							toolbar: 'Default',
+							toolbar: 'QuickEdit',
 							width: "75%",
 							customConfig: 'config.js.cfm'
 						});
@@ -283,7 +379,7 @@
 					muraInlineEditor.data.changesetid='';
 				} else {
 					if(muraInlineEditor.data.changesetid != '' && muraInlineEditor.data.changesetid != changesetid){
-						if(confirm('#JSStringFormat(application.rbFactory.getResourceBundle(session.rb).messageFormat(application.rbFactory.getKeyValue(session.rb,"sitemanager.content.removechangeset"),application.changesetManager.read(node.getChangesetID()).getName()))#')){
+						if(confirm('#esapiEncode('javascript',application.rbFactory.getResourceBundle(session.rb).messageFormat(application.rbFactory.getKeyValue(session.rb,"sitemanager.content.removechangeset"),application.changesetManager.read(node.getChangesetID()).getName()))#')){
 							muraInlineEditor.data._removePreviousChangeset=true;
 						}
 					}
@@ -317,26 +413,51 @@
 			}
 		},
 		save:function(){
-			if(muraInlineEditor.validate()){
-				var count=0;
-				for (var prop in muraInlineEditor.attributes) {
-					var attribute=$(muraInlineEditor.attributes[prop]).attr('data-attribute');
-					muraInlineEditor.data[attribute]=muraInlineEditor.getAttributeValue(attribute);
-					count++;
-				}
-
-				if(count){
-					$.post('#application.configBean.getContext()#/admin/index.cfm',
-						muraInlineEditor.data,
-						function(data){
-							var resp = eval('(' + data + ')');
-							location.href=resp.location;
+			try{
+				muraInlineEditor.validate(
+					function(){
+						var count=0;
+						for (var prop in muraInlineEditor.attributes) {
+							var attribute=$(muraInlineEditor.attributes[prop]).attr('data-attribute');
+							muraInlineEditor.data[attribute]=muraInlineEditor.getAttributeValue(attribute);
+							count++;
 						}
-					);
-				} else {
-					location.reload();
-				}
+
+						if(count){
+							if(muraInlineEditor.data.approvalstatus=='Pending'){
+								if(confirm('#esapiEncode('javascript',application.rbFactory.getKeyValue(session.rb,"approvalchains.cancelPendingApproval"))#')){
+									muraInlineEditor.data.cancelpendingapproval=true;
+								} else {
+									muraInlineEditor.data.cancelpendingapproval=false;
+								}
+
+							}
+
+							$.ajax({ 
+					        type: "POST",
+					        <cfif yesNoFormat($.globalConfig('accesscontrolcredentials'))>
+					        xhrFields: { withCredentials: true },
+					        </cfif>
+					       	<cfif yesNoFormat($.globalConfig('accesscontrolheaders'))>
+					        crossDomain:true,
+					     	</cfif>
+					        url: adminLoc,
+					        data: muraInlineEditor.data,
+					        success: function(data){
+						        var resp = eval('(' + data + ')');
+						        location.href=resp.location;
+					        }
+					       });
+						} else {
+							location.reload();
+						}
+					}
+				);
+			} catch(err){
+				alert("An error has occurred, please check your browser console for more information."); 
+				console.log(err);
 			}
+
 			return false;		
 		},
 		stripHTML: function(html){
@@ -344,94 +465,134 @@
 			tmp.innerHTML = html;
 			return tmp.textContent||tmp.innerText;
 		},
-		validate: function(){
-				var errors="";
-				var setFocus=0;
-				var started=false;
-				var startAt;
-				var firstErrorNode;
-				var validationType='';
-				for (var prop in muraInlineEditor.attributes) {
-				 theField=muraInlineEditor.attributes[prop];
-				 validationType=getValidationType(theField);
-				 theValue=muraInlineEditor.getAttributeValue(prop);
-				 //alert(prop + ":" + theValue + " " + validationType);
-				if(getValidationIsRequired(theField) && theValue == "" )
-					{	
-						if (!started) {
-						started=true;
-						startAt=prop;
-						}
-						
-						errors += getValidationMessage(theField,' is required.');
-						 			
-					}
-				else if(validationType != ''){
-						
-					if(validationType=='EMAIL' && theValue != '' && !isEmail(theValue))
-					{	
-						if (!started) {
-						started=true;
-						startAt=prop;
-						}
-						
-						errors += getValidationMessage(theField,' must be a valid email address.');
-						
-					}
-			
-					else if(validationType=='NUMERIC' && isNaN(theValue))
-					{	
-						if(!isNaN(theValue.replace(/\$|\,|\%/g,'')))
-						{
-							theField.html(theValue.replace(/\$|\,|\%/g,''));
-			
-						} else {
-							if (!started) {
-							started=true;
-							startAt=prop;
-							}
-							
-							errors += getValidationMessage(theField,' must be numeric.');
-						}			
-					}
-					
-					else if(validationType=='REGEX' && theValue !='' && hasValidationRegex(theField))
-					{	
-						var re = new RegExp(getValidationRegex(theField));
-						if(!theValue.match(re))
-						{
-							if (!started) {
-							started=true;
-							startAt=prop;
-							}
-						
-							 errors += getValidationMessage(theField,' is not valid.');
-						}			
-					}
+		validate: function(callback){
+				var data={};
+				var $callback=callback;
 
-					else if(validationType=='DATE' && theValue != '' && !isDate(theValue))
-					{
-						if (!started) {
-						started=true;
-						startAt=prop;
+				for (var prop in muraInlineEditor.attributes) {
+					data[prop]=muraInlineEditor.getAttributeValue(prop);
+				}
+
+				var errors="";
+                var setFocus=0;
+                var started=false;
+                var startAt;
+                var firstErrorNode;
+                var validationType='';
+                var validations={properties:{}};
+                var rules=new Array();
+
+                for (var prop in muraInlineEditor.attributes) {
+                	theField=muraInlineEditor.attributes[prop];
+                    validationType=getValidationType(theField).toUpperCase();;
+                    theValue=muraInlineEditor.getAttributeValue(prop);
+		
+					rules=new Array();
+					
+					if(getValidationIsRequired(theField))
+						{	
+							rules.push({
+								required: true,
+								message: getValidationMessage(theField,' is required.')
+							});
+							
+							 			
+						}
+					if(validationType != ''){
+							
+						if(validationType=='EMAIL' && theValue != '')
+						{	
+								rules.push({
+									dataType: 'EMAIL',
+									message: getValidationMessage(theField,' must be a valid email address.')
+								});
+								
+										
+						}
+		
+						else if(validationType=='NUMERIC')
+						{	
+								rules.push({
+									dataType: 'NUMERIC',
+									message: getValidationMessage(theField,' must be numeric.')
+								});
+											
 						}
 						
-						errors += getValidationMessage(theField, ' must be a valid date [MM/DD/YYYY].' );
-						 
+						else if(validationType=='REGEX' && theValue !='' && hasValidationRegex(theField))
+						{	
+								rules.push({
+									regex: hasValidationRegex(theField),
+									message: getValidationMessage(theField,' is not valid.')
+								});
+												
+						}
+						
+						else if(validationType=='MATCH' 
+								&& hasValidationMatchField(theField) && theValue != theForm[getValidationMatchField(theField)].value)
+						{	
+							rules.push({
+								eq: theForm[getValidationMatchField(theField)].value,
+								message: getValidationMessage(theField, ' must match' + getValidationMatchField(theField) + '.' )
+							});
+										
+						}
+						
+						else if(validationType=='DATE' && theValue != '')
+						{
+							rules.push({
+								dataType: 'DATE',
+								message: getValidationMessage(theField, ' must be a valid date [MM/DD/YYYY].' )
+							});
+							 
+						}
 					}
-				}
 					
+					if(rules.length){
+						validations.properties[prop]=rules;
 					}
-				
-				if(errors != ""){	
-					alert(errors);
-					//muraInlineEditor.attributes[startAt].focus();
-					return false;
 				}
-				else
-				{
-					return true;
+
+				try{
+					//alert(JSON.stringify(validations))
+					$.ajax(
+						{
+							type: 'post',
+							url: '#application.configBean.getContext()#/tasks/validate/',
+							data: {
+									data: JSON.stringify($.extend(muraInlineEditor.data,data)),
+									validations: JSON.stringify(validations)
+								},
+							success: function(resp) {
+		 				 		data=eval('(' + resp + ')');
+
+		 				 		if($.isEmptyObject(data)){
+		 				 			$callback();
+		 				 		} else {
+			 				 		var msg='';
+			 				 		for(var e in data){
+			 				 			msg=msg + data[e] + '\n';
+			 				 		}
+
+			 				 		alert(msg);
+
+			 				 		return false;
+		 				 		}
+							},
+							error: function(resp) {
+		 				 		
+		 				 		alert(JSON.stringify(resp));
+							}
+
+						}		 
+					);
+				} 
+				catch(err){ 
+					console.log(err);
+
 				}
+
+				return false;
 
 		},
 		htmlEditorOnComplete: function(editorInstance) {
@@ -444,17 +605,23 @@
 				rememberLastFolder: false
 			});
 		},
+		<cfset csrfTokens=$.generateCSRFTokens(context=node.getContentHistID() & 'add')>
 		data:{
 			muraaction: 'carch.update',
 			action: 'add',
 			ajaxrequest: true,
-			siteid: '#JSStringFormat(node.getSiteID())#',
-			sourceid: '#JSStringFormat(node.getContentHistID())#',
-			contentid: '#JSStringFormat(node.getContentID())#',
-			parentid: '#JSStringFormat(node.getParentID())#',
-			moduleid: '#JSStringFormat(node.getModuleID())#',
+			siteid: '#esapiEncode('javascript',node.getSiteID())#',
+			contenthistid: '#esapiEncode('javascript',node.getContentHistID())#',
+			contentid: '#esapiEncode('javascript',node.getContentID())#',
+			parentid: '#esapiEncode('javascript',node.getParentID())#',
+			moduleid: '#esapiEncode('javascript',node.getModuleID())#',
 			approved: 0,
-			changesetid: ''
+			changesetid: '',
+			bean: 'content',
+			loadby: 'contenthistid',
+			approvalstatus: '#esapiEncode('javascript',node.getApprovalStatus())#',
+			mura_token: '#csrfTokens.token#',
+			mura_token_expires: '#csrfTokens.expires#'
 			},
 		attributes: {},
 		preprocessed: {
@@ -465,7 +632,7 @@
 		for(attribute in nodeCollection)
 			if(isSimpleValue(nodeCollection[attribute]) and reFindNoCase("(\{{|\[sava\]|\[mura\]).+?(\[/sava\]|\[/mura\]|}})",nodeCollection[attribute])){
 				if(started){writeOutput(",");}
-				writeOutput("'#JSStringFormat(lcase(attribute))#':'#JSStringFormat(trim(nodeCollection[attribute]))#'");
+				writeOutput("'#esapiEncode('javascript',lcase(attribute))#':'#esapiEncode('javascript',trim(nodeCollection[attribute]))#'");
 				started=true;
 			}
 		</cfscript>

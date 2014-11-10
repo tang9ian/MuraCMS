@@ -48,13 +48,13 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfoutput>
 <h1>#application.rbFactory.getKeyValue(session.rb,'permissions')#</h1>
 <div id="nav-module-specific" class="btn-group">
-	<a class="btn" href="##" title="#HTMLEditFormat(application.rbFactory.getKeyValue(session.rb,'sitemanager.back'))#" onclick="window.history.back(); return false;"><i class="icon-circle-arrow-left"></i> #HTMLEditFormat(application.rbFactory.getKeyValue(session.rb,'sitemanager.back'))#</a>
+	<a class="btn" href="##" title="#esapiEncode('html_attr',application.rbFactory.getKeyValue(session.rb,'sitemanager.back'))#" onclick="window.history.back(); return false;"><i class="icon-circle-arrow-left"></i> #esapiEncode('html',application.rbFactory.getKeyValue(session.rb,'sitemanager.back'))#</a>
 </div>
 <p class="alert alert-info">#application.rbFactory.getResourceBundle(session.rb).messageFormat(application.rbFactory.getKeyValue(session.rb,"permissions.moduletext"),rc.rscontent.title)#</p>
-<section>
-  <form novalidate="novalidate"  method="post" name="form1" action="?muraAction=cPerm.updatemodule&contentid=#URLEncodedFormat(rc.contentid)#">
+ <form novalidate="novalidate"  method="post" name="form1" action="./?muraAction=cPerm.updatemodule&contentid=#esapiEncode('url',rc.contentid)#">
+	<section>
         <h2>#application.rbFactory.getKeyValue(session.rb,'user.adminusergroups')#</h2>
-		<table class="table table-striped table-condensed table-bordered mura-table-grid">
+		<table class="mura-table-grid">
           <tr> 
             <th>#application.rbFactory.getKeyValue(session.rb,'permissions.allow')#</th>
             <th class="var-width">#application.rbFactory.getKeyValue(session.rb,'permissions.group')#</th>
@@ -78,7 +78,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfset rc.rslist=rc.groups.publicGroups />
 <section>
  <h2>#application.rbFactory.getKeyValue(session.rb,'user.membergroups')#</h2>		<p>#application.rbFactory.getKeyValue(session.rb,'permissions.memberpermscript')#</p>
- <table class="table table-striped table-condensed table-bordered mura-table-grid">
+ <table class="mura-table-grid">
     <tr> 
         <th>#application.rbFactory.getKeyValue(session.rb,'permissions.allow')#</th>
         <th class="var-width">#application.rbFactory.getKeyValue(session.rb,'permissions.group')#</th>
@@ -87,7 +87,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
         <cfloop query="rc.rslist"> 
             <tr> 
               	<td><input type="checkbox" name="groupid" value="#rc.rslist.userid#"<cfif application.permUtility.getGroupPermVerdict(rc.contentid,rc.rslist.userid,'module',rc.siteid)>checked</cfif>></td>
-	      		<td class="var-width" nowrap>#rc.rslist.GroupName#</td>
+	      		<td class="var-width" nowrap>#esapiEncode('html',rc.rslist.GroupName)#</td>
 			</tr>
 		 </cfloop>
 	<cfelse>
@@ -102,8 +102,9 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <div class="form-actions no-offset">
 <input type="button" class="btn" onclick="submitForm(document.forms.form1);" value="#application.rbFactory.getKeyValue(session.rb,'permissions.update')#" />
 </div>
-<input type="hidden" name="router" value="#cgi.HTTP_REFERER#">
-<input type="hidden" name="siteid" value="#HTMLEditFormat(rc.siteid)#">
-<input type="hidden" name="topid" value="#rc.topid#">
-<input type="hidden" name="moduleid" value="#rc.moduleid#">
+<input type="hidden" name="router" value="#esapiEncode('html_attr',cgi.HTTP_REFERER)#">
+<input type="hidden" name="siteid" value="#esapiEncode('html_attr',rc.siteid)#">
+<input type="hidden" name="topid" value="#esapiEncode('html_attr',rc.topid)#">
+<input type="hidden" name="moduleid" value="#esapiEncode('html_attr',rc.moduleid)#">
+#rc.$.renderCSRFTokens(context=rc.moduleid,format="form")#
 </form></cfoutput>

@@ -92,12 +92,12 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<input type="button" class="btn" onclick="submitForm(document.forms.searchFrm);" value="#application.rbFactory.getKeyValue(session.rb,"params.search")#" /></dd>
 </div>
 
-<input type="hidden" value="#HTMLEditFormat(rc.siteid)#" name="siteID"/>
+<input type="hidden" value="#esapiEncode('html_attr',rc.siteid)#" name="siteID"/>
 <input type="hidden" value="cDashboard.topReferers" name="muraAction"/>
 </form>
 
 <h3 class="alt">#application.rbFactory.getKeyValue(session.rb,"dashboard.session.totalreferrals")#: <strong>#rstotal.referals#</strong></h3>
-<table class="table table-striped table-condensed table-bordered mura-table-grid">
+<table class="mura-table-grid">
 <tr>
 <th class="var-width">#application.rbFactory.getKeyValue(session.rb,"dashboard.session.referer")#</th>
 <th>#application.rbFactory.getKeyValue(session.rb,"dashboard.session.count")#</th>
@@ -106,7 +106,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfif rslist.recordcount>
 <cfloop query="rslist">
 <tr>
-<td class="var-width"><cfif rslist.referer neq 'Unknown'><a href="#rsList.referer#" target="_blank">#HTMLEditFormat(left(rslist.referer,120))#</a><cfelse>#HTMLEditFormat(rslist.referer)#</cfif></td>
+<td class="var-width"><cfif rslist.referer neq 'Unknown'><a href="#rsList.referer#" target="_blank">#esapiEncode('html',left(rslist.referer,120))#</a><cfelse>#esapiEncode('html',rslist.referer)#</cfif></td>
 <td>#rsList.referals#</td>
 <td>#decimalFormat((rsList.referals/rstotal.referals)*100)#%</td>
 </tr>

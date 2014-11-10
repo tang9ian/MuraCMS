@@ -1,6 +1,8 @@
-header, #cPlugins {
+header {
 
-// Top NavBar
+	min-width: 940px;
+	
+	// Top NavBar
 	
 .navbar {
 
@@ -53,6 +55,7 @@ header, #cPlugins {
 		font-size: 15px;
 		position: relative;
 		top: 1px;
+		margin-right: .25em;
 	}
 	
 	.brand {
@@ -60,7 +63,7 @@ header, #cPlugins {
 	    position: absolute;
 	    padding: 0;
 	    margin: 0 0 0 -4px;
-	    z-index: 1000;
+	    z-index: 99; // Was 1000
 	    .hide-text;
 	    background: transparent url(../images/mura_logo.png) no-repeat;
 	    height: 52px;
@@ -210,16 +213,33 @@ header, #cPlugins {
 	    	margin-top: 0 !important;
 	    	text-align: left;
 	    	
-	    	.dropdown-menu {
-		    	.border-radius(5px);
-		    	}
+	    	.dropdown-submenu {
+	    	
+	    		> .dropdown-menu {
+		    	.border-radius(5px);	
+				max-height: 219px;
+				overflow-y: auto;
+				}
+		    }
 	    
 			.divider {
 		        	background: hsla(0,0%,20%,.98);
 		        	border-bottom: 1px solid hsla(0,0%,30%,.98);
 		        	}
 			
-			li { }
+			li.nav-header { 
+				text-transform: none;
+				font-size: 13px;
+				padding: 0;
+				text-shadow: none;
+		        border-bottom: 1px dotted hsla(0,0%,30%,.98);
+		        
+		        a {
+					font-weight: bold !important;
+					letter-spacing: 0;
+			        }
+		        
+				}
 			
 			a {
 				font-size: 12px;
@@ -240,7 +260,11 @@ header, #cPlugins {
 			i {
 				color: @grayDark;
 				font-size: 15px;
-				top: 2px;
+				top: 2px;				
+				display: inline-block;
+				width: 1.25em;
+				text-align: center;
+				position: relative;
 				}
 			
 			li > a:hover i {
@@ -253,8 +277,6 @@ header, #cPlugins {
 			.active > a i {
 				color: @gray;
 				}
-			
-			
 	    	}
 	    	
 	/* Pointer on top of dropdown nav */
@@ -350,17 +372,28 @@ header, #cPlugins {
 		 	.text-overflow;
 		 	color: @white;
 		 	}
-		
-		.dropdown-menu {
-		 	width: 164px;
-		 	}
 		 	
 		.dropdown-menu  i {
 		 	text-shadow: 0 0 0 !important;
 		 	}
 		 	  
-	} // End #select-site  
-
+	} // End #select-site
+	
+	// select-site & modules dropdown constraints
+	
+	#select-site {
+	
+	.dropdown-menu {
+			 	min-width: 164px;
+			 	max-width: 388px;
+			 	max-height: 200px;
+			 	overflow-y: auto;
+			 	
+			 	> li {
+			 	.text-overflow;
+			 		}
+			 	}
+			 }
 } // End .nav-site
 
 //	Showing dropdowns on :hover instead of click

@@ -48,13 +48,13 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <h1>Bundle Created</h1>
 
 <div id="nav-module-specific" class="btn-group">
-<a class="btn" href="index.cfm?muraAction=cSettings.editSite&siteID=#URLEncodedFormat(rc.siteID)#"><i class="icon-circle-arrow-left"></i> Back to Site Settings</a>
+<a class="btn" href="./?muraAction=cSettings.editSite&siteID=#esapiEncode('url',rc.siteID)#"><i class="icon-circle-arrow-left"></i> Back to Site Settings</a>
 </div>
 
 <p>The bundle that you have requested has been created and is now available on your server at #rc.bundleFilePath#.</p>
 	<p class="alert"><strong>Important:</strong> Leaving large bundle files on server can lead to excessive disk space usage.</p>
 <cfif findNoCase(application.configBean.getWebRoot(),rc.bundleFilePath)>
 	<cfset downloadURL=replace(application.configBean.getContext() & right(rc.bundleFilePath,len(rc.bundleFilePath)-len(application.configBean.getWebRoot())),"\","/","All")>
-	<p><a href="#downloadURL#"class="submit"><span>Download Bundle</span></a></p>
+	<p><a href="#downloadURL#" class="btn btn-primary">Download Bundle</a></p>
 </cfif>
 </cfoutput>

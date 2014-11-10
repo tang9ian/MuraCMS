@@ -114,8 +114,11 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 <cffunction name="getValue" access="public" returntype="any" output="false">
 	<cfargument name="property">
-	<cfif len(arguments.property)>	
-		<cfif structKeyExists(variables.instance.struct,"#arguments.property#")>
+	<cfif len(arguments.property)>
+		<cfif isDefined("this.get#arguments.property#")>
+			<cfset var tempFunc=this["get#arguments.property#"]>
+			<cfreturn tempFunc()>	
+		<cfelseif structKeyExists(variables.instance.struct,"#arguments.property#")>
 			<cfreturn variables.instance.struct["#arguments.property#"]>
 		<cfelse>
 			<cfreturn getContentBean().getValue(arguments.property)>
@@ -128,10 +131,14 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cffunction name="setValue" access="public" returntype="any" output="false">
 	<cfargument name="property">
 	<cfargument name="propertyValue">	
-	
+	<cfif isDefined("this.set#arguments.property#")>
+		<cfset var tempFunc=this["set#arguments.property#"]>
+		<cfset tempFunc(arguments.propertyValue)>
+	<cfelse>
 		<cfset variables.instance.struct[arguments.property]=arguments.propertyValue>
 		<cfset getContentBean().setValue(arguments.property, arguments.propertyValue)>
-		<cfreturn this>
+	</cfif>
+	<cfreturn this>
 </cffunction>
 
 <cffunction name="getContentBean" access="public" returntype="any" output="false">
@@ -155,6 +162,15 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfset variables.instance.content.setValue('sourceIterator',variables.sourceiterator)>
 
 		<cfreturn variables.instance.content>
+	</cfif>
+</cffunction>
+
+<cffunction name="getAllValues" output="false">
+	<cfargument name="expand" default="true">
+	<cfif arguments.expand>
+		<cfreturn getContentBean().getAllValues(argumentCollection=arguments)>
+	<cfelse>
+		<cfreturn variables.instance.struct>
 	</cfif>
 </cffunction>
 
@@ -197,7 +213,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfif arguments.liveOnly>
 		<cfset q=getKidsQuery(arguments.aggregation) />
 	<cfelse>
-		<cfset q=variables.contentManager.getNest( parentID:getValue("parentID"), siteID:getValue("siteID"), sortBy:getValue("sortBy"), sortDirection:getValue("sortDirection")) />
+		<cfset q=variables.contentManager.getNest( parentID:getValue("contentID"), siteID:getValue("siteID"), sortBy:getValue("sortBy"), sortDirection:getValue("sortDirection")) />
 	</cfif>
 	<cfset it.setQuery(q,getValue("nextn"))>
 	
@@ -232,8 +248,60 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfargument name="complete" default="false"/>
 	<cfargument name="height" default=""/>
 	<cfargument name="width" default=""/>
+	<cfargument name="default" default=""/>
 	<cfset arguments.bean=this>
 	<cfreturn variables.contentManager.getImageURL(argumentCollection=arguments)>
+</cffunction>
+
+<cffunction name="getFileMetaData" output="false">
+	<cfargument name="property" default="fileid">
+	<cfreturn getBean('fileMetaData').loadBy(contentid=getValue('contentid'),contentHistID=getValue('contentHistID'),siteID=getValue('siteid'),fileid=getValue(arguments.property))>	
+</cffunction>
+
+<cffunction name="getRelatedContentQuery" returnType="query" output="false" access="public">
+	<cfargument name="liveOnly" type="boolean" required="yes" default="false" />
+	<cfargument name="today" type="date" required="yes" default="#now()#" />
+	<cfargument name="sortBy" type="string" default="orderno">
+	<cfargument name="sortDirection" type="string" default="asc">
+	<cfargument name="relatedContentSetID" type="string" default="">
+	<cfargument name="name" type="string" default="">
+	<cfargument name="reverse" type="boolean" default="false">
+	
+	<cfreturn variables.contentManager.getRelatedContent(getValue('siteID'), getValue('contentHistID'), arguments.liveOnly, arguments.today, arguments.sortBy, arguments.sortDirection, arguments.relatedContentSetID, arguments.name, arguments.reverse, getValue('contentID')) />
+</cffunction>
+
+<cffunction name="getRelatedContentIterator" returnType="any" output="false" access="public">
+	<cfargument name="liveOnly" type="boolean" required="yes" default="false" />
+	<cfargument name="today" type="date" required="yes" default="#now()#" />
+	<cfargument name="sortBy" type="string" default="orderno" >
+	<cfargument name="sortDirection" type="string" default="asc">
+	<cfargument name="relatedContentSetID" type="string" default="">
+	<cfargument name="name" type="string" default="">
+	<cfargument name="reverse" type="boolean" default="false">
+	
+	<cfset var q=getRelatedContentQuery(argumentCollection=arguments) />
+	<cfset var it=getBean("contentIterator")>
+	<cfset it.setQuery(q)>
+	<cfreturn it>
+</cffunction>
+
+<cffunction name="hasImage">
+	<cfreturn len(getValue('fileID')) and listFindNoCase('jpg,jpeg,png,gif',getValue('fileEXT'))>
+</cffunction>
+
+<cffunction name="getExtendedAttributes" returntype="struct" output="false" access="public">
+	<cfargument name="name" default="" hint="Extend Set Name" />
+	<cfreturn getContentBean().getExtendedAttributes(name=arguments.name) />
+</cffunction>
+
+ <cffunction name="getExtendedAttributesList" returnType="string" output="false" access="public">
+ 	<cfargument name="name" default="" hint="Extend Set Name" />
+ 	<cfreturn StructKeyList(getExtendedAttributes(name=arguments.name)) />
+ </cffunction>
+
+ <cffunction name="getExtendedAttributesQuery" returntype="query" output="false" access="public">
+	<cfargument name="name" default="" hint="Extend Set Name" />
+	<cfreturn getContentBean().getExtendedAttributesQuery(name=arguments.name) />
 </cffunction>
 
 </cfcomponent>

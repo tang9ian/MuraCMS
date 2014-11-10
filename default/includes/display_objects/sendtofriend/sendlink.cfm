@@ -57,7 +57,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfset passedProtect=false/>
 <cftry>
 <cfif not $.currentUser().isLoggedIn()>
-	<cfthrow message="User must be logged in">
+	<cfthrow data-message="User must be logged in">
 </cfif>
 <cfset variables.cffp = CreateObject("component","cfformprotect.cffpVerify").init() />
 <cfif $.siteConfig().getContactEmail() neq "">
@@ -71,7 +71,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 <cfset passedProtect=variables.cffp.testSubmission(form)>
 <cfif not passedProtect>
-	<cfthrow message="Spam form submission">
+	<cfthrow data-message="Spam form submission">
 </cfif>
 
 <cfsavecontent variable="notifyText"><cfoutput>
@@ -107,14 +107,14 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<link rel="stylesheet" href="#$.siteConfig('assetPath')#/css/mura.min.css" type="text/css" media="all" />
 	</head>
 
-	<body id="svSendToFriend">
+	<body id="svSendToFriend" class="mura-send-to-friend">
 		<cfif not passedProtect>
-			<h1 class="success">#$.rbKey('captcha.spam')#</h1>
+			<h1 class="#this.alertDangerClass#">#$.rbKey('captcha.spam')#</h1>
 		<cfelse>
 			<cfif success>
-				<h1 class="success">#$.rbKey('stf.yourlinkhasbeensent')#</h1>   
+				<h1 class="#this.alertSuccessClass#">#$.rbKey('stf.yourlinkhasbeensent')#</h1>   
 			<cfelse>
-				<h1 class="error">#$.rbKey('stf.error')#</h1>  
+				<h1 class="#this.alertDangerClass#">#$.rbKey('stf.error')#</h1>  
 			</cfif>
 		</cfif>
 	</body>

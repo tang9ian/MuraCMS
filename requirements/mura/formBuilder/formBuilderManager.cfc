@@ -246,11 +246,15 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 				<cfreturn arguments.dataset />
 			</cfcase>
 			<cfcase value="object">
-				<cfset arguments.dataset = createObject('component',$.siteConfig().getAssetMap() & "." & dataset.source).getData($,arguments.dataset) />
+				<cfset arguments.dataset = createObject('component',$.siteConfig().getAssetMap() & "." & replacenocase(dataset.source,".cfc","") ).getData($,arguments.dataset) />
 				<cfreturn arguments.dataset />
 			</cfcase>
 			<cfcase value="dsp">
-				<cfinclude template="#$.siteConfig().getIncludePath()##dataset.source#">
+				<cfif fileExists( expandPath( $.siteConfig().getIncludePath() ) & "/includes/display_objects/custom/#dataset.source#"  )>
+					<cfinclude template="#$.siteConfig().getIncludePath()#/includes/display_objects/custom/#dataset.source#">
+				<cfelse>
+					<cfinclude template="#$.siteConfig().getIncludePath()##dataset.source#">
+				</cfif>
 				<cfreturn arguments.dataset />
 			</cfcase>
 			<cfdefaultcase>

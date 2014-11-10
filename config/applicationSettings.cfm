@@ -46,8 +46,10 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 --->
 	<cfparam name="request.muraFrontEndRequest" default="false"/>
 	<cfparam name="request.muraChangesetPreview" default="false"/>
+	<cfparam name="request.muraChangesetPreviewToolbar" default="false"/>
 	<cfparam name="request.muraExportHtml" default="false"/>
 	<cfparam name="request.muraMobileRequest" default="false"/>
+	<cfparam name="request.muraMobileTemplate" default="false"/>
 	<cfparam name="request.muraHandledEvents" default="#structNew()#"/>
 	<cfparam name="request.altTHeme" default=""/>
 	<cfparam name="request.customMuraScopeKeys" default="#structNew()#"/>
@@ -56,6 +58,11 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfparam name="request.muraShowTrace" default="true"/>
 	<cfparam name="request.muraValidateDomain" default="true"/>
 	<cfparam name="request.muraAppreloaded" default="false"/>
+	<cfparam name="request.muratransaction" default="0"/>
+	<cfparam name="request.muraDynamicContentError" default="false">
+	<cfparam name="request.muraPreviewDomain" default="">
+	<cfparam name="request.muraOutputCacheOffset" default="">
+	<cfparam name="request.muraMostRecentPluginModuleID" default="">
 
 	<cffunction name="initTracePoint" output="false">
 		<cfargument name="detail">
@@ -128,20 +135,16 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset commitTracePoint(variables.tracePoint)>
 
 	<!--- define custom coldfusion mappings. Keys are mapping names, values are full paths  --->
-	<cfif StructKeyExists(SERVER,"bluedragon") and not findNoCase("Windows",server.os.name)>
-		<cfset mapPrefix="$" />
-	<cfelse>
-		<cfset mapPrefix="" />
-	</cfif>
-
+	<!--- This is here for older mappings.cfm files --->
+	<cfset mapPrefix="" />
 	<cfset this.mapPrefix=mapPrefix>
 	<cfset variables.mapPrefix=mapPrefix>
 	
 	<cfset this.mappings = structNew()>
-	<cfset this.mappings["/plugins"] = variables.mapPrefix & variables.baseDir & "/plugins">
-	<cfset this.mappings["/muraWRM"] = variables.mapPrefix & variables.baseDir>
-	<cfset this.mappings["/savaWRM"] = variables.mapPrefix & variables.baseDir>
-	<cfset this.mappings["/config"] = variables.mapPrefix & variables.baseDir & "/config">
+	<cfset this.mappings["/plugins"] = variables.baseDir & "/plugins">
+	<cfset this.mappings["/muraWRM"] = variables.baseDir>
+	<cfset this.mappings["/savaWRM"] = variables.baseDir>
+	<cfset this.mappings["/config"] = variables.baseDir & "/config">
 	
 	<cftry>
 		<cfinclude template="#properties.getProperty("context","")#/config/mappings.cfm">
@@ -150,6 +153,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfset hasMainMappings=false>
 		</cfcatch>
 	</cftry>
+	
 	<cftry>
 		<cfinclude template="#properties.getProperty("context","")#/plugins/mappings.cfm">
 		<cfset hasPluginMappings=true>
@@ -157,10 +161,13 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfset hasPluginMappings=false>
 		</cfcatch>
 	</cftry>
+
+	<cfset this.mappings["/cfformprotect"] = variables.baseDir & "/tasks/widgets/cfformprotect">
 	
 	<cfset request.userAgent = LCase( CGI.http_user_agent ) />
+	
 	<!--- Should we even use sessions? --->
-	<cfset request.trackSession = not (NOT Len( request.userAgent ) OR
+	<cfset request.trackSession = not (
 	 REFind( "bot\b", request.userAgent ) OR
 	 Find( "_bot_", request.userAgent ) OR
 	 Find( "crawl", request.userAgent ) OR
@@ -170,7 +177,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	 Find( "blog", request.userAgent ) OR
 	 Find( "reader", request.userAgent ) OR
 	 Find( "syndication", request.userAgent ) OR
-	 Find( "coldfusion", request.userAgent ) OR
+	 FindNoCase( "coldfusion", request.userAgent ) OR
 	 Find( "slurp", request.userAgent ) OR
 	 Find( "google", request.userAgent ) OR
 	 Find( "zyborg", request.userAgent ) OR
@@ -180,38 +187,79 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	 FindNoCase( "java", request.userAgent ) OR 
 	 FindNoCase( "cfschedule", request.userAgent ) OR
 	 FindNoCase( "reeder", request.userAgent ) OR
-	 FindNoCase( "Python", request.userAgent ) OR
-	 FindNoCase( "Synapse", request.userAgent ) OR
-	 Find( "spider", request.userAgent ))>
-	 
+	 FindNoCase( "python", request.userAgent ) OR
+	 FindNoCase( "synapse", request.userAgent ) OR
+	 FindNoCase( "facebookexternalhit", request.userAgent ) OR
+	 FindNoCase( "TencentTraveler", request.userAgent ) OR
+	 FindNoCase( "bluedragon", request.userAgent ) OR
+	 FindNoCase( "binarycanary", request.userAgent ) OR
+	 FindNoCase( "siteexplorer", request.userAgent ) OR
+	 Find( "spider", request.userAgent ) OR
+	 FindNoCase( "80legs", request.userAgent ) OR
+	 FindNoCase( "googlebot", request.userAgent ) OR
+	 FindNoCase( "Microsoft Office Protocol", request.userAgent ) OR
+	 FindNoCase( "Railo", request.userAgent )
+	 )>
+
+	<cfif request.tracksession>
+		<cfset checklist=properties.getProperty("donottrackagents","")>
+		<cfif len(checklist)>
+			<cfloop list="#checklist#" index="i">
+				<cfif FindNoCase( i, request.userAgent )>
+					<cfset request.tracksession=false>
+					<cfbreak>
+				</cfif>
+			</cfloop>
+		</cfif>
+	</cfif>
+
 	<!--- How long do session vars persist? --->
 	<cfif request.trackSession>
-		<cfset this.sessionTimeout = (properties.getProperty("sessionTimeout","180") / 24) / 60>
+		<cfset this.sessionTimeout = ( evalSetting(properties.getProperty("sessionTimeout","180")) / 24) / 60>
 	<cfelse>
-		<cfset this.sessionTimeout = createTimeSpan(0,0,5,0)>
+		<cfset this.sessionTimeout = createTimeSpan(0,0,0,2)>
 	</cfif>
 	
+	<cfset this.timeout =  evalSetting(properties.getProperty("requesttimeout","1000"))>
+
 	<!--- define a list of custom tag paths. --->
-	<cfset this.customtagpaths = properties.getProperty("customtagpaths","") />
-	<cfset this.customtagpaths = listAppend(this.customtagpaths,variables.mapPrefix & variables.baseDir  &  "/requirements/custom_tags/")>
+	<cfset this.customtagpaths =  evalSetting(properties.getProperty("customtagpaths","")) />
+	<cfset this.customtagpaths = listAppend(this.customtagpaths,variables.baseDir  &  "/requirements/mura/customtags/")>
+	<cfset this.clientManagement = evalSetting(properties.getProperty("clientManagement","false")) />
 	
-	<cfset this.clientManagement = properties.getProperty("clientManagement","false") />
-	<cfset this.clientStorage = properties.getProperty("clientStorage","registry") />
-	<cfset this.ormenabled = properties.getProperty("ormenabled","true") />
+	<cfset variables.clientStorageCheck=evalSetting(properties.getProperty("clientStorage",""))>
 	
-	<!--- You can't depend on 9 supporting datasource as struct --->
-	<cfif listFirst(SERVER.COLDFUSION.PRODUCTVERSION) gt 9 
-		or listGetAt(SERVER.COLDFUSION.PRODUCTVERSION,3) gt 0>
-		<cfset this.datasource = structNew()>
-		<cfset this.datasource.name = properties.getProperty("datasource","") />
-		<cfset this.datasource.username = properties.getProperty("dbusername","")>
-		<cfset this.datasource.password = properties.getProperty("dbpassword","")>
-	<cfelse>
-		<cfset this.datasource =  properties.getProperty("datasource","") >
+	<cfif len(variables.clientStorageCheck)>
+		<cfset this.clientStorage = variables.clientStorageCheck />
 	</cfif>
 	
-	<cfset this.ormSettings=structNew()>
-	<cfset this.ormSettings.cfclocation=arrayNew(1)>
+	<cfset this.ormenabled =  evalSetting(properties.getProperty("ormenabled","true")) />
+	<cfset this.ormSettings={}>
+	<cfset this.ormSettings.cfclocation=[]>
+
+	<cftry>
+		<cfinclude template="#properties.getProperty("context","")#/config/cfapplication.cfm">
+		<cfset request.hasCFApplicationCFM=true>
+		<cfcatch>
+			<cfset request.hasCFApplicationCFM=false>
+		</cfcatch>
+	</cftry>
+	
+	<cfif len(properties.getProperty("datasource",""))>
+
+		<!--- You can't depend on 9 supporting datasource as struct --->
+		<cfif listFirst(SERVER.COLDFUSION.PRODUCTVERSION) gt 9 
+			or listGetAt(SERVER.COLDFUSION.PRODUCTVERSION,3) gt 0>
+			<cfset this.datasource = structNew()>
+			<cfset this.datasource.name = evalSetting(properties.getProperty("datasource","")) />
+			<cfset this.datasource.username = evalSetting(properties.getProperty("dbusername",""))>
+			<cfset this.datasource.password = evalSetting(properties.getProperty("dbpassword",""))>
+		<cfelse>
+			<cfset this.datasource =  evalSetting(properties.getProperty("datasource","")) >			
+		</cfif>
+	<cfelse>
+		<cfset this.ormenabled=false>
+	</cfif>
 	
 	<cfif this.ormenabled>
 		<cfswitch expression="#properties.getProperty('dbtype','')#">
@@ -221,6 +269,9 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfcase value="mysql">
 				<cfset this.ormSettings.dialect = "MySQL" />
 			</cfcase>
+			<cfcase value="postgresql">
+				<cfset this.ormSettings.dialect = "PostgreSQL" />
+			</cfcase>
 			<cfcase value="oracle">
 				<cfset this.ormSettings.dialect = "Oracle10g" />
 			</cfcase>
@@ -228,18 +279,18 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 				<cfset this.ormSettings.dialect = "nuodb" />
 			</cfcase>
 		</cfswitch>
-		<cfset this.ormSettings.dbcreate = properties.getProperty("ormdbcreate","update") />
+		<cfset this.ormSettings.dbcreate = evalSetting(properties.getProperty("ormdbcreate","update")) />
 		<cfif len(properties.getProperty("ormcfclocation",""))>
-			<cfset arrayAppend(this.ormSettings.cfclocation,properties.getProperty("ormcfclocation")) />
+			<cfset arrayAppend(this.ormSettings.cfclocation,evalSetting(properties.getProperty("ormcfclocation"))) />
 		</cfif>
-		<cfset this.ormSettings.flushAtRequestEnd = properties.getProperty("ormflushAtRequestEnd","false") />
-		<cfset this.ormsettings.eventhandling = properties.getProperty("ormeventhandling","true") />
-		<cfset this.ormSettings.automanageSession = properties.getProperty("ormautomanageSession","false") />
-		<cfset this.ormSettings.savemapping=properties.getProperty("ormsavemapping","false") />
-		<cfset this.ormSettings.skipCFCwitherror=properties.getProperty("ormskipCFCwitherror","false") />
-		<cfset this.ormSettings.useDBforMapping=properties.getProperty("ormuseDBforMapping","true") />
-		<cfset this.ormSettings.autogenmap=properties.getProperty("ormautogenmap","true") />
-		<cfset this.ormSettings.logsql=properties.getProperty("ormlogsql","false") />
+		<cfset this.ormSettings.flushAtRequestEnd = evalSetting(properties.getProperty("ormflushAtRequestEnd","false")) />
+		<cfset this.ormsettings.eventhandling = evalSetting(properties.getProperty("ormeventhandling","true")) />
+		<cfset this.ormSettings.automanageSession = evalSetting(properties.getProperty("ormautomanageSession","false")) />
+		<cfset this.ormSettings.savemapping= evalSetting(properties.getProperty("ormsavemapping","false")) />
+		<cfset this.ormSettings.skipCFCwitherror= evalSetting(properties.getProperty("ormskipCFCwitherror","false")) />
+		<cfset this.ormSettings.useDBforMapping= evalSetting(properties.getProperty("ormuseDBforMapping","true")) />
+		<cfset this.ormSettings.autogenmap= evalSetting(properties.getProperty("ormautogenmap","true")) />
+		<cfset this.ormSettings.logsql= evalSetting(properties.getProperty("ormlogsql","false")) />
 	</cfif>
 
 	<cftry>
@@ -249,15 +300,50 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfset hasPluginCFApplication=false>
 		</cfcatch>
 	</cftry>
-	<cftry>
-		<cfinclude template="#properties.getProperty("context","")#/config/cfapplication.cfm">
-		<cfset request.hasCFApplicationCFM=true>
-		<cfcatch>
-			<cfset request.hasCFApplicationCFM=false>
-		</cfcatch>
-	</cftry>
 	
 	<cfif not (isSimpleValue(this.ormSettings.cfclocation) and len(this.ormSettings.cfclocation))
 		and not (isArray(this.ormSettings.cfclocation) and arrayLen(this.ormSettings.cfclocation))>
 		<cfset this.ormenabled=false>
 	</cfif>
+
+	<cfscript>
+		// if true, CF converts form fields as an array instead of a list (not recommended)
+		this.sameformfieldsasarray=evalSetting(properties.getProperty('sameformfieldsasarray',false));
+
+		// Custom Java library paths with dynamic loading
+		try {
+			variables.loadPaths = ListToArray(evalSetting(properties.getProperty('javaSettingsLoadPaths','#properties.getProperty('context','')#/requirements/lib')));
+		} catch(any e) {
+			variables.loadPaths = ['#properties.getProperty('context','')#/requirements/lib'];
+		}
+
+		this.javaSettings = {
+			loadPaths=variables.loadPaths
+			, loadColdFusionClassPath = evalSetting(properties.getProperty('javaSettingsLoadColdFusionClassPath',true))
+			, reloadOnChange=evalSetting(properties.getProperty('javaSettingsReloadOnChange',false))
+			, watchInterval=evalSetting(properties.getProperty('javaSettingsWatchInterval',60))
+			, watchExtensions=evalSetting(properties.getProperty('javaSettingsWatchExtensions','jar,class'))
+		};
+
+		// Amazon S3 Credentials
+		try {
+			this.s3.accessKeyId=evalSetting(properties.getProperty('s3accessKeyId',''));
+			this.s3.awsSecretKey=evalSetting(properties.getProperty('s3awsSecretKey',''));
+		} catch(any e) {
+			// not supported
+		}
+	</cfscript>
+
+	<cffunction name="evalSetting" output="false">
+		<cfargument name="value">
+			<cfif left(arguments.value,2) eq "${"
+				and right(arguments.value,1) eq "}">
+				<cfset arguments.value=mid(arguments.value,3,len(arguments.value)-3)>
+				<cfset arguments.value = evaluate(arguments.value)>
+			<cfelseif left(arguments.value,2) eq "{{"
+				and right(arguments.value,2) eq "}}">
+				<cfset arguments.value=mid(arguments.value,3,len(arguments.value)-4)>
+				<cfset arguments.value = evaluate(arguments.value)>
+			</cfif>	
+		<cfreturn arguments.value>
+	</cffunction>

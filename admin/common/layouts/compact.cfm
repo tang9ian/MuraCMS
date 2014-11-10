@@ -43,8 +43,7 @@ requires distribution of source code.
 For clarity, if you create a modified version of Mura CMS, you are not obligated to grant this special exception for your 
 modified version; it is your choice whether to do so, or to make such modified version available under the GNU General Public License 
 version 2 without this exception.  You may, if you choose, apply this exception to your own modified versions of Mura CMS.
---->
-<cfsilent>
+---><cfsilent>
 <cfparam name="request.action" default="core:cplugin.plugin">
 <cfparam name="rc.originalfuseaction" default="#listLast(listLast(request.action,":"),".")#">
 <cfparam name="rc.originalcircuit"  default="#listFirst(listLast(request.action,":"),".")#">
@@ -59,19 +58,23 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfif len(rc.frontEndProxyLoc)>
 	<cfset session.frontEndProxyLoc=rc.frontEndProxyLoc>
 </cfif>
-</cfsilent>
-<cfoutput>
-<!DOCTYPE html>
+</cfsilent><cfoutput><cfprocessingdirective suppressWhitespace="true"><!DOCTYPE html>
 <cfif cgi.http_user_agent contains 'msie'>
 <meta content="IE=8; IE=9" http-equiv="X-UA-Compatible" />
-<!--[if lt IE 7 ]><html class="mura ie ie6" lang="#HTMLEditFormat(session.locale)#"> <![endif]-->
-<!--[if IE 7 ]><html class="mura ie ie7" lang="#HTMLEditFormat(session.locale)#"> <![endif]-->
-<!--[if IE 8 ]><html class="mura ie ie8" lang="#HTMLEditFormat(session.locale)#"> <![endif]-->
-<!--[if (gte IE 9)|!(IE)]><!--><html lang="#HTMLEditFormat(session.locale)#" class="mura ie"><!--<![endif]-->
+<!--[if lt IE 7 ]><html class="mura ie ie6" lang="#esapiEncode('html_attr',session.locale)#"> <![endif]-->
+<!--[if IE 7 ]><html class="mura ie ie7" lang="#esapiEncode('html_attr',session.locale)#"> <![endif]-->
+<!--[if IE 8 ]><html class="mura ie ie8" lang="#esapiEncode('html_attr',session.locale)#"> <![endif]-->
+<!--[if (gte IE 9)|!(IE)]><!--><html lang="#esapiEncode('html_attr',session.locale)#" class="mura ie"><!--<![endif]-->
 <cfelse>
-<html lang="#HTMLEditFormat(session.locale)#" class="mura">
+<html lang="#esapiEncode('html_attr',session.locale)#" class="mura">
 </cfif>
 	<head>
+		<cfif Len(application.configBean.getWindowDocumentDomain())>
+			<script type="text/javascript">
+				window.document.domain = '#application.configBean.getWindowDocumentDomain()#';
+			</script>
+		</cfif>
+
 		<title>#application.configBean.getTitle()#</title>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<meta name="description" content="">
@@ -98,20 +101,25 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		 <!-- Spinner JS -->
 		<script src="#application.configBean.getContext()#/admin/assets/js/spin.min.js" type="text/javascript"></script>
 
-		<!-- Mura Admin JS -->
-		<script src="#application.configBean.getContext()#/admin/assets/js/admin.min.js" type="text/javascript"></script>
-
 		 <!-- jQuery -->
 		<script src="#application.configBean.getContext()#/admin/assets/js/jquery/jquery.js?coreversion=#application.coreversion#" type="text/javascript"></script>
 		<script src="#application.configBean.getContext()#/admin/assets/js/jquery/jquery.spin.js" type="text/javascript"></script>
 		<script src="#application.configBean.getContext()#/admin/assets/js/jquery/jquery.collapsibleCheckboxTree.js?coreversion=#application.coreversion#" type="text/javascript"></script>
 		<script src="#application.configBean.getContext()#/admin/assets/js/jquery/jquery-ui.js?coreversion=#application.coreversion#" type="text/javascript"></script>
 		<script src="#application.configBean.getContext()#/admin/assets/js/jquery/jquery-ui-i18n.min.js?coreversion=#application.coreversion#" type="text/javascript"></script>
+
+		<!-- Mura Admin JS -->
+		<script src="#application.configBean.getContext()#/admin/assets/js/admin.min.js" type="text/javascript"></script>
+
 		
 		<!-- CK Editor/Finder -->
 		<script type="text/javascript" src="#application.configBean.getContext()#/tasks/widgets/ckeditor/ckeditor.js"></script>
 		<script type="text/javascript" src="#application.configBean.getContext()#/tasks/widgets/ckeditor/adapters/jquery.js"></script>
 		<script type="text/javascript" src="#application.configBean.getContext()#/tasks/widgets/ckfinder/ckfinder.js"></script>
+
+		<!-- Color Picker -->
+		<script type="text/javascript" src="#application.configBean.getContext()#/tasks/widgets/colorpicker/js/bootstrap-colorpicker.js?coreversion=#application.coreversion#"></script>
+		<link href="#application.configBean.getContext()#/tasks/widgets/colorpicker/css/colorpicker.css?coreversion=#application.coreversion#" rel="stylesheet" type="text/css" />
 
 		<!-- JSON -->
 		<script src="#application.configBean.getContext()#/admin/assets/js/json2.js" type="text/javascript"></script>
@@ -119,13 +127,18 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<!-- Utilities to support iframe communication -->
 		<script src="#application.configBean.getContext()#/admin/assets/js/jquery/jquery-resize.min.js?coreversion=#application.coreversion#" type="text/javascript"></script>
 		<script src="#application.configBean.getContext()#/admin/assets/js/porthole/porthole.min.js?coreversion=#application.coreversion#" type="text/javascript"></script>
+		<script src="#application.configBean.getContext()#/admin/assets/js/chart.min.js?coreversion=#application.coreversion#" type="text/javascript"></script>
 
 		<script type="text/javascript">
 		var htmlEditorType='#application.configBean.getValue("htmlEditorType")#';
 		var context='#application.configBean.getContext()#';
 		var themepath='#application.settingsManager.getSite(rc.siteID).getThemeAssetPath()#';
-		var rb='#lcase(session.rb)#';
-		var siteid='#session.siteid#';
+		var rb='#lcase(esapiEncode('javascript',session.rb))#';
+		var siteid='#esapiEncode('javascript',session.siteid)#';
+		var activepanel=#esapiEncode('javascript',rc.activepanel)#;
+		var activetab=#esapiEncode('javascript',rc.activetab)#;
+		var webroot='#esapiEncode('javascript',left($.globalConfig("webroot"),len($.globalConfig("webroot"))-len($.globalConfig("context"))))#';
+		var fileDelim='#esapiEncode('javascript',$.globalConfig("fileDelim"))#';
 		</script>
 		
 		<link href="#application.configBean.getContext()#/admin/assets/css/admin.min.css" rel="stylesheet" type="text/css" />
@@ -133,16 +146,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<script type="text/javascript">
 			var frontEndProxy;
 			jQuery(document).ready(function(){
-				setDatePickers(".datepicker",dtLocale);
-				setTabs(".tabs",#rc.activeTab#);
-				setHTMLEditors();
-				setAccordions(".accordion",#rc.activePanel#);
-				setCheckboxTrees();
-				setColorPickers(".colorpicker");
-				setToolTips(".container");
-
 				if (top.location != self.location) {
-					frontEndProxy = new Porthole.WindowProxy("#session.frontEndProxyLoc##application.configBean.getContext()#/admin/assets/js/porthole/proxy.html");
+					frontEndProxy = new Porthole.WindowProxy("#esapiEncode('javascript',session.frontEndProxyLoc)##application.configBean.getContext()#/admin/assets/js/porthole/proxy.html");
 					frontEndProxy.post({cmd:
 											'setHeight',
 											height:Math.max(document.body.scrollHeight, document.body.offsetHeight, document.documentElement.scrollHeight, document.documentElement.offsetHeight)
@@ -165,7 +170,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	    <![endif]-->
 		
 		<!--[if lte IE 8]>
-		<link href="#application.configBean.getContext()#/admin/assets/css/ie/ie.min.css?coreversion=#application.coreversion#" rel="stylesheet" type="text/css" />
+		<link href="#application.configBean.getContext()#/admin/assets/css/ie.min.css?coreversion=#application.coreversion#" rel="stylesheet" type="text/css" />
 		<![endif]-->
 		
 		<!--[if lte IE 7]>
@@ -176,12 +181,13 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		</cfif>
 		
 	</head>
-	<body id="#rc.originalcircuit#" class="compact">
+	<body id="#esapiEncode('html_attr',rc.originalcircuit)#" class="compact">
+		<a id="frontEndToolsModalClose" href="javascript:frontEndProxy.post({cmd:'close'});"><i class="icon-remove-sign"></i></a>
 		<cfinclude template="includes/dialog.cfm">
-		<div class="main row-fluid">#body#</div>
+		<div class="main row-fluid"></cfprocessingdirective>#body#<cfprocessingdirective suppressWhitespace="true"></div>
 		
 		<script src="#application.configBean.getContext()#/admin/assets/js/jquery/jquery-tagselector.js?coreversion=#application.coreversion#"></script>
 		<script src="#application.configBean.getContext()#/admin/assets/bootstrap/js/bootstrap.min.js"></script>
 	</body>
-</html>
+</html></cfprocessingdirective>
 </cfoutput>

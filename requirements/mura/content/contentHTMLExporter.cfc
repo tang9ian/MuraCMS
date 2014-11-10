@@ -71,8 +71,12 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cffunction name="export">
 	<cfargument name="siteid" type="string" required="true" />
 	<cfargument name="exportDir" type="string" required="true" />
-
+	
 	<cfset var $=getBean("MuraScope").init(arguments.siteID)>
+	
+	<cfset var localval="">
+	
+	<cfset request.exportedfiles={}>
 
 	<cfsetting requestTimeout = "7200">
 	
@@ -89,12 +93,16 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	</cfif>
 	
 	<cfset variables.fileWriter.createDir("#arguments.exportDir##$.globalConfig("context")#/#arguments.siteID#")>
+	<cfset localval = "#$.globalConfig('webroot')#/#arguments.siteid#/css/">
+	<cfset localval = localval & " to " & "#arguments.exportDir##$.globalConfig('context')#/#arguments.siteID#/css/">
 	
 	<cfset variables.fileWriter.copyDir("#$.globalConfig('webroot')#/#arguments.siteid#/css/", "#arguments.exportDir##$.globalConfig('context')#/#arguments.siteID#/css/") />
 	<cfset variables.fileWriter.copyDir("#$.globalConfig('webroot')#/#arguments.siteid#/flash/", "#arguments.exportDir##$.globalConfig('context')#/#arguments.siteID#/flash/") />
 	<cfset variables.fileWriter.copyDir("#$.globalConfig('webroot')#/#arguments.siteid#/images/", "#arguments.exportDir##$.globalConfig('context')#/#arguments.siteID#/images/") />
 	<cfset variables.fileWriter.copyDir("#$.globalConfig('webroot')#/#arguments.siteid#/js/", "#arguments.exportDir##$.globalConfig('context')#/#arguments.siteID#/js/") />
 	<cfset variables.fileWriter.copyDir("#$.globalConfig('assetDir')#/#arguments.siteid#/assets/", "#arguments.exportDir##$.globalConfig('context')#/#arguments.siteID#/assets/") />
+	<!--- Add jquery to the export --->
+	<cfset variables.fileWriter.copyDir("#$.globalConfig('assetDir')#/#arguments.siteid#/jquery/", "#arguments.exportDir##$.globalConfig('context')#/#arguments.siteID#/jquery/") />
 	
 	<cfset variables.fileWriter.createDir("#arguments.exportDir##$.globalConfig('context')#/#arguments.siteID#/includes")>
 	<cfset variables.fileWriter.createDir("#arguments.exportDir##$.globalConfig('context')#/#arguments.siteID#/includes/themes")>
@@ -105,7 +113,6 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset variables.fileWriter.createDir("#arguments.exportDir##$.globalConfig('context')#/#arguments.siteID#/cache")>
 	<cfset variables.fileWriter.createDir("#arguments.exportDir##$.globalConfig('context')#/#arguments.siteID#/cache/file")>
 
-	<!---
 	<cfif directoryExists("#$.siteConfig('themeIncludePath')#/css")>
 		<cfset variables.fileWriter.copyDir(expandPath("#$.siteConfig('themeIncludePath')#/css/"), "#arguments.exportDir##$.globalConfig('context')#/#arguments.siteID#/includes/themes/#$.siteConfig('theme')#/css/") />
 	</cfif>
@@ -118,7 +125,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfif directoryExists("#$.siteConfig('themeIncludePath')#/js")>
 		<cfset variables.fileWriter.copyDir(expandPath("#$.siteConfig('themeIncludePath')#/js/"), "#arguments.exportDir##$.globalConfig('context')#/#arguments.siteID#/includes/themes/#$.siteConfig('theme')#/js/") />
 	</cfif>
-	--->
+	<cfset localval = expandPath("#$.siteConfig('themeIncludePath')#/images/")>
 	
 	<cfset traverseSite('00000000000000000000000000000000END', arguments.siteid, arguments.exportDir) />
 	
@@ -205,7 +212,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfset variables.fileWriter.writeFile(file = "#filepath#",output = "#fileOutput#")>
 	</cfif>		
 	
-	<cfif len(arguments.contentBean.getFileID())>
+	<cfif len(arguments.contentBean.getFileID()) and not structKeyExists(request.exportedfiles,hash(arguments.contentBean.getFileID()))>
 			<cfif arguments.contentBean.getType() eq "File">
 				<cfset variables.fileWriter.createDir("#arguments.exportDir##$.globalConfig('context')#/#arguments.contentBean.getSiteID()#/cache/file/#arguments.contentBean.getFileID()#")>
 				<cfset variables.fileWriter.copyFile(source="#$.globalConfig('fileDir')#/#arguments.contentBean.getSiteID()#/cache/file/#arguments.contentBean.getFileID()#.#arguments.contentBean.getFileEXT()#", destination="#arguments.exportDir##$.globalConfig('context')#/#arguments.contentBean.getSiteID()#/cache/file/#arguments.contentBean.getFileID()#/#arguments.contentBean.getAssocFilename()#")>
@@ -217,6 +224,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 					<cfset variables.fileWriter.copyFile(source="#$.globalConfig('fileDir')#/#arguments.contentBean.getSiteID()#/cache/file/#rsFiles.name#", destination="#arguments.exportDir##$.globalConfig('context')#/#arguments.contentBean.getSiteID()#/cache/file/#rsFiles.name#")>
 				</cfloop>
 			</cfif>
+
+			<cfset request.exportedfiles[hash(arguments.contentBean.getFileID())]=true>
 	</cfif>
 			
 	<cfif listFindNoCase("Folder,Gallery",arguments.contentBean.getType())>

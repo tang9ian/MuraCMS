@@ -53,7 +53,7 @@
 
 
 	<!--- Temporary band aid to for property files that have pre-escapde charactars--->
-	<cfif listFindNoCase("fr,de,hu,en,es",lang)>
+	<cfif listFindNoCase("fr,de,hu,en,es,nl",lang)>
 		<cfset loadResourceBundle() />
 	<cfelse>
 		<cfset loadResourceBundleUTF() />
@@ -76,10 +76,10 @@
 	var keys=""; // var to hold rb keys
 	var thisKEY="";
 	var thisMSG="";
-	var thisLang=listFirst(variables.Locale,"_");
+	var thisLang=lcase(listFirst(variables.Locale,"_"));
 	var thisDir=GetDirectoryFromPath(variables.rbFile);
 	var thisFile=getFileFromPath(variables.rbFile);
-	var thisRBfile=thisDir & listFirst(thisFile,".") & "_"& variables.Locale & "." & listLast(thisFile,".");
+	var thisRBfile=thisDir & lcase(listFirst(thisFile,".") & "_" & variables.Locale & "." & listLast(thisFile,"."));
 	
 	if (NOT fileExists(thisRBfile))// still nothing? strip thisRBfile back to base rb
 		thisRBfile=thisDir & thisLang & "." & listLast(thisFile,".");
@@ -144,7 +144,7 @@
 			   if(lineCheck)
 			   {
 			     if(left(local.line,1) neq "##" and listLen(local.line,"=") gt 1){
-			     	variables.resourceBundle["#listFirst(local.line,'=')#"]=listRest(local.line,'=');
+			     	variables.resourceBundle["#reReplaceNoCase(listFirst(local.line,'='), '[^-a-zA-Z0-9.]', '', 'all')#"]=listRest(local.line,'=');
 			     	}
 			   }
 			} while(lineCheck);
@@ -188,7 +188,7 @@
 			<cfif NOT isArray(inputArgs)>
 				<cfset inputArgs=listToArray(inputArgs)>
 			</cfif>	
-			<cfset thisFormat=variables.msgFormat.init(arguments.thisPattern,variables.javaLocale)>
+			<cfset thisFormat=variables.msgFormat.init(replace(arguments.thisPattern,"'","''","all"),variables.javaLocale)>
 			<!--- let's make sure any cf numerics are cast to java datatypes --->
 			<cfset p=pattern.compile(regexStr,pattern.CASE_INSENSITIVE)>
 			<cfset m=p.matcher(arguments.thisPattern)>
@@ -226,7 +226,7 @@
 	
 	<cfif structKeyExists(variables.resourceBundle,arguments.key)>
 
-		<cfreturn variables.resourceBundle[arguments.key] />
+		<cfreturn replace(variables.resourceBundle[arguments.key],"''","'","ALL") />
 
 	<cfelseif arguments.useMuraDefault>
 		<cfreturn "muraKeyEmpty">
@@ -239,4 +239,3 @@
 </cffunction>
 
 </cfcomponent>
-

@@ -45,6 +45,17 @@ modified version; it is your choice whether to do so, or to make such modified v
 version 2 without this exception.  You may, if you choose, apply this exception to your own modified versions of Mura CMS.
 --->
 <cfcomponent output="false">
+
+<cfscript>
+	if(structKeyExists(server,'railo')){
+		backportdir='';
+		include "/mura/backport/backport.cfm";
+	} else {
+		backportdir='/mura/backport/';
+		include "#backportdir#backport.cfm";
+	}
+</cfscript>
+
 <cfset variables.translator=""/>
 
 <cffunction name="init" returntype="any" access="public" output="false">
@@ -100,13 +111,11 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	
 	<cfset bean=getServiceFactory().getBean(arguments.beanName) />
 
-	<cfif structKeyExists(bean,"setSiteID")>		
+	<cfif structKeyExists(bean,'valueExists') and bean.valueExists('siteid')>
 		<cfif len(arguments.siteID)>
-			<cfset bean.setSiteID(arguments.siteID)>			
-		<cfelseif isDefined("getSiteID")>
-			<cfset bean.setSiteID(getSiteID())>
+			<cfset bean.setValue('siteid',arguments.siteID)>	
 		<cfelseif len(getValue("siteID"))>
-			<cfset bean.setSiteID(getValue("siteID"))>		
+			<cfset bean.setValue('siteid',getValue("siteID"))>	
 		</cfif>		
 	</cfif>
 	
@@ -217,5 +226,23 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfset tracePoint.total=tracePoint.stop-request.muraRequestStart>
 	</cfif>	
 </cffunction>
+
+<cfscript>
+	public any function invokeMethod(required string methodName, struct methodArguments={}) {
+		if(structKeyExists(this, arguments.methodName)) {
+			var theMethod = this[ arguments.methodName ];
+			return theMethod(argumentCollection = methodArguments);
+		}
+		if(structKeyExists(this, "onMissingMethod")) {
+			return this.onMissingMethod(missingMethodName=arguments.methodName, missingMethodArguments=arguments.methodArguments);	
+		}
+		throw("You have attempted to call the method #arguments.methodName# which does not exist in #getClassFullName()#");
+	}
+
+	function getQueryService(){
+		return new Query(argumentCollection=getBean('configBean').getReadOnlyQRYAttrs(argumentCollection=arguments));
+	}
+
+</cfscript>
 
 </cfcomponent>

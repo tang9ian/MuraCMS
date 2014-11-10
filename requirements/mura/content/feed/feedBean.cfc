@@ -44,56 +44,63 @@ For clarity, if you create a modified version of Mura CMS, you are not obligated
 modified version; it is your choice whether to do so, or to make such modified version available under the GNU General Public License 
 version 2 without this exception.  You may, if you choose, apply this exception to your own modified versions of Mura CMS.
 --->
-<cfcomponent extends="mura.bean.beanFeed" output="false">
+<cfcomponent extends="mura.bean.beanFeed" entityName="feed" table="tcontentfeeds" output="false">
 
-<cfproperty name="feedID" type="string" default="" required="true" />
-<cfproperty name="siteID" type="string" default="" required="true" />
-<cfproperty name="dateCreated" type="date" default="" required="true" />
-<cfproperty name="lastUpdate" type="date" default="" required="true" />
-<cfproperty name="lastUpdateBy" type="string" default="" required="true" />
-<cfproperty name="name" type="string" default="" required="true" />
-<cfproperty name="altName" type="string" default="" required="true" />
+<cfproperty name="feedID" fieldtype="id" type="string" default="" />
+<cfproperty name="site" fieldtype="many-to-one" cfc="site" fkcolumn="siteID" />
+<cfproperty name="dateCreated" type="date" default=""/>
+<cfproperty name="lastUpdate" type="date" default=""/>
+<cfproperty name="lastUpdateBy" type="string" default=""/>
+<cfproperty name="name" type="string" default=""/>
+<cfproperty name="altName" type="string" default=""/>
 <cfproperty name="lang" type="string" default="en-us" required="true" />
 <cfproperty name="isActive" type="numeric" default="1" required="true" />
 <cfproperty name="showNavOnly" type="numeric" default="1" required="true" />
 <cfproperty name="showExcludeSearch" type="numeric" default="0" required="true" />
 <cfproperty name="isPublic" type="numeric" default="0" required="true" />
 <cfproperty name="isDefault" type="numeric" default="0" required="true" />
-<cfproperty name="description" type="string" default="" required="true" />
-<cfproperty name="contentID" type="string" default="" required="true" />
-<cfproperty name="categoryID" type="string" default="" required="true" />
+<cfproperty name="description" type="string" default=""/>
+<cfproperty name="contentID" type="string" default=""/>
+<cfproperty name="categoryID" type="string" default=""/>
 <cfproperty name="maxItems" type="numeric" default="20" required="true" />
 <cfproperty name="allowHTML" type="numeric" default="1" required="true" />
-<cfproperty name="isFeaturesOnly" type="numeric" default="0" required="true" />
+<cfproperty name="isFeaturesOnly" type="numeric" default="0" required="true" hint="either,architecture,category"/>
+<cfproperty name="featureType" type="string" default="either"/>
 <cfproperty name="restricted" type="numeric" default="0" required="true" />
-<cfproperty name="restrictGroups" type="string" default="" required="true" />
+<cfproperty name="restrictGroups" type="string" default=""/>
 <cfproperty name="version" type="string" default="RSS 2.0" required="true" />
-<cfproperty name="channelLink" type="string" default="" required="true" />
+<cfproperty name="channelLink" type="string" default=""/>
 <cfproperty name="type" type="string" default="local" required="true" />
-<cfproperty name="sortBy" type="string" default="lastUpdate" required="true" />
+<cfproperty name="sortBy" type="string" default="lastUpdate" required="false" />
 <cfproperty name="sortDirection" type="string" default="desc" required="true" />
-<cfproperty name="parentID" type="string" default="" required="true" />
+<cfproperty name="parentID" type="string" default=""/>
 <cfproperty name="nextN" type="numeric" default="20" required="true" />
 <cfproperty name="displayName" type="numeric" default="0" required="true" />
 <cfproperty name="displayRatings" type="numeric" default="0" required="true" />
 <cfproperty name="displayComments" type="numeric" default="0" required="true" />
 <cfproperty name="displayKids" type="numeric" default="0" required="true" />
 <cfproperty name="isNew" type="numeric" default="0" required="true" />
-<cfproperty name="params" type="query" default="" required="true" />
-<cfproperty name="remoteID" type="string" default="" required="true" />
-<cfproperty name="remoteSourceURL" type="string" default="" required="true" />
-<cfproperty name="remotePubDAte" type="string" default="" required="true" />
+<cfproperty name="params" type="query" default=""/>
+<cfproperty name="remoteID" type="string" default=""/>
+<cfproperty name="remoteSourceURL" type="string" default=""/>
+<cfproperty name="remotePubDAte" type="string" default="" />
 <cfproperty name="imageSize" type="string" default="small" required="true" />
 <cfproperty name="imageHeight" type="string" default="AUTO" required="true" />
 <cfproperty name="imageWidth" type="string" default="AUTO" required="true" />
 <cfproperty name="displayList" type="string" default="Title,Date,Image,Summary,Tags,Credits" required="true" />
 <cfproperty name="liveOnly" type="numeric" default="1" required="true" />
-<cfproperty name="bean" type="string" default="content" required="true" />
-<cfproperty name="viewalllabel" type="string" default="" required="true" />
-<cfproperty name="viewalllink" type="string" default="View All" required="true" />
+<cfproperty name="entityName" type="string" default="content" />
+<cfproperty name="viewalllabel" type="string" default="" />
+<cfproperty name="viewalllink" type="string" default="View All" />
 <cfproperty name="autoimport" type="numeric" default="0" required="true" />
 <cfproperty name="isLocked" type="numeric" default="0" required="true" />
-<cfproperty name="cssClass" type="string" default="" required="true" />
+<cfproperty name="cssClass" type="string" default="" />
+<cfproperty name="useCategoryIntersect" type="numeric" default="0" />
+<cfproperty name="altTable" type="string" default=""/>
+<cfproperty name="contentpoolid" type="string" default=""/>
+
+<cfset variables.primaryKey = 'feedid'>
+<cfset variables.entityName = 'feed'>
 
 <cffunction name="init" returntype="any" output="false" access="public">
 	<cfset super.init(argumentCollection=arguments)>
@@ -117,6 +124,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset variables.instance.MaxItems=20 />
 	<cfset variables.instance.allowHTML=1 />
 	<cfset variables.instance.isFeaturesOnly=0 />
+	<cfset variables.instance.featureType='either' />
 	<cfset variables.instance.restricted=0 />
 	<cfset variables.instance.restrictGroups="" />
 	<cfset variables.instance.Version="RSS 2.0" />
@@ -142,13 +150,17 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset variables.instance.imageWidth="AUTO" />
 	<cfset variables.instance.displayList="Date,Title,Image,Summary,Credits,Tags" />
 	<cfset variables.instance.liveOnly=1 />
-	<cfset variables.instance.bean="content" />
+	<cfset variables.instance.activeOnly=1 />
+	<cfset variables.instance.entityName="content" />
 	<cfset variables.instance.table="tcontent">
 	<cfset variables.instance.viewalllink="" />
 	<cfset variables.instance.viewalllabel="" />
 	<cfset variables.instance.autoimport=0 />
 	<cfset variables.instance.isLocked=0 />
 	<cfset variables.instance.cssClass="" />
+	<cfset variables.instance.useCategoryIntersect=0 />
+	<cfset variables.instance.altTable="" />
+	<cfset variables.instance.contentpoolid="" />
 	
 	<cfreturn this />
 </cffunction>
@@ -223,6 +235,15 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	</cfif>
 	
 	<cfreturn this>
+</cffunction>
+
+<cffunction name="getContentPoolID" access="public" output="false">
+
+	<cfif not len(variables.instance.contentpoolid)>
+		<cfset variables.instance.contentpoolid=variables.instance.siteid />
+	</cfif>
+	
+	<cfreturn variables.instance.contentpoolid>
 </cffunction>
 
 <cffunction name="setCategoryID" access="public" output="false">
@@ -307,6 +328,14 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfreturn this>
 </cffunction>
 
+<cffunction name="setUseCategoryIntersect" access="public" output="false">
+	<cfargument name="useCategoryIntersect" type="any" />
+	<cfif isNumeric(arguments.useCategoryIntersect)>
+	<cfset variables.instance.useCategoryIntersect = arguments.useCategoryIntersect />
+	</cfif>
+	<cfreturn this>
+</cffunction>
+
 <cffunction name="setShowExcludeSearch" access="public" output="false">
 	<cfargument name="showExcludeSearch" type="any" />
 	<cfif isNumeric(arguments.showExcludeSearch)>
@@ -378,7 +407,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		
 	<cfset var rows=0/>
 	<cfset var I = 0 />
-		
+
+
 	<cfif isquery(arguments.params)>
 		<cfset variables.instance.params=arguments.params />
 			
@@ -386,13 +416,13 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	
 		<cfset clearParams() />
 		<cfloop from="1" to="#listLen(arguments.params.param)#" index="i">
-			
+
 			<cfset addParam(
-					listFirst(evaluate('arguments.params.paramField#i#'),'^'),
-					evaluate('arguments.params.paramRelationship#i#'),
-					evaluate('arguments.params.paramCriteria#i#'),
-					evaluate('arguments.params.paramCondition#i#'),
-					listLast(evaluate('arguments.params.paramField#i#'),'^')
+					listFirst(arguments.params['paramField#i#'],'^'),
+					arguments.params['paramRelationship#i#'],
+					arguments.params['paramCriteria#i#'],
+					arguments.params['paramCondition#i#'],
+					listLast(arguments.params['paramField#i#'],'^')
 					) />
 		</cfloop>
 			
@@ -417,13 +447,29 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cffunction name="getQuery" returnType="query" output="false" access="public">
 	<cfargument name="aggregation" required="true" default="false">
 	<cfargument name="applyPermFilter" required="true" default="false">
-	<cfreturn variables.feedManager.getFeed(feedBean=this,tag="",aggregation=arguments.aggregation,applyPermFilter=arguments.applyPermFilter) />
+	<cfargument name="countOnly" default="false">
+	<cfargument name="menuType" default="default">
+	<cfargument name="from" required="true" default="">
+	<cfargument name="to" required="true" default="">
+
+	<cfreturn variables.feedManager.getFeed(
+		feedBean=this
+		, tag=''
+		, aggregation=arguments.aggregation
+		, applyPermFilter=arguments.applyPermFilter
+		, countOnly=arguments.countOnly
+		, menuType=arguments.menuType
+		, from=arguments.from
+		, to=arguments.to
+	) />
 </cffunction>
 
 <cffunction name="getIterator" returnType="any" output="false" access="public">
 	<cfargument name="aggregation" required="true" default="false">
 	<cfargument name="applyPermFilter" required="true" default="false">
-	<cfset var q=getQuery(aggregation=arguments.aggregation,applyPermFilter=arguments.applyPermFilter) />
+	<cfargument name="from" required="true" default="">
+	<cfargument name="to" required="true" default="">
+	<cfset var q=getQuery(aggregation=arguments.aggregation,applyPermFilter=arguments.applyPermFilter,from=arguments.from,to=arguments.to) />
 	<cfset var it=getBean("contentIterator")>
 	<cfset it.setQuery(q,variables.instance.nextn)>
 	<cfreturn it>
@@ -461,6 +507,14 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	</cfif>
 	<cfreturn this>
   </cffunction>
+
+ <cffunction name="setAltTable" access="public" output="false">
+	<cfargument name="altTable" type="any" />
+	<cfif len(arguments.altTable)>
+	<cfset variables.instance.altTable = arguments.altTable />
+	</cfif>
+	<cfreturn this>
+</cffunction>
 
 <cffunction name="getEditUrl" access="public" returntype="string" output="false">
 	<cfargument name="compactDisplay" type="any" required="true" default="false"/>
@@ -520,6 +574,23 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		</cfif>
 	</cfloop>
 	<cfreturn returnList>
+</cffunction>
+
+<cffunction name="getPrimaryKey" output="false">
+	<cfreturn "feedID">
+</cffunction>
+
+<cffunction name="getEntityName" output="false">
+	<cfargument name="userProxyName" default="true">
+	<cfif arguments.userProxyName>
+		<cfreturn "content">
+	<cfelse>
+		<cfreturn "feed">
+	</cfif>
+</cffunction>
+
+<cffunction name="getAvailableCount" output="false">
+	<cfreturn getQuery(countOnly=true).count>
 </cffunction>
 	
 </cfcomponent>

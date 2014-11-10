@@ -139,7 +139,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		#application.rbFactory.getKeyValue(session.rb,"params.from")#
 	</label>
     <div class="controls"><input type="hidden" name="muraAction" value="cDashboard.sessionSearch" />
-	    <input type="hidden" name="siteID" value="#HTMLEditFormat(rc.siteid)#" />
+	    <input type="hidden" name="siteID" value="#esapiEncode('html_attr',rc.siteid)#" />
 	    <input type="text" class="datepicker" name="startDate" value="#LSDateFormat(session.startDate,session.dateKeyFormat)#" validate="date" message="The 'From' date is required." />
     </div>
     
@@ -186,8 +186,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		</cfloop>
 		</select>
 		<input type="text" name="paramCriteria1" class="span4">
-		<a class="criteria remove" href="javascript:;" onclick="searchParams.removeSeachParam(this.parentNode);searchParams.setSearchButtons();return false;" style="display:none;" title="#application.rbFactory.getKeyValue(session.rb,"params.removecriteria")#"><i class="icon-remove-sign"></i></a>
-		<a class="criteria add" href="javascript:;" onclick="searchParams.addSearchParam();searchParams.setSearchButtons();return false;" title="#application.rbFactory.getKeyValue(session.rb,"params.addcriteria")#"><i class="icon-plus-sign"></i></a>
+		<a class="criteria remove" href="javascript:;" onclick="$searchParams.removeSeachParam(this.parentNode);$searchParams.setSearchButtons();return false;" style="display:none;" title="#application.rbFactory.getKeyValue(session.rb,"params.removecriteria")#"><i class="icon-remove-sign"></i></a>
+		<a class="criteria add" href="javascript:;" onclick="$searchParams.addSearchParam();$searchParams.setSearchButtons();return false;" title="#application.rbFactory.getKeyValue(session.rb,"params.addcriteria")#"><i class="icon-plus-sign"></i></a>
 		</div>
 		<cfelse>
 		<cfloop from="1" to="#session.paramCount#" index="p">
@@ -221,8 +221,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		</cfloop>
 		</select>
 		<input type="text" name="paramCriteria#p#" value="#session.paramArray[p].criteria#" class="span4">
-		<a class="removeCriteria" href="javascript:;" onclick="searchParams.removeSeachParam(this.parentNode);searchParams.setSearchButtons();return false;"><span>#application.rbFactory.getKeyValue(session.rb,"params.removecriteria")#</span></a>
-		<a class="addCriteria" href="javascript:;" onclick="searchParams.addSearchParam();searchParams.setSearchButtons();return false;" ><span>#application.rbFactory.getKeyValue(session.rb,"params.addcriteria")#</span></a>
+		<a class="removeCriteria" href="javascript:;" onclick="$searchParams.removeSeachParam(this.parentNode);$searchParams.setSearchButtons();return false;"><span>#application.rbFactory.getKeyValue(session.rb,"params.removecriteria")#</span></a>
+		<a class="addCriteria" href="javascript:;" onclick="$searchParams.addSearchParam();$searchParams.setSearchButtons();return false;" ><span>#application.rbFactory.getKeyValue(session.rb,"params.addcriteria")#</span></a>
 		</div>
 		</cfloop>
 		</cfif>	
@@ -288,13 +288,13 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	</cftry>
 </cfsilent>
 
-<script type="text/javascript">searchParams.setSearchButtons();</script>
+<script type="text/javascript">$searchParams.setSearchButtons();</script>
 
 <cfif not searchFailed>
 	<cfoutput>
 	<h2>#application.rbFactory.getKeyValue(session.rb,"dashboard.session.totalsessions")# (#rc.rslist.recordcount#)</h2>
 	
-<table class="table table-striped table-condensed table-bordered mura-table-grid">
+<table class="mura-table-grid">
 <thead>
 <tr>
 <th>#application.rbFactory.getKeyValue(session.rb,"dashboard.session.user")#</th>
@@ -311,12 +311,12 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfset endrow=(rc.startrow+rc.nextN.recordsperpage)-1/>
 <cfloop query="rc.rslist" startrow="#rc.startRow#" endrow="#endRow#">
 <tr>
-<td><a title="#application.rbFactory.getKeyValue(session.rb,"dashboard.session.view")#" href="index.cfm?muraAction=cDashboard.viewSession&urlToken=#urlEncodedFormat(rc.rslist.urlToken)#&siteid=#URLEncodedFormat(rc.siteid)#"><cfif rc.rslist.userid eq ''>#application.rbFactory.getKeyValue(session.rb,"dashboard.session.anonymous")#<cfelse>#HTMLEditFormat(rc.rslist.fname)# #HTMLEditFormat(rc.rslist.lname)#<cfif rc.rslist.company neq ''> (#HTMLEditFormat(rc.rslist.company)#)</cfif></cfif></a></td>
-<td>#rc.rslist.locale#</td>
+<td><a title="#application.rbFactory.getKeyValue(session.rb,"dashboard.session.view")#" href="./?muraAction=cDashboard.viewSession&urlToken=#esapiEncode('url',rc.rslist.urlToken)#&siteid=#esapiEncode('url',rc.siteid)#"><cfif rc.rslist.fname eq ''>#application.rbFactory.getKeyValue(session.rb,"dashboard.session.anonymous")#<cfelse>#esapiEncode('html',rc.rslist.fname)# #esapiEncode('html',rc.rslist.lname)#<cfif rc.rslist.company neq ''> (#esapiEncode('html',rc.rslist.company)#)</cfif></cfif></a></td>
+<td>#esapiEncode('html',rc.rslist.locale)#</td>
 <td>#LSDateFormat(rc.rslist.lastRequest,session.dateKeyFormat)# #LSTimeFormat(rc.rslist.lastRequest,"short")#</td>
 <td>#rc.rslist.views#</td>
 <td>#application.dashboardManager.getTimespan(rc.rslist.firstRequest,rc.rslist.lastRequest)#</td>
-<td class="actions"><ul><li class="viewDetails"><a title="View Details" href="index.cfm?muraAction=cDashboard.viewSession&urlToken=#urlEncodedFormat(rc.rslist.urlToken)#&siteid=#URLEncodedFormat(rc.siteid)#"><i class="icon-pencil"></i></a></li></ul></td>
+<td class="actions"><ul><li class="viewDetails"><a title="View Details" href="./?muraAction=cDashboard.viewSession&urlToken=#esapiEncode('url',rc.rslist.urlToken)#&siteid=#esapiEncode('url',rc.siteid)#"><i class="icon-pencil"></i></a></li></ul></td>
 </tr></cfloop>
 <cfelse>
 <tr>
@@ -335,11 +335,12 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<div class="clearfix mura-results-wrapper">
 		<p class="search-showing">
 			#application.rbFactory.getResourceBundle(session.rb).messageFormat(application.rbFactory.getKeyValue(session.rb,"sitemanager.paginationmeta"),args)#
-		</p> 
-		 <ul class="moreResults pagination">
+		</p>
+		<div class="pagination">
+		 <ul class="moreResults">
 		  <cfif rc.nextN.currentpagenumber gt 1>
 		  	<li>
-		  	<a href="index.cfm?muraAction=cDashboard.sessionSearch&startrow=#rc.nextN.previous#&siteid=#URLEncodedFormat(rc.siteid)#&direction=#rc.direction#&orderBy=#rc.orderBy#">&laquo;&nbsp;#application.rbFactory.getKeyValue(session.rb,'sitemanager.prev')#</a> 
+		  	<a href="./?muraAction=cDashboard.sessionSearch&startrow=#rc.nextN.previous#&siteid=#esapiEncode('url',rc.siteid)#&direction=#esapiEncode('url',rc.direction)#&orderBy=#esapiEncode('url',rc.orderBy)#">&laquo;&nbsp;#application.rbFactory.getKeyValue(session.rb,'sitemanager.prev')#</a> 
 		  	</li>
 		  </cfif>
 		  <cfloop from="#rc.nextN.firstPage#"  to="#rc.nextN.lastPage#" index="i">
@@ -347,16 +348,17 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		  		<li class="active"><a href="##">#i#</a></li>
 		  <cfelse>  
 		  		<li>
-		  			<a href="index.cfm?muraAction=cDashboard.sessionSearch&startrow=#evaluate('(#i#*#rc.nextN.recordsperpage#)-#rc.nextN.recordsperpage#+1')#&siteid=#URLEncodedFormat(rc.siteid)#&direction=#rc.direction#&orderBy=#rc.orderBy#">#i#</a>
+		  			<a href="./?muraAction=cDashboard.sessionSearch&startrow=#evaluate('(#i#*#rc.nextN.recordsperpage#)-#rc.nextN.recordsperpage#+1')#&siteid=#esapiEncode('url',rc.siteid)#&direction=#esapiEncode('url',rc.direction)#&orderBy=#esapiEncode('url',rc.orderBy)#">#i#</a>
 		  		</li>
 		  	</cfif>
 	     </cfloop>
 		 <cfif rc.nextN.currentpagenumber lt rc.nextN.NumberOfPages>
 		 	<li>
-		 		<a href="index.cfm?muraAction=cDashboard.sessionSearch&startrow=#rc.nextN.next#&siteid=#URLEncodedFormat(rc.siteid)#&direction=#rc.direction#&orderBy=#rc.orderBy#">#application.rbFactory.getKeyValue(session.rb,'sitemanager.next')#&nbsp;&raquo;</a> 
+		 		<a href="./?muraAction=cDashboard.sessionSearch&startrow=#rc.nextN.next#&siteid=#esapiEncode('url',rc.siteid)#&direction=#esapiEncode('url',rc.direction)#&orderBy=#esapiEncode('url',rc.orderBy)#">#application.rbFactory.getKeyValue(session.rb,'sitemanager.next')#&nbsp;&raquo;</a> 
 		 	</li>
 		 </cfif>
 		</ul>
+		</div>
 	</div>
 </cfif>
 </cfoutput>

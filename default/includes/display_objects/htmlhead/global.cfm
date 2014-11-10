@@ -54,16 +54,29 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 </cfif>--->
 </cfsilent>
 <cfoutput>
-#variables.$.siteConfig('JSDateKey')#	
 <script type="text/javascript" src="#variables.$.siteConfig('AssetPath')#/js/global.min.js"></script>
 <script type="text/javascript">
-var loginURL="#variables.loginURL#";
-var siteid="#variables.$.event('siteID')#"; 
-var siteID="#variables.$.event('siteID')#"; 
-var context="#variables.$.globalConfig('context')#"; 
-var jslib="#variables.$.getJsLib()#";
-var assetpath="#variables.$.siteConfig('assetPath')#";
-var themepath="#variables.$.siteConfig('themeAssetPath')#";
-var htmlEditorType="#variables.$.globalConfig('htmlEditorType')#";
-var rb="#lcase(listFirst(variables.$.siteConfig('JavaLocale'),"_"))#";
+<cfif Len(application.configBean.getWindowDocumentDomain())>
+	window.document.domain = '#application.configBean.getWindowDocumentDomain()#';
+</cfif>
+var mura={
+	loginURL:"#variables.loginURL#",
+	siteid:"#variables.$.event('siteID')#", 
+	siteID:"#variables.$.event('siteID')#", 
+	context:"#variables.$.globalConfig('context')#", 
+	jslib:"#variables.$.getJsLib()#",
+	assetpath:"#variables.$.siteConfig('assetPath')#",
+	themepath:"#variables.$.siteConfig('themeAssetPath')#",
+	htmlEditorType:"#variables.$.globalConfig('htmlEditorType')#",
+	rb:"#lcase(listFirst(variables.$.siteConfig('JavaLocale'),"_"))#",
+	#variables.$.siteConfig('JSDateKeyObjInc')#
+}
+$.extend(window,mura);
+<cfif structKeyExists(url,'muraadminpreview')>
+$(function(){
+   	$("a").attr('href', function(i, h) {
+    return h + (h.indexOf('?') != -1 ? "&muraadminpreview&mobileformat=#$.event('muraMobileRequest')#" : "?muraadminpreview&muraadminpreview&mobileformat=#$.event('muraMobileRequest')#");
+	});
+});
+</cfif>
 </script></cfoutput>

@@ -55,11 +55,14 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		        style="width:310px;">
 		<cfset rc.rslist = application.feedManager.getFeeds(rc.siteid, 'Local')/>
 		<cfloop query="rc.rslist">
-			<option value="{'object':'feed_slideshow','objectid':'#rc.rslist.feedID#','name':'#JSStringFormat(rc.rslist.name)# #application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.localindexslideshow')#'}">
-				#rc.rslist.name# 
-				- 
-				#application.rbFactory.getKeyValue(session.rb, 
-			                                    'sitemanager.content.fields.localindexslideshow')#
+
+			<cfset title=rc.rslist.name
+				& ' - ' 
+				& application.rbFactory.getKeyValue(session.rb, 
+			                                    'sitemanager.content.fields.localindexslideshow')>
+
+			<option title="#esapiEncode('html_attr',title)#" value="{'object':'feed_slideshow','objectid':'#rc.rslist.feedID#','name':'#esapiEncode('javascript',title)#'}">
+				#esapiEncode('html',title)#
 			</option>
 		</cfloop>
 	</select>

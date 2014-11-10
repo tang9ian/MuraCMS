@@ -79,10 +79,10 @@ function loadObject(url, target, message) {
 
 //content scheduling
 var dtCh = "/";
-var minYear = 1900;
+var minYear = 1800;
 var maxYear = 2100;
 var dtFormat = [0, 1, 2];
-var dtExample = "12/31/2014";
+var dtExample = "12/31/2016";
 
 function isInteger(s) {
 	var i;
@@ -126,7 +126,52 @@ function DaysArray(n) {
 	return this
 }
 
-function isDate(dtStr, fldName) {
+function parseDateTimeSelector(id){
+	//alert($('.datepicker.mura-datepicker' + id).val())
+	if(isDate($('.datepicker.mura-datepicker' + id).val())){
+		var dtStr=$('.datepicker.mura-datepicker' + id).val();
+		var daysInMonth = DaysArray(12);
+		var dtArray = dtStr.split(dtCh);
+		var strMonth = dtArray[dtFormat[0]];
+		var strDay = dtArray[dtFormat[1]];
+		var strYear = dtArray[dtFormat[2]];
+	
+		var strMinute = ($('#mura-' + id + 'Minute').length) ? $('#mura-' + id + 'Minute').val() : 0;
+		var strHour=($('#mura-' + id + 'Hour').length) ? $('#mura-' + id + 'Hour').val() : 0;
+
+		if($('#mura-' + id + 'DayPart').length){
+			if($('#mura-' + id + 'DayPart').val().toLowerCase() == 'pm'){
+				strHour=parseInt(strHour) + 12;
+				if(strHour==24){
+					strHour=12;
+				}
+			} else if (parseInt(strHour) ==12) {
+				strHour=0;
+			}
+		}
+
+		//alert('#mura-' + id + 'Minute');
+
+		if(strHour.length==1){
+			strHour='0' + strHour;
+		}
+
+		if(strMinute.length==1){
+			strMinute='0' + strMinute;
+		}
+
+		var newVal="{ts '" + strYear + "-" + strMonth + "-" + strDay + " " + strHour + ":" + strMinute + ":00'}";
+		
+		$('#mura-' + id).val(newVal);
+		//alert($('#mura-' + id).val());
+	} else {
+		$('#mura-' + id).val('');
+	}
+
+
+}
+
+function isDate(dtStr) {
 	var daysInMonth = DaysArray(12);
 	var dtArray = dtStr.split(dtCh);
 
@@ -183,6 +228,34 @@ function isEmail(cur) {
 		return true;
 	}
 
+}
+
+function isColor(c){
+    var i= 0, itm,
+    M= c.replace(/ +/g, '').match(/(rgba?)|(\d+(\.\d+)?%?)|(\.\d+)/g);
+    if(M && M.length> 3){
+        while(i<3){
+            itm= M[++i];
+            if(itm.indexOf('%')!= -1){
+                itm= Math.round(parseFloat(itm)*2.55);
+            }
+            else itm= parseInt(itm);
+            if(itm<0 || itm> 255) return NaN;
+            M[i]= itm;
+        }
+        if(c.indexOf('rgba')=== 0){
+            if(M[4]==undefined ||M[4]<0 || M[4]> 1) return NaN;
+        }
+        else if(M[4]) return NaN;
+        return M[0]+'('+M.slice(1).join(',')+')';
+    }
+    return NaN;
+}
+
+function isURL(url){
+	urlPattern = /(http|ftp|https):\/\/[\w-]+(\.[\w-]+)+([\w.,@?^=%&amp;:\/~+#-]*[\w@?^=%&amp;\/~+#-])?/
+
+	return url.match(urlPattern);
 }
 
 function stripe(theclass) {
@@ -395,8 +468,8 @@ function validateForm(theForm) {
 						errors += getValidationMessage(theField, ' must be numeric.');
 					}
 				} else if(validationType == 'COLOR' && theField.value != '') {
-					var re = new RegExp("^#?([a-f]|[A-F]|[0-9]){3}(([a-f]|[A-F]|[0-9]){3})?$");
-					if(!theField.value.match(re)) {
+					//var re = new RegExp("(^#?([a-f]|[A-F]|[0-9]){3}(([a-f]|[A-F]|[0-9]){3})?$)||");
+					if( !isColor(theField.value) ) {
 						if(!started) {
 							started = true;
 							startAt = f;
@@ -404,6 +477,17 @@ function validateForm(theForm) {
 						}
 
 						errors += getValidationMessage(theField, ' is not a valid color.');
+					}
+				} else if(validationType == 'URL' && theField.value != '') {
+					//var re = new RegExp("(^#?([a-f]|[A-F]|[0-9]){3}(([a-f]|[A-F]|[0-9]){3})?$)||");
+					if( !isURL(theField.value) ) {
+						if(!started) {
+							started = true;
+							startAt = f;
+							firstErrorNode = "input";
+						}
+
+						errors += getValidationMessage(theField, ' is not a valid URL.');
 					}
 				} else if(validationType == 'REGEX' && theField.value != '' && hasValidationRegex(theField)) {
 					var re = new RegExp(getValidationRegex(theField));
@@ -425,7 +509,7 @@ function validateForm(theForm) {
 
 					errors += getValidationMessage(theField, ' must match' + getValidationMatchField(theField) + '.');
 
-				} else if(validationType == 'DATE' && theField.value != '' && !isDate(theField.value)) {
+				} else if((validationType == 'DATE' || validationType == 'DATETIME') && theField.value != '' && !isDate(theField.value)) {
 					if(!started) {
 						started = true;
 						startAt = f;
@@ -542,7 +626,7 @@ function submitForm(frm, action, msg) {
 				modal: true,
 				position: getDialogPosition(),
 				buttons: {
-					'YES': function() {
+					'Yes': function() {
 						$(this).dialog('close');
 						var frmInputs = currentFrm.getElementsByTagName("input");
 						for(f = 0; f < frmInputs.length; f++) {
@@ -552,7 +636,7 @@ function submitForm(frm, action, msg) {
 						}
 						currentFrm.submit();
 					},
-					'NO': function() {
+					'No': function() {
 						$(this).dialog('close');
 					}
 				}
@@ -588,14 +672,14 @@ function submitForm(frm, action, msg) {
 
 function actionModal(action) {
 	$('body').append('<div id="action-modal" class="modal-backdrop fade in"></div>');
-	if(typeof(action)=='string'){
-		$('#action-modal').spin(spinnerArgs, 
-			function(){
-				location.href=action;
-			}
-		);
-	} else {
-		$('#action-modal').spin(spinnerArgs, action);
+	$('#action-modal').spin(spinnerArgs);
+	
+	if(action){
+		if(typeof(action)=='string'){
+			location.href=action;
+		} else {
+			action();
+		}
 	}
  
 	return false;
@@ -739,8 +823,8 @@ function setColorPickers(target) {
 		$(this).colorpicker({
 			format: 'rgba'
 		}).on('changeColor', function(e) {
-			//var rgb=e.color.toRGB();
-			//$(this).val('rgba('+rgb.r+','+rgb.g+','+rgb.b+','+rgb.a+')');
+			var rgb=e.color.toRGB();
+			$(this).val('rgba('+rgb.r+','+rgb.g+','+rgb.b+','+rgb.a+')');
 		});
 	});
 }
@@ -757,6 +841,7 @@ function setToolTips(target) {
 }
 
 function setTabs(target, activetab) {
+	$(".tab-preloader").spin(spinnerArgs2);
 	/*
 	$(target).each(
 		function(index) {			
@@ -777,8 +862,14 @@ function setTabs(target, activetab) {
 	if(window.location.hash != "") {
 		$(target + ' a[href="' + window.location.hash + '"]').tab('show');
 	} else if(typeof(activetab) != 'undefined') {
-		$(target + ' li::nth-child(' + (activetab + 1) + ') a').tab('show');
-
+		try{
+			$(target + ' li::nth-child(' + (activetab + 1) + ') a').tab('show');
+		} 
+		catch(err){
+			if($(target + ' li:first a').tab){
+				$(target + ' li:first a').tab('show');
+			}
+		}
 	} else {
 		$(target + ' li:first a').tab('show');
 	}
@@ -797,11 +888,7 @@ function setTabs(target, activetab) {
 		);
 
 	*/
-	$(".tab-preloader").each(
-
-	function(index) {
-		$(this).hide();
-	});
+	$(".tab-preloader").hide().spin(false);
 }
 
 function setAccordions(target, activepanel) {
@@ -833,6 +920,215 @@ function setCheckboxTrees() {
 	});
 }
 
+function openFileMetaData(contenthistid,fileid,siteid,property) {
+
+		if (typeof fileMetaDataAssign === 'undefined') {
+			fileMetaDataAssign={};
+		}
+
+ 		$("#newFileMetaContainer").remove();
+		$("body").append('<div id="newFileMetaContainer" title="Loading..." style="display:none"><div id="newFileMeta"><div class="load-inline"></div></div></div>');
+
+		var _focusTabbable=$.ui.dialog.prototype._focusTabbable;
+		$.ui.dialog.prototype._focusTabbable = function(){};
+		$("#newFileMetaContainer").dialog({
+			resizable: false,
+			modal: true,
+			width: 552,
+			title: 'Edit Image Properties',
+			position: getDialogPosition(),
+			buttons: {
+				Save:function(){
+					var fileData={exifpartial:{}};
+
+					$('.filemeta').each(function(){
+						fileData[$(this).attr('data-property')]=$(this).val();
+					});
+
+					$('.exif').each(function(){
+						fileData.exifpartial[$(this).attr('data-property')]=$(this).val();
+					});
+
+					fileData.setasdefault=$('#filemeta-setasdefault').is(':checked');
+
+					fileMetaDataAssign[property]=fileData;
+					$('#filemetadataassign').val(JSON.stringify(fileMetaDataAssign));
+					//alert($('#filemetadataassign').val());
+					$(this).dialog( "close" );
+
+				},
+				Cancel: function(){
+					 $(this).dialog( "close" );
+				}
+
+
+			},
+			open: function() {
+				$('.ui-widget-overlay').css('z-index',500);
+				$('.ui-dialog').css('z-index',501);
+				$("#newFileMetaContainer").html('<div class="ui-dialog-content ui-widget-content"><div class="load-inline"></div></div>');
+				var url = 'index.cfm';
+				var pars = 'muraAction=cArch.loadfilemetadata&fileid=' + fileid + '&property=' + property  + '&contenthistid=' + contenthistid + '&siteid=' + siteid + '&cacheid=' + Math.random();
+				$("#newFileMetaContainer .load-inline").spin(spinnerArgs2);
+
+				$.get(url + "?" + pars).done(function(data) {
+
+					if(data.indexOf('mura-primary-login-token') != -1) {
+						location.href = './';
+					}
+					
+					$("#newFileMetaContainer .load-inline").spin(false);
+					$('#newFileMetaContainer').html(data);
+					
+					if(property in fileMetaDataAssign){
+						var fileData=fileMetaDataAssign[property];
+						for(var p in fileData){
+							$('.filemeta[data-property="' + p +'"]').val(fileData[p]);
+						}
+
+						$('#filemeta-setasdefault').prop('checked',fileData.setasdefault);
+					}
+					
+					$('#newFileMetaContainer .htmlEditor').ckeditor({
+							toolbar: 'Basic',
+							height: 100,
+							customConfig: 'config.js.cfm'
+						}, htmlEditorOnComplete);
+
+					/*
+					$('#file-credits').ckeditor({
+							toolbar: 'Default',
+							customConfig: 'config.js.cfm'
+						}, htmlEditorOnComplete);*/
+
+					setTabs("#newFileMetaContainer.tabs",0);
+					setDatePickers(".datepicker",dtLocale);
+
+					$("#newFileMetaContainer").dialog("option", "position", getDialogPosition());
+
+
+					$('.filemeta:first').focus();
+
+				}).error(function(data){
+					$('#newFileMetaContainer').html(data.responseText);
+					$("#newFileMetaContainer").dialog("option", "position", getDialogPosition());
+				});
+
+			},
+			close: function() {
+				$(this).dialog("destroy");
+				$("#newFileMetaContainer").remove();
+				$.ui.dialog.prototype._focusTabbable=_focusTabbable;
+			}
+		});
+
+		return false;
+	}
+ 
+(function ($) {
+
+	 /* BUTTON PUBLIC CLASS DEFINITION
+	  * ============================== */
+
+	  var FileSelector = function (element, options) {
+	    var $elm= this.$element = $(element);
+	    var $opts = this.options = $.extend({}, $.fn.fileselector.defaults, options);
+
+	    if($(this.$element).attr('data-name')){
+	    	this.options.file=this.$element.attr('data-name');
+	    }
+
+	    var loadAssocFiles=function(keywords) {
+			var url = 'index.cfm';
+			var pars = 'muraAction=cArch.assocfiles&compactDisplay=true&siteid=' + $elm.attr('data-siteid') + '&fileid=' + $elm.attr('data-fileid') + '&type=' + $elm.attr('data-filetype') + '&contentid=' + $elm.attr('data-contentid') +  '&property=' + $elm.attr('data-property') +'&keywords=' + keywords + '&cacheid=' + Math.random();
+			$elm.find(".mura-file-existing").html('<div class="load-inline"></div>');
+			$elm.find('.load-inline').spin(spinnerArgs2);
+			$.ajax(url + "?" + pars)
+			.done( 
+				function(data) {
+					$elm.find('.load-inline').spin(false);
+					$elm.find(".mura-file-existing").html(data);
+					$elm.find(".mura-file-existing").find('.btn').click(function(){
+						loadAssocFiles($elm.find(".mura-file-existing").find(".filesearch").val());
+					});
+
+					setTabs('#selectAssocImageResults-' + $elm.attr('data-property'),0);
+				}
+			)
+			.error(
+				function(data) {
+				$elm.find('.load-inline').spin(false);
+				$elm.find(".mura-file-existing").html(data.responseText);
+				}
+			);
+		}
+	   
+
+	    var clickHandler=function(){
+	    	setTab($(this).val());
+	    	if($(this).val().toLowerCase() == 'existing'){
+	    		loadAssocFiles('');
+	    	} else {
+	    		$elm.find(".mura-file-existing").html('<div class="load-inline"></div>')
+	    		$elm.find('.load-inline').spin(spinnerArgs2);
+	    	}
+	    }
+
+	    var setTab=function(tab){
+	    	
+	    	//if(tab.toLowerCase() != 'upload'){
+			$elm.find(".mura-file-option").find('input').val('');
+			$elm.find(".mura-file-option").find('.btn').hide();
+			//}
+
+	    	$elm.find(".mura-file-option").hide();
+	    	$elm.find(".mura-file-" + tab.toLowerCase()).show();
+			$elm.find(".mura-file-option").find("input").attr('name','');
+			$elm.find(".mura-file-" + tab.toLowerCase()).find("input").attr('name',$opts.file);
+
+	    }
+	
+	    $(this.$element).find("button.mura-file-type-selector").click(clickHandler);
+	   
+	    $elm.find(".mura-file-option").find('input').change(
+	    	function(){
+	    		var reg1 = /^(([a-zA-Z]:)|(\\{2}\w+)\$?)(\\(\w[\w].*))+(.jpg|.jpeg|.png|.gif)$/;
+	    		var reg2 = /(http(s?):)|([/|.|\w|\s])*\.(?:jpg|gif|png)/;
+	    		if(reg1.test( $(this).val().toLowerCase()) || reg2.test( $(this).val().toLowerCase())){
+	    			$(this).parent().find('.file-meta-open').show();
+	    		}else{
+	    			$(this).parent().find('.file-meta-open').hide()
+	    		}
+	    });
+
+		setTab('Upload');
+
+	  }
+	
+	  $.fn.fileselector = function (options) {
+	    return this.each(function () {
+	      var $this = $(this);
+	      var data = $this.data('fileselector');
+	      
+	      if (!data){
+	      	 $this.data('fileselector', (data = new FileSelector(this, options)) );
+	      }
+	  	});
+	  }
+
+	  $.fn.fileselector.defaults = {
+	    file: 'newfile'
+	  }
+
+	  $.fn.fileselector.Constructor = FileSelector;
+
+}(window.jQuery));
+
+function setFileSelectors() {
+
+	$('.mura-file-selector').fileselector();
+}
+
 function alertDialog(message) {
 	$("#alertDialogMessage").html(message);
 	$("#alertDialog").dialog({
@@ -859,23 +1155,24 @@ function confirmDialog(message, yesAction, noAction) {
 		modal: true,
 		position: getDialogPosition(),
 		buttons: {
-			'YES': function() {
+			'Yes': function() {
 				$(this).dialog('close');
 				if(typeof(_yesAction) == 'function') {
 					_yesAction();
 				} else {
-					location.href = _yesAction;
+					actionModal(_yesAction);
 				}
 
 			},
-			'NO': function() {
-				$(this).dialog('close');
+			'No': function() {		
 				if(typeof(_noAction) != 'undefined') {
 					if(typeof(_noAction) == 'function') {
 						_noAction();
 					} else {
-						location.href = _noAction;
+						actionModal(_noAction);
 					}
+				} else {
+					$(this).dialog('close');
 				}
 			}
 		}
@@ -909,7 +1206,7 @@ function CountDown() {
 		if(document.getElementById('clock').innerHTML != undefined) {
 			document.getElementById('clock').innerHTML = 0 + ':' + 0 + ':' + 0;
 		}
-		//location.href=context + "/admin/index.cfm?muraAction=cLogin.logout"
+		//location.href=context + "/admin/?muraAction=cLogin.logout"
 	}
 }
 
@@ -943,6 +1240,8 @@ function loadjscssfile(filename, filetype) {
 }
 
 function getDialogPosition() {
+
+	/*
 	if(top.location != self.location) {
 		try {
 			var windowHeight = $(window.parent).height();
@@ -957,20 +1256,70 @@ function getDialogPosition() {
 	} else {
 		return "center";
 	}
+	*/
+	//["top",20]
+	return "center";
 }
 
 function openPreviewDialog(previewURL) {
-	if(previewURL.indexOf("?") == -1) {
-		previewURL = previewURL + '?muraadminpreview';
+
+	var $previewURL=previewURL;
+
+	if($previewURL.indexOf("?") == -1) {
+		$previewURL = previewURL + '?muraadminpreview';
 	} else {
-		previewURL = previewURL + '&muraadminpreview';
+		$previewURL = previewURL + '&muraadminpreview';
 	}
 
-	var $dialog = $('<div></div>').html('<iframe style="border: 0; " src="' + previewURL + '" width="1100" height="600"></iframe>').dialog({
-		width: 1100,
+	var position=["top",20];
+
+	var $dialog = $('<div id="mura-preview-container"></div>').html('<iframe id="preview-dialog" style="border: 0; background:#fff;" src="' + $previewURL + '&mobileFormat=false" width="1075" height="600" allowfullscreen></iframe>').dialog({
+		width: 1105,
 		height: 600,
 		modal: true,
-		title: 'Preview'
+		title: 'Preview',
+		position: position,
+		resize: function(event,ui){
+			$('#preview-dialog').attr('width',ui.size.width-25);
+		},
+		close: function(){
+			$($dialog).dialog( "destroy" );
+			$('#mura-preview-container').remove();
+			$('#mura-preview-device-selector').remove();
+		},
+		open: function(){
+
+			var $tools='<div id="mura-preview-device-selector"><p>Preview Mode</p>';
+				$tools=$tools+'<a class="mura-device-standard active" data-height="600" data-width="1075" data-mobileformat="false"><i class="icon-desktop"></i></a>';
+				$tools=$tools+'<a class="mura-device-tablet" data-height="600" data-width="768" data-mobileformat="false"><i class="icon-tablet"></i></a>';
+				$tools=$tools+'<a class="mura-device-tablet-landscape" data-height="480" data-width="1024" data-mobileformat="false"><i class="icon-tablet icon-rotate-270"></i></a>';
+				$tools=$tools+'<a class="mura-device-phone" data-height="480" data-width="320" data-mobileformat="true"><i class="icon-mobile-phone"></i></a>';
+				$tools=$tools+'<a class="mura-device-phone-landscape" data-height="250" data-width="520" data-mobileformat="true"><i class="icon-mobile-phone icon-rotate-270"></i></a>';
+				$tools=$tools+'</div>';
+
+			var wos=30;
+			var hos=85+39;
+
+			$('.ui-dialog').prepend($tools);
+			
+			$('#mura-preview-device-selector a').bind('click', function () {
+				var data=$(this).data();
+
+			    $( $dialog ).dialog( "option", "width", data.width + wos );
+			    $( $dialog ).dialog( "option", "height", data.height + hos);
+
+			    $('#preview-dialog')
+			    	.attr('width',data.width)
+			    	.attr('height',data.height)
+			   	 .attr('src',$previewURL + '&mobileFormat=' + data.mobileformat);
+			    $( $dialog ).dialog( "option", "position", position );
+			    $('#mura-preview-device-selector a').removeClass('active');
+			    $(this).addClass('active');
+
+			    return false;
+			});
+			
+		}
 	});
 
 	return false;
@@ -986,7 +1335,7 @@ function preloadimages(arr) {
 }
 
 
-spinnerArgs = {
+var spinnerArgs = {
 	lines: 17,
 	// The number of lines to draw
 	length: 7,
@@ -1018,10 +1367,206 @@ spinnerArgs = {
 	left: 'auto' // Left position relative to parent in px
 }
 
-preloadimages(['./assets/images/ajax-loader.gif']);
+var spinnerArgs2 = {
+	lines: 17,
+	// The number of lines to draw
+	length: 7,
+	// The length of each line
+	width: 4,
+	// The line thickness
+	radius: 13,
+	// The radius of the inner circle
+	corners: 1,
+	// Corner roundness (0..1)
+	rotate: 0,
+	// The rotation offset
+	color: '#000',
+	// #rgb or #rrggbb
+	speed: 0.9,
+	// Rounds per second
+	trail: 60,
+	// Afterglow percentage
+	shadow: false,
+	// Whether to render a shadow
+	hwaccel: false,
+	// Whether to use hardware acceleration
+	className: 'spinner-alt',
+	// The CSS class to assign to the spinner
+	zIndex: 2e9,	
+	// The z-index (defaults to 2000000000)
+	top: 'auto',
+	// Top position relative to parent in px
+	left: 'auto', // Left position relative to parent in px
+    position: 'relative'
+}
+
+
+var spinnerArgs3 = {
+	lines: 17,
+	// The number of lines to draw
+	length: 7,
+	// The length of each line
+	width: 4,
+	// The line thickness
+	radius: 13,
+	// The radius of the inner circle
+	corners: 1,
+	// Corner roundness (0..1)
+	rotate: 0,
+	// The rotation offset
+	color: '#fff',
+	// #rgb or #rrggbb
+	speed: 0.9,
+	// Rounds per second
+	trail: 60,
+	// Afterglow percentage
+	shadow: false,
+	// Whether to render a shadow
+	hwaccel: false,
+	// Whether to use hardware acceleration
+	className: 'spinner-alt',
+	// The CSS class to assign to the spinner
+	zIndex: 2e9,	
+	// The z-index (defaults to 2000000000)
+	top: 'auto',
+	// Top position relative to parent in px
+	left: 'auto', // Left position relative to parent in px
+    position: 'relative'
+}
+
+
+//preloadimages(['./assets/images/ajax-loader.gif']);
 
 function removePunctuation(item){
 	$(item).val(
 		$(item).val().replace(/[^\w\s-]|/g, "").replace(/\s+/g, "")
 	);
 }
+
+
+// search site drop down menu
+$.widget( "custom.muraSiteSelector", $.ui.autocomplete, {
+	_suggest: function( items ) {
+		// todo: make the ul id an options config (string or object?)
+		var ul = this.element.closest("ul");
+		ul.children("li").remove();
+		
+		this._renderMenu( ul, items );
+		this.isNewMenu = true;
+		this.menu.refresh();
+
+		ul.show();
+		this._resizeMenu();
+
+		if ( this.options.autoFocus ) {
+			this.menu.next();
+		}
+	},
+
+	_renderItem: function( ul, item ) {
+		return $( "<li>" )
+			.append(
+				$( "<a>" ).attr(
+					"href", "?muraAction=cDashboard.main&siteID=" + item.id
+				).append(
+					$( "<i>" ).addClass( "icon-globe" )
+				).append( item.label )
+			).appendTo( ul );
+	},
+
+	options: {
+		create: function( event ) {
+			
+			// we clear the results list if search string get is using backspace for example
+			$( event.target ).keyup(function( event, ui ) {
+				var input = $( this );
+				if ( input.val().length < $( this ).data("customMuraSiteSelector").option("minLength") ) {
+					var ul = input.closest("ul");
+					ul.children("li").remove();
+				}
+			});
+			
+		}
+	}
+});
+
+$(function() {
+	$( 'input[name="site-search"]' ).muraSiteSelector({
+		source: function( request, response ) {
+			$.ajax({
+				url: "./index.cfm?muraAction=cnav.searchsitedata",
+				dataType: "json",
+				method: "POST",
+				data: {
+					searchString: request.term
+				},
+				success: function( data ) {
+					return response( data );
+				}
+			});
+		},
+		minLength: 2
+	});
+});
+
+function setLowerCaseKeys(obj) {
+  var keys = Object.keys(obj);
+  var n = keys.length;
+  while (n--) {
+    var key = keys[n]; // "cache" it, for less lookups to the array
+    if (key !== key.toLowerCase()) { // might already be in its lower case version
+        obj[key.toLowerCase()] = obj[key] // swap the value to a new lower case key
+        delete obj[key] // delete the old key
+    }
+   	if(typeof obj[key.toLowerCase()] == 'object'){
+   		setLowerCaseKeys(obj[key.toLowerCase()]);
+   	}
+  }
+  return (obj);
+}
+
+function setFinders(selector){
+
+	$(selector).unbind('click').on('click',function(){
+		var target=$(this).attr('data-target');
+		var finder = new CKFinder();
+		finder.basePath = context + '/tasks/widgets/ckfinder/';
+		var completepath=$(this).attr('data-completepath');
+
+		if(completepath.toLowerCase() == 'true'){
+			finder.selectActionFunction = function(fileUrl) {
+				jQuery('input[name="' + target + '"]').val(webroot + fileDelim + fileUrl);		
+			};
+		} else {
+			finder.selectActionFunction = function(fileUrl) {
+				jQuery('input[name="' + target + '"]').val(fileUrl);		
+			};
+		}
+
+		if($(this).attr('data-resourcetype') =='root'){
+			finder.resourceType='Application_Root';
+		} else if($(this).attr('data-resourcetype') == 'site'){
+			finder.resourceType=siteid + '_Site_Files';
+		} else {
+			finder.resourceType=siteid + '_User_Assets';
+		}
+		
+		finder.popup();			
+
+	});
+}
+
+$(function(){
+	
+	setFinders(".mura-ckfinder");
+	setDatePickers(".datepicker",dtLocale);
+	setTabs(".tabs",activetab);
+	setHTMLEditors();
+	setAccordions(".accordion",activepanel);
+	setCheckboxTrees();
+	setColorPickers(".colorpicker");
+	setToolTips(".container");
+	setFileSelectors();
+
+});
+

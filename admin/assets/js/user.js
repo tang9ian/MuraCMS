@@ -58,11 +58,16 @@ var userManager = {
 
 		if(d.length) {
 			d.html('<div class="load-inline"></div>');
-			$.get(url + "?" + pars, function(data) {
-				if(data.indexOf('mura-primary-login-token') != -1) {
-					location.href = './';
+			$.ajax({
+				url: url + "?" + pars,
+				dataType: 'text', 
+				success: function(data) {
+
+					if(data.indexOf('mura-primary-login-token') != -1) {
+						location.href = './';
+					}
+					userManager.setExtendedAttributes(data);
 				}
-				userManager.setExtendedAttributes(data);
 			});
 		}
 
@@ -81,9 +86,11 @@ var userManager = {
 		}
 		//checkExtendSetTargeting();
 		setHTMLEditors(context, themeAssetPath);
-		setDatePickers(".tabcontent .datepicker", dtLocale);
-		setColorPickers(".tabcontent .colorpicker");
-		setToolTips(".tabcontent");
+		setDatePickers(".tab-content .datepicker", dtLocale);
+		setColorPickers(".tab-content .colorpicker");
+		setFinders(".tab-content .mura-ckfinder");
+		setToolTips(".tab-content");
+		setFileSelectors();
 
 	},
 

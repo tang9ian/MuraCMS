@@ -56,7 +56,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfset comments.setPage(rc.page)>
 
 <h3>#application.rbFactory.getKeyValue(session.rb,"dashboard.comments.last100")#</h3>
-<table class="table table-striped table-condensed table-bordered mura-table-grid">
+<table class="mura-table-grid">
 <thead>
 <tr>
 	<th class="var-width">#application.rbFactory.getKeyValue(session.rb,"dashboard.comments")#</th>
@@ -77,13 +77,13 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 	<tr>
 		<cfset args=arrayNew(1)>
-		<cfset args[1]="<strong>#HTMLEditFormat(comment.getName())#</strong>">
-		<cfset args[2]="<strong>#HTMLEditFormat(content.getMenuTitle())#</strong>">
+		<cfset args[1]="<strong>#esapiEncode('html',comment.getName())#</strong>">
+		<cfset args[2]="<strong>#esapiEncode('html',content.getMenuTitle())#</strong>">
 		<td class="var-width">#application.rbFactory.getResourceBundle(session.rb).messageFormat(application.rbFactory.getKeyValue(session.rb,"dashboard.comments.description"),args)#</td>
 		<td class="dateTime">#LSDateFormat(comment.getEntered(),session.dateKeyFormat)# #LSTimeFormat(comment.getEntered(),"short")#</td>
 		<td class="actions">
 		<ul>
-			<li class="preview"><a title="#application.rbFactory.getKeyValue(session.rb,"dashboard.view")#" href="##" onclick="return preview('#JSStringFormat(content.getURL(complete=1,queryString='##comment-#comment.getCommentID()#'))#','#content.getTargetParams()#');"><i class="icon-globe"></i></a></li>
+			<li class="preview"><a title="#application.rbFactory.getKeyValue(session.rb,"dashboard.view")#" href="##" onclick="return preview('#esapiEncode('javascript',content.getURL(complete=1,queryString='##comment-#comment.getCommentID()#'))#','#content.getTargetParams()#');"><i class="icon-globe"></i></a></li>
 		</ul>
 		</td>
 	</tr>
@@ -97,22 +97,24 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 </table>
 
 <cfif comments.recordCount() and comments.pageCount() gt 1>
-	<ul class="pagination">
+	<div class="pagination">
+	<ul>
 		<cfif comments.getPageIndex() gt 1> 
-			<a href="index.cfm?muraAction=cDashboard.recentComments&page=#evaluate('comments.getPageIndex()-1')#&siteid=#URLEncodedFormat(rc.siteid)#"><li>&laquo;&nbsp;#application.rbFactory.getKeyValue(session.rb,"dashboard.session.prev")#</a></li>
+			<a href="./?muraAction=cDashboard.recentComments&page=#evaluate('comments.getPageIndex()-1')#&siteid=#esapiEncode('url',rc.siteid)#"><li>&laquo;&nbsp;#application.rbFactory.getKeyValue(session.rb,"dashboard.session.prev")#</a></li>
 			</cfif>
 		<cfloop from="1"  to="#comments.pageCount()#" index="i">
 			<cfif comments.getPageIndex() eq i>
 				<li class="active"> <a href="##">#i#</a></li> 
 			<cfelse> 
-				<li><a href="index.cfm?muraAction=cDashBoard.recentComments&page=#i#&siteid=#URLEncodedFormat(rc.siteid)#">#i#</a>
+				<li><a href="./?muraAction=cDashBoard.recentComments&page=#i#&siteid=#esapiEncode('url',rc.siteid)#">#i#</a>
 				</li>
 			</cfif>
 		</cfloop>
 		<cfif comments.getPageIndex() lt comments.pageCount()>
-			<li><a href="index.cfm?muraAction=cDashboard.recentComments&page=#evaluate('comments.getPageIndex()+1')#&siteid=#URLEncodedFormat(rc.siteid)#">#application.rbFactory.getKeyValue(session.rb,"dashboard.session.next")#&nbsp;&raquo;</a></li>
+			<li><a href="./?muraAction=cDashboard.recentComments&page=#evaluate('comments.getPageIndex()+1')#&siteid=#esapiEncode('url',rc.siteid)#">#application.rbFactory.getKeyValue(session.rb,"dashboard.session.next")#&nbsp;&raquo;</a></li>
 		</cfif>
-	</ul> 
+	</ul>
+	</div>
 </cfif>	
 </cfoutput>
 

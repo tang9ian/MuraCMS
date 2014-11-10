@@ -47,6 +47,11 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 <cfset $=application.serviceFactory.getBean("muraScope").init(rc.siteID)>
 <cfset feed=$.getBean("feed").loadBy(name=createUUID())>
+
+<cfset rc.contentBean = $.getBean('content').loadBy(contentID=rc.contentID, siteID=rc.siteID)>
+<cfset subtype = application.classExtensionManager.getSubTypeByName(rc.contentBean.getType(), rc.contentBean.getSubType(), rc.contentBean.getSiteID())>
+<cfset relatedContentSets = subtype.getRelatedContentSets()>
+
 <cfif isDefined("form.params") and isJSON(form.params)>
 	<cfset feed.set(deserializeJSON(form.params))>
 <cfelse>
@@ -57,25 +62,42 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfif rc.classid eq "related_content">
 		<div id="availableObjectParams"	
 		data-object="#rc.classid#" 
-		data-name="#HTMLEditFormat(application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.relatedcontent'))#" 
-		data-objectid="#rc.objectID#">
+		data-name="#esapiEncode('html_attr',application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.relatedcontent'))#" 
+		data-objectid="#createUUID()#">
 	<cfelse>
 		<cfset menutitle=$.getBean("content").loadBy(contentID=rc.contentID).getMenuTitle()>
 		<div id="availableObjectParams"	
 		data-object="#rc.classid#" 
-		data-name="#HTMLEditFormat('#menutitle# - #application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.relatedcontent')#')#" 
-		data-objectid="#rc.objectID#">
+		data-name="#esapiEncode('html_attr','#menutitle# - #application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.relatedcontent')#')#" 
+		data-objectid="#hash('related_content')#">
 	</cfif>
 	
 <!---<cfif rc.classid eq "related_content">
-<h2>#HTMLEditFormat(application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.relatedcontent'))#</h2>
+<h2>#esapiEncode('html',application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.relatedcontent'))#</h2>
 	<cfelse>
-		<h2>#HTMLEditFormat('#menutitle# - #application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.relatedcontent')#')#</h2>
+		<h2>#esapiEncode('html','#menutitle# - #application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.relatedcontent')#')#</h2>
 	</cfif>
 --->
 
 	<div id="configurator" class="fieldset-wrap row-fluid">
 	<div class="fieldset">
+		<cfif rc.classid eq "related_content">
+			<div class="control-group">
+				<label class="control-label">
+					Related Content Set
+				</label>
+				<div class="controls">
+					<select name="relatedContentSetName" class="objectParam">
+						<option value=""<cfif feed.getRelatedContentSetName() eq ""> selected</cfif>>All</option>
+						<cfloop from="1" to="#arrayLen(relatedContentSets)#" index="s">
+							<cfset rcsBean = relatedContentSets[s]/>
+							<option value="#rcsBean.getName()#"<cfif feed.getRelatedContentSetName() eq rcsBean.getName()> selected</cfif>>#rcsBean.getName()#</option>
+						</cfloop>
+					</select>
+				</div>
+			</div>
+		</cfif>
+		
 		<div class="control-group">
 		<div class="span4">
 	      	<label class="control-label">#application.rbFactory.getKeyValue(session.rb,'collections.imagesize')#</label>
@@ -89,7 +111,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 											
 					<cfloop condition="imageSizes.hasNext()">
 						<cfset image=imageSizes.next()>
-						<option value="#lcase(image.getName())#"<cfif image.getName() eq feed.getImageSize()> selected</cfif>>#HTMLEditFormat(image.getName())#</option>
+						<option value="#lcase(image.getName())#"<cfif image.getName() eq feed.getImageSize()> selected</cfif>>#esapiEncode('html',image.getName())#</option>
 					</cfloop>
 						<option value="custom"<cfif "custom" eq feed.getImageSize()> selected</cfif>>Custom</option>
 				</select>
@@ -112,8 +134,9 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			</div>
 		</div>	
 	</div>
-			
-	<div class="control-group">
+	
+	<cfif rc.classid neq "related_content">	
+		<div class="control-group">
 			<div class="span6">
 				<label class="control-label">
 					#application.rbFactory.getKeyValue(session.rb,'collections.sortby')#
@@ -134,14 +157,13 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 						<!---
 						<option value="random" <cfif feed.getsortBy() eq 'random'>selected</cfif>>#application.rbFactory.getKeyValue(session.rb,'params.random')#</option>
 					
-						<cfloop query="rsExtend"><option value="#HTMLEditFormat(rsExtend.attribute)#" <cfif feed.getsortBy() eq rsExtend.attribute>selected</cfif>>#rsExtend.Type#/#rsExtend.subType# - #rsExtend.attribute#</option>
+						<cfloop query="rsExtend"><option value="#esapiEncode('html_attr',rsExtend.attribute)#" <cfif feed.getsortBy() eq rsExtend.attribute>selected</cfif>>#rsExtend.Type#/#rsExtend.subType# - #rsExtend.attribute#</option>
 						</cfloop>
 					--->
 					</select>
 				</div>
 			</div>
 					
-
 			<div class="span6">
 				<label class="control-label">
 					#application.rbFactory.getKeyValue(session.rb,'collections.sortdirection')#
@@ -152,8 +174,9 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 						<option value="desc" <cfif feed.getsortDirection() eq 'desc'>selected</cfif>>#application.rbFactory.getKeyValue(session.rb,'collections.descending')#</option>
 					</select>
 				</div>
-				</div>
 			</div>
+		</div>
+	</cfif>
 			
 			<div class="control-group" id="availableFields">
 				<label class="control-label">

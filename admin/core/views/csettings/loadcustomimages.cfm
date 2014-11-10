@@ -22,7 +22,7 @@ height:#rc.height#<br/>
 width:#rc.width#<br/>
 --->
 <cfif images.hasNext()>
-<table class="table table-striped table-condensed table-bordered mura-table-grid">
+<table class="mura-table-grid">
 <tr>
 <th >Name</th>
 <th>Height</th>
@@ -32,11 +32,11 @@ width:#rc.width#<br/>
 <cfloop condition="images.hasNext()">
 <cfset image=images.next()>
 <tr>
-<td class="var-width">#HTMLEditFormat(image.getName())#</td>
-<td>#HTMLEditFormat(image.getHeight())#</td>
-<td>#HTMLEditFormat(image.getWidth())#</td>
+<td class="var-width">#esapiEncode('html',image.getName())#</td>
+<td>#esapiEncode('html',image.getHeight())#</td>
+<td>#esapiEncode('html',image.getWidth())#</td>
 <td class="actions"><ul>
-	<li class="edit"><a href="##" text="Edit" onclick="return openCustomImageSize('#image.getSizeID()#','#JSStringFormat(image.getSiteID())#');"><i class="icon-pencil"></i></a></li>
+	<li class="edit"><a href="##" text="Edit" onclick="return openCustomImageSize('#image.getSizeID()#','#esapiEncode('javascript',image.getSiteID())#');"><i class="icon-pencil"></i></a></li>
 </ul></td>
 </tr>
 </cfloop>

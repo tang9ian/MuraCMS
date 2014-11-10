@@ -52,10 +52,13 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfset rc.rsObjects = application.contentManager.getSystemObjects(rc.siteid)/>
 		<cfquery name="rc.rsObjects" dbtype="query">
 			select * from rc.rsObjects where object not like '%nav%'
+			<cfif not application.settingsManager.getSite(rc.siteid).getHasComments()>
+				and object != 'comments'
+			</cfif>
 		</cfquery>
 		<cfloop query="rc.rsObjects">
-			<option value='{"object":"#JSStringFormat(rc.rsobjects.object)#","name":"#JSStringFormat(rc.rsObjects.name)#","objectid":"#createUUID()#"}'>
-				#rc.rsObjects.name#
+			<option title="#esapiEncode('html_attr',rc.rsObjects.name)#" value='{"object":"#esapiEncode('javascript',rc.rsobjects.object)#","name":"#esapiEncode('javascript',rc.rsObjects.name)#","objectid":"#createUUID()#"}'>
+				#esapiEncode('html',rc.rsObjects.name)#
 			</option>
 		</cfloop>
 	</select>

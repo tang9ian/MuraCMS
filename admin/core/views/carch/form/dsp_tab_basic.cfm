@@ -59,17 +59,34 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfcase value="Page,Folder,Calendar,Gallery,File,Link">
 			<div class="control-group">
 			    <label class="control-label">
-			    	<a href="##" rel="tooltip" title="#HTMLEditFormat(application.rbFactory.getKeyValue(session.rb,"tooltip.pageTitle"))#">
+			    	<a href="##" rel="tooltip" title="#esapiEncode('html_attr',application.rbFactory.getKeyValue(session.rb,"tooltip.pageTitle"))#">
 			    		#application.rbFactory.getKeyValue(session.rb,"sitemanager.content.fields.title")# <i class="icon-question-sign"></i>
 					</a>
 			    </label>
+			   	<cfset hasSEOTab=not len(tabAssignments) or listFindNocase(tabAssignments,'SEO')>
 			    <div class="controls">
-			     	<input type="text" id="title" name="title" value="#HTMLEditFormat(rc.contentBean.gettitle())#"  maxlength="255" class="span12" required="true" message="#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.titlerequired')#" <cfif not rc.contentBean.getIsNew() and not listFindNoCase('Link,File',rc.type)>onkeypress="openDisplay('editAdditionalTitles','#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.close')#');"</cfif>>
+			     	<input type="text" id="title" name="title" value="#esapiEncode('html_attr',rc.contentBean.gettitle())#"  maxlength="255" class="span12" required="true" message="#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.titlerequired')#" <cfif hasSEOTab and not rc.contentBean.getIsNew()>onkeypress="openDisplay('editAdditionalTitles','#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.close')#');"</cfif>>
 			     </div>
+			     <div id="alertTitleSuccess" class="alert alert-success" style="display:none;">#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.seotitlescleared')# <button type="button" class="close" data-dismiss="alert"><i class="icon-remove-sign"></i></button></div>
 		    </div>
 		<div class="control-group" id="editAdditionalTitles" style="display:none;">		
 			<div class="controls" >
-				<p class="alert help-block">#application.rbFactory.getKeyValue(session.rb,"sitemanager.content.fields.AdditionalTitlesnote")#</p>
+				<div class="alert help-block">
+					<p>#application.rbFactory.getKeyValue(session.rb,"sitemanager.content.fields.AdditionalTitlesnote")#</p><br />
+					<button id="resetTitles" name="resetTitles" class="btn">#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.clearseotitles')#</button>
+				</div>
+				
+				<script>
+					jQuery(document).ready(function(){
+						$('##resetTitles').click(function(e){
+							e.preventDefault();
+							$('##menuTitle,##urlTitle,##htmlTitle').val('');
+							$('##editAdditionalTitles').hide();
+							$('##alertTitleSuccess').fadeIn();
+							return true;
+						});
+					});
+				</script>
 			</div>
 		</div>
 		</cfcase>
@@ -80,21 +97,21 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	      			#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.title')#
 	      		</label>
 	     		 <div class="controls">
-	     		 	<input type="text" id="title" name="title" value="#HTMLEditFormat(rc.contentBean.getTitle())#"  maxlength="255" class="span12" required="true" message="#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.titlerequired')#"<cfif rc.contentBean.getIsLocked()> disabled="disabled"</cfif>>
+	     		 	<input type="text" id="title" name="title" value="#esapiEncode('html_attr',rc.contentBean.getTitle())#"  maxlength="255" class="span12" required="true" message="#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.titlerequired')#"<cfif rc.contentBean.getIsLocked()> disabled="disabled"</cfif>>
 	     		 	<input type="hidden" id="menuTitle" name="menuTitle" value="">
 	     		</div>
 	     	</div>
 		</cfdefaultcase>
 	</cfswitch>
 
-	<cfif listFind("Page,Folder,Calendar,Gallery,Link",rc.type)>
+	<cfif ListFindNoCase("Page,Folder,Calendar,Gallery,Link",rc.type)>
 		<cfinclude template="dsp_file_selector.cfm">
 	</cfif>	
 
-	<cfif rc.type neq 'Form' and  rc.type neq 'Component' >	
+	<cfif not ListFindNoCase('Form,Component',rc.type) >	
 		<div class="control-group summaryContainer" style="display:none;">
 	      	<label class="control-label">
-	      		<a href="##" rel="tooltip" title="#HTMLEditFormat(application.rbFactory.getKeyValue(session.rb,"tooltip.contentSummary"))#">
+	      		<a href="##" rel="tooltip" title="#esapiEncode('html_attr',application.rbFactory.getKeyValue(session.rb,"tooltip.contentSummary"))#">
 	      			#application.rbFactory.getKeyValue(session.rb,"sitemanager.content.fields.summary")#
 	      		 <i class="icon-question-sign"></i></a> 
 	      		<!---<a href="##" id="editSummaryLink" onclick="javascript: toggleDisplay('editSummary','#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.expand')#','#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.close')#'); editSummary();return false">
@@ -103,7 +120,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	      	</label>
 	      	<div id="editSummary" class="controls summaryContainer" style="display:none;">
 				<cfoutput>
-					<textarea name="summary" id="summary" cols="96" rows="10"><cfif application.configBean.getValue("htmlEditorType") neq "none" or len(rc.contentBean.getSummary())>#HTMLEditFormat(rc.contentBean.getSummary())#<cfelse><p></p></cfif></textarea>
+					<textarea name="summary" id="summary" cols="96" rows="10"><cfif application.configBean.getValue("htmlEditorType") neq "none" or len(rc.contentBean.getSummary())>#esapiEncode('html',rc.contentBean.getSummary())#<cfelse><p></p></cfif></textarea>
 				</cfoutput>
 			</div>
 			
@@ -126,8 +143,14 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 					jQuery('##summary').ckeditor(
 		     		{ toolbar:'Summary',
 		     			height:'150',
-		     		  	customConfig : 'config.js.cfm'},
-		     		htmlEditorOnComplete
+		     		  	customConfig : 'config.js.cfm'
+					},
+					function(editorInstance){
+						htmlEditorOnComplete(editorInstance);
+						if (!hasBody){
+							showPreview();
+						}
+					}	
 		     	);
 				}
 			}
@@ -137,13 +160,13 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		</script>
 	</cfif>
 
-	<cfif rc.type eq 'Page' or rc.type eq 'Folder' or rc.type eq 'Gallery' or rc.type eq 'Calendar' or  rc.type eq 'Component' or  rc.type eq 'Form' >
-		<div class="control-group">
-	      	<label class="control-label">
+	<cfif listFindNoCase('Form,Gallery,Calendar,Component,Page,Folder',rc.type)>    	
+		<cfset rsPluginEditor=application.pluginManager.getScripts("onHTMLEdit",rc.siteID)>
+		<div id="bodyContainer" class="body-container controls" style="display:none;">
+			<div class="control-group">
+			<label class="control-label">
 	      		#application.rbFactory.getKeyValue(session.rb,"sitemanager.content.fields.content")#
 	      	</label>
-			<cfset rsPluginEditor=application.pluginManager.getScripts("onHTMLEdit",rc.siteID)>
-			<div id="bodyContainer" class="body-container controls"<cfif rsPluginEditor.recordcount> style="display:none;"</cfif>>
 			<cfif rsPluginEditor.recordcount>
 				#application.pluginManager.renderScripts("onHTMLEdit",rc.siteid,pluginEvent,rsPluginEditor)#
 			<cfelse>
@@ -171,7 +194,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 						
 						if(fileExists("#expandPath(application.settingsManager.getSite(rc.siteid).getThemeIncludePath())#/js/fckconfig.js.cfm"))
 						{
-						fckEditor.config["CustomConfigurationsPath"]=urlencodedformat('#application.settingsManager.getSite(rc.siteid).getThemeAssetPath()#/js/fckconfig.js.cfm?EditorType=#rc.type#');
+						fckEditor.config["CustomConfigurationsPath"]=esapiEncode('url','#application.settingsManager.getSite(rc.siteid).getThemeAssetPath()#/js/fckconfig.js.cfm?EditorType=#rc.type#');
 						}
 						
 						fckEditor.create(); // create the editor.
@@ -181,7 +204,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 					
 					function FCKeditor_OnComplete( editorInstance ) { 	
 						<cfif rc.preview eq 1>
-					   	preview('http://#application.settingsManager.getSite(rc.siteid).getDomain()##application.configBean.getServerPort()##application.configBean.getContext()##application.contentRenderer.getURLStem(rc.siteid,'')#?previewid=#rc.contentBean.getcontenthistid()#','#rc.contentBean.getTargetParams()#');
+					   	preview('http://#application.settingsManager.getSite(rc.siteid).getDomain(mode="preview")##application.configBean.getServerPort()##application.configBean.getContext()##$.getURLStem(rc.siteid,'')#?previewid=#rc.contentBean.getcontenthistid()#','#rc.contentBean.getTargetParams()#');
 						</cfif> 
 						htmlEditorOnComplete(editorInstance); 
 					}
@@ -192,9 +215,9 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 					</cfif>
 					</script>
 				<cfelseif application.configBean.getValue("htmlEditorType") eq "none">
-					<textarea name="body" id="body">#HTMLEditFormat(rc.contentBean.getBody())#</textarea>
+					<textarea name="body" id="body">#esapiEncode('html',rc.contentBean.getBody())#</textarea>
 				<cfelse>	
-					<textarea name="body" id="body"><cfif len(rc.contentBean.getBody())>#HTMLEditFormat(rc.contentBean.getBody())#<cfelse><p></p></cfif></textarea>
+					<textarea name="body" id="body"><cfif len(rc.contentBean.getBody())>#esapiEncode('html',rc.contentBean.getBody())#<cfelse><p></p></cfif></textarea>
 					<script type="text/javascript">
 					var loadEditorCount = 0;
 					<cfif rc.preview eq 1>var previewLaunched= false;</cfif>
@@ -218,25 +241,35 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 							},
 								function(editorInstance){
 									htmlEditorOnComplete(editorInstance);
-									<cfif rc.preview eq 1>
-										if(!previewLaunched){
-									<cfif listFindNoCase("File",rc.type)>
-										preview('http://#application.settingsManager.getSite(rc.siteid).getDomain()##application.configBean.getServerPort()##application.configBean.getContext()##application.contentRenderer.getURLStem(rc.siteid,'')#?previewid=#rc.contentBean.getcontenthistid()#&siteid=#rc.contentBean.getsiteid()#');
-									<cfelse>
-										openPreviewDialog('http://#application.settingsManager.getSite(rc.siteid).getDomain()##application.configBean.getServerPort()##application.configBean.getContext()##application.contentRenderer.getURLStem(rc.siteid,'')#?previewid=#rc.contentBean.getcontenthistid()#&siteid=#rc.contentBean.getsiteid()#');
-									</cfif>
-											previewLaunched=true;
-										}
-									</cfif>
-									
+									showPreview();
 								}
 							);
 						}
 					}
-
-					<cfif not isExtended>
+					
+					jQuery(document).ready(function(){
+						<cfif not isExtended>
 						showBodyEditor();	
-					</cfif>
+						</cfif>
+						if (!hasSummary && !hasBody){
+							setTimeout(function(){
+								showPreview();
+							}, 2000);
+						}
+					});	
+					
+					function showPreview(){
+						<cfif rc.preview eq 1>
+							if(!previewLaunched){
+						<cfif listFindNoCase("File",rc.type)>
+							preview('http://#application.settingsManager.getSite(rc.siteid).getDomain(mode="preview")##application.configBean.getServerPort()##application.configBean.getContext()##$.siteConfig().getContentRenderer().getURLStem(rc.siteid,'')#?previewid=#rc.contentBean.getcontenthistid()#&siteid=#rc.contentBean.getsiteid()#');
+						<cfelse>
+							openPreviewDialog('#application.utility.getRequestProtocol()#://#application.settingsManager.getSite(rc.siteid).getDomain(mode="preview")##application.configBean.getServerPort()##application.configBean.getContext()##$.siteConfig().getContentRenderer().getURLStem(rc.siteid,'')#?previewid=#rc.contentBean.getcontenthistid()#&siteid=#rc.contentBean.getsiteid()#');
+						</cfif>
+							previewLaunched=true;
+							}
+						</cfif>
+					}
 					</script>
 				</cfif>
 			</cfif>
@@ -249,7 +282,26 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	      		#application.rbFactory.getKeyValue(session.rb,"sitemanager.content.fields.url")#
 	      	</label>
 	     	<div class="controls">
-	     	 	<input type="text" id="url" name="body" value="#HTMLEditFormat(rc.contentBean.getbody())#" class="text span12" required="true" message="#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.urlrequired')#">
+	     	 	
+	     	 	<cfif len(application.serviceFactory.getBean('settingsManager').getSite(session.siteid).getRazunaSettings().getHostname())>
+	     	 			<input type="text" id="url" name="body" value="#esapiEncode('html_attr',rc.contentBean.getbody())#" class="text span9" required="true" message="#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.urlrequired')#">
+	     	 			<div class="btn-group">
+	     	 				<a class="btn dropdown-toggle" data-toggle="dropdown" href="##">
+	     	 				 	<i class="icon-folder-open"></i> #application.rbFactory.getKeyValue(session.rb,'sitemanager.content.browseassets')#
+	     	 				</a>
+	     	 				<ul class="dropdown-menu">
+	     	 					<li><a href="##" type="button" data-completepath="false" data-target="body" data-resourcetype="user" class="mura-file-type-selector mura-ckfinder" title="Select a File from Server">
+	     	 						<i class="icon-folder-open"></i> #application.rbFactory.getKeyValue(session.rb,'sitemanager.content.local')#</a></li>
+	     	 					<li><a href="##" type="button" onclick="renderRazunaWindow('body');return false;" class="mura-file-type-selector btn-razuna-icon" value="URL-Razuna" title="Select a File from Razuna"><i></i> Razuna</a></li>
+	     	 				</ul>
+	     	 			</div>
+						
+				<cfelse>
+					<input type="text" id="url" name="body" value="#esapiEncode('html_attr',rc.contentBean.getbody())#" class="text span9" required="true" message="#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.urlrequired')#">
+					<div class="btn-group">
+	     	 			<button type="button" data-completepath="false" data-target="body" data-resourcetype="user" class="btn mura-file-type-selector mura-ckfinder" title="Select a File from Server"><i class="icon-folder-open"></i> #application.rbFactory.getKeyValue(session.rb,'sitemanager.content.browseassets')#</button>
+	     	 		</div>
+				</cfif>	
 	     	</div>
 	    </div>
 	<cfelseif rc.type eq 'File'>
@@ -286,7 +338,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	</cfif>
 
 	<cfif rc.type eq 'Form'>
-		<div class="control-group">
+		<div class="control-group body-container" style="display:none">
 			<label class="control-label">#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.formpresentation')#</label>
 			<div class="controls">
 				<label for="rc" class="checkbox">
@@ -294,12 +346,12 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	      		</label>
 			</div>
 		</div>
-		<div class="control-group">
+		<div class="control-group body-container" style="display:none">
 			<label class="control-label">
 				 #application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.confirmationmessage')#
 			</label>
 			<div class="controls">
-				<textarea name="responseMessage" rows="6" class="span12">#HTMLEditFormat(rc.contentBean.getresponseMessage())#</textarea>
+				<textarea name="responseMessage" rows="6" class="span12">#esapiEncode('html',rc.contentBean.getresponseMessage())#</textarea>
 			</div>
 		</div>
 		<div class="control-group">
@@ -307,12 +359,12 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 				#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.responsesendto')#
 			</label>
 			<div class="controls">
-				<input type="text" name="responseSendTo" value="#HTMLEditFormat(rc.contentBean.getresponseSendTo())#" class="span12">
+				<input type="text" name="responseSendTo" value="#esapiEncode('html_attr',rc.contentBean.getresponseSendTo())#" class="span12">
 			</div>
 		</div> 
 	</cfif>
 
-	<cfif rc.ptype eq 'Calendar' and ((rc.parentid neq '00000000000000000000000000000000001' and application.settingsManager.getSite(rc.siteid).getlocking() neq 'all') or (rc.parentid eq '00000000000000000000000000000000001' and application.settingsManager.getSite(rc.siteid).getlocking() eq 'none')) and rc.contentid neq '00000000000000000000000000000000001'>	
+	<cfif rc.parentBean.getType() eq 'Calendar' and ((rc.parentid neq '00000000000000000000000000000000001' and application.settingsManager.getSite(rc.siteid).getlocking() neq 'all') or (rc.parentid eq '00000000000000000000000000000000001' and application.settingsManager.getSite(rc.siteid).getlocking() eq 'none')) and rc.contentid neq '00000000000000000000000000000000001'>	
 		<cfinclude template="dsp_displaycontent.cfm">
 	</cfif>
 

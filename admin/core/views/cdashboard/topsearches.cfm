@@ -94,12 +94,12 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<input type="button" class="btn" onclick="submitForm(document.forms.searchFrm);" value="#application.rbFactory.getKeyValue(session.rb,"params.search")#" /></dd>
 </div>
 
-<input type="hidden" value="#HTMLEditFormat(rc.siteid)#" name="siteID"/>
+<input type="hidden" value="#esapiEncode('html_attr',rc.siteid)#" name="siteID"/>
 <input type="hidden" value="cDashboard.topSearches" name="muraAction"/>
 </form>
 
 <h3 class="alt">#application.rbFactory.getKeyValue(session.rb,"dashboard.session.totalsearches")#: <strong>#rstotal.keywordCount#</strong></h3>
-<table class="table table-striped table-condensed table-bordered mura-table-grid">
+<table class="mura-table-grid">
 <tr>
 <th>#application.rbFactory.getKeyValue(session.rb,"dashboard.session.keywords")#</th>
 <th>#application.rbFactory.getKeyValue(session.rb,"dashboard.session.count")#</th>
@@ -108,9 +108,9 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfif rslist.recordcount>
 <cfloop query="rslist">
 <tr>
-<td>#HTMLEditFormat(rslist.keywords)#</td>
+<td>#esapiEncode('html',rslist.keywords)#</td>
 <td>#rsList.keywordCount#</td>
-<td>#decimalFormat((rsList.keywordCount/rstotal.keywordCount)*100)#%</td>
+<td><cfif rstotal.keywordCount>0%<cfelse>#decimalFormat((rsList.keywordCount/rstotal.keywordCount)*100)#%</cfif></td>
 </tr>
 </cfloop>
 <cfelse>

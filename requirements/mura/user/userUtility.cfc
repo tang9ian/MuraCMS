@@ -80,6 +80,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfargument name="username" type="string" required="true" default="">
 		<cfargument name="password" type="string" required="true" default="">
 		<cfargument name="siteid" type="string" required="false" default="">
+		<cfargument name="lockdownCheck" type="string" required="false" default="false">
+		<cfargument name="lockdownExpries" type="string" required="false" default="">
 		<cfset var rolelist = "" />
 		<cfset var rsUser = "" />
 		<cfset var user = "" />
@@ -87,10 +89,6 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfset var lastLogin = now() />
 		<cfset var pluginEvent = createObject("component","mura.event").init(arguments) />
 		<cfset var strikes = createObject("component","mura.user.userstrikes").init(arguments.username,variables.configBean) />
-		
-		<cfif yesNoFormat(variables.configBean.getValue("useLegacySessions"))>
-			<cflogout>
-		</cfif>
 		
 		<cfparam name="session.blockLoginUntil" type="string" default="#strikes.blockedUntil()#" />
 		
@@ -100,7 +98,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfset variables.pluginManager.announceEvent('onGlobalLogin',pluginEvent)/>
 		</cfif>
 		
-		<cfquery datasource="#application.configBean.getReadOnlyDatasource()#" name="rsUser" username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
+		<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rsUser')#">
 		SELECT * FROM tusers WHERE
 		username=<cfqueryparam cfsqltype="cf_sql_varchar" value="#trim(arguments.username)#"> 
 		AND Type = 2 
@@ -153,7 +151,19 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 					
 				<cfset session.blockLoginUntil=""/>
 				
-				<cfset loginByQuery(rsUser)/>
+				<cfif not arguments.lockdownCheck>
+					<cfset loginByQuery(rsUser)/>
+				<cfelse>
+					<cfswitch expression="#arguments.lockdownExpries#">
+						<cfcase value="1,7,30,10950">
+							<cfcookie name="passedLockdown" value="true" expires="#arguments.lockdownExpries#" httpOnly="true" secure="#variables.configBean.getValue('secureCookies')#">
+						</cfcase>
+						<cfcase value="session">
+							<cfcookie name="passedLockdown" value="true" httpOnly="true" secure="#variables.configBean.getValue('secureCookies')#">
+						</cfcase>
+					</cfswitch>
+				</cfif>
+				
 				<cfset strikes.clear()>
 
 				<cfif arguments.password eq "admin" and arguments.username eq "admin">
@@ -170,6 +180,11 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfelse>
 			<cfif not strikes.isBlocked()>
 				<cfset strikes.addStrike()>
+				<cfif len(arguments.siteID)>
+					<cfset variables.pluginManager.announceEvent('onSiteLoginFailure',pluginEvent)/>
+				<cfelse>
+					<cfset variables.pluginManager.announceEvent('onGlobalLoginFailure',pluginEvent)/>
+				</cfif>
 			<cfelse>
 			
 				<cfif len(arguments.siteID)>
@@ -196,8 +211,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfset var lastLogin = now() />
 		<cfset var pluginEvent = createObject("component","mura.event").init(arguments) />
 		
-		<cflogout>
-		<cfquery datasource="#variables.configBean.getReadOnlyDatasource()#" username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#" name="rsUser">
+		<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rsUser')#">
 		SELECT * FROM tusers WHERE userid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.userID#"> AND Type = 2
 		and inactive=0
 		</cfquery>
@@ -211,7 +225,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 				
 				
 				<cfset loginByQuery(rsUser)/>
-				
+
 				<cfset pluginEvent.setValue("username",rsUser.username)>
 				<cfset pluginEvent.setValue("password",rsUser.password)>
 				<cfset pluginEvent.setValue("siteid",rsUser.siteid)>
@@ -237,62 +251,74 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfset var lastLogin = now() />
 		<cfset var rsGetRoles = "" />
 		<cfset var user=""/>
+		
+		<cfset structDelete(session,'siteArray')>
 
-				<cfquery name="RsGetRoles" datasource="#variables.configBean.getReadOnlyDatasource()#" username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
-				Select groupname, isPublic, siteid from tusers where userid in
-				(Select GroupID from tusersmemb where userid='#rsuser.userid#')
-				</cfquery>
+		<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rsGetRoles')#">
+			Select userID, groupname, isPublic, siteid from tusers where userid in
+			(Select GroupID from tusersmemb where userid='#rsuser.userid#')
+		</cfquery>
 				
-				<cfloop query="rsGetRoles">
-					<cfset rolelist=listappend(rolelist, "#rsGetRoles.groupname#;#rsGetRoles.siteid#;#rsGetRoles.isPublic#")>
-				</cfloop>
+		<cfloop query="rsGetRoles">
+			<cfset rolelist=listappend(rolelist, "#rsGetRoles.groupname#;#rsGetRoles.siteid#;#rsGetRoles.isPublic#")>
+		</cfloop>
 							
-				<cfif not rsUser.isPublic>
-					<cfset rolelist=listappend(rolelist, 'S2IsPrivate;#rsuser.siteid#')>
-					<cfset rolelist=listappend(rolelist, 'S2IsPrivate')>
-				<cfelse>
-					<cfset rolelist=listappend(rolelist, 'S2IsPublic;#rsuser.siteid#')>
-					<cfset rolelist=listappend(rolelist, 'S2IsPublic')>
-				</cfif>
+		<cfif not rsUser.isPublic>
+			<cfset rolelist=listappend(rolelist, 'S2IsPrivate;#rsuser.siteid#')>
+			<cfset rolelist=listappend(rolelist, 'S2IsPrivate')>
+		<cfelse>
+			<cfset rolelist=listappend(rolelist, 'S2IsPublic;#rsuser.siteid#')>
+			<cfset rolelist=listappend(rolelist, 'S2IsPublic')>
+		</cfif>
 					
-				<cfif rsuser.s2>
-					<cfset rolelist=listappend(rolelist, 'S2')>
-				</cfif>
-				
-				<cfif yesNoFormat(variables.configBean.getValue("useLegacySessions"))>
-					<cfif isDate(rsuser.lastLogin)>
-						<cfset lastLogin=rsuser.lastLogin/>
-					</cfif>
-					
-					<cfif rsuser.company neq ''>
-						<cfset group=rsuser.company>
-					<cfelse>
-						<cfset group="#rsUser.Fname# #rsUser.Lname#">
-					</cfif>
-					
-					<cfif rsuser.lname eq '' and rsuser.fname eq ''>
-						<cfset user=rsuser.company>
-					<cfelse>
-						<cfset user="#rsUser.Fname# #rsUser.Lname#">
-					</cfif>
-					
-					<cflogin>
-					<cfloginuser name="#rsuser.userID#^#user#^#dateFormat(lastLogin,'m/d/yy')#^#group#^#rsUser.username#^#dateFormat(rsUser.passwordCreated,'m/d/yy')#^#rsUser.password#"
-					 roles="#rolelist#"
-					 password="#rsUser.password#">
-					</cflogin>	
-				</cfif>
-				
-				<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
-				UPDATE tusers SET LastLogin = <cfqueryparam cfsqltype="cf_sql_timestamp" value="#now()#">
-				WHERE tusers.UserID='#rsUser.UserID#'
-				</cfquery>
-				
-				<cfset setUserStruct(rsuser,rolelist)>
-				
-				<cfset variables.globalUtility.logEvent("UserID:#rsuser.userid# Name:#rsuser.fname# #rsuser.lname# logged in at #now()#","mura-users","Information",true) />
+		<cfif rsuser.s2>
+			<cfset rolelist=listappend(rolelist, 'S2')>
+		</cfif>
 
+		<cfset rolelist=listAppend(rolelist,'#rsuser.username#;username;#rsuser.siteid#')>
+				
+		<cfif yesNoFormat(variables.configBean.getValue("useLegacySessions"))>
+			<cflogout>
 
+			<cfif isDate(rsuser.lastLogin)>
+				<cfset lastLogin=rsuser.lastLogin/>
+			</cfif>
+					
+			<cfif rsuser.company neq ''>
+				<cfset group=rsuser.company>
+			<cfelse>
+				<cfset group="#rsUser.Fname# #rsUser.Lname#">
+			</cfif>
+					
+			<cfif rsuser.lname eq '' and rsuser.fname eq ''>
+				<cfset user=rsuser.company>
+			<cfelse>
+				<cfset user="#rsUser.Fname# #rsUser.Lname#">
+			</cfif>
+					
+			<cflogin>
+			<cfloginuser name="#rsuser.userID#^#user#^#dateFormat(lastLogin,'m/d/yy')#^#group#^#rsUser.username#^#dateFormat(rsUser.passwordCreated,'m/d/yy')#^#rsUser.password#"
+			 roles="#rolelist#"
+			password="#rsUser.password#">
+			</cflogin>	
+		</cfif>
+				
+		<cfquery>
+		UPDATE tusers SET LastLogin = <cfqueryparam cfsqltype="cf_sql_timestamp" value="#now()#">
+		WHERE tusers.UserID='#rsUser.UserID#'
+		</cfquery>
+
+		<cfif isDefined('cookie.userid') and cookie.userid neq rsuser.userid>
+			<cfset structDelete(cookie,"userid")>
+			<cfset structDelete(cookie,"userhash")>
+		</cfif>
+				
+		<cfset setUserStruct(rsuser,rolelist,listAppend(valueList(RsGetRoles.userID),rsuser.userid))>
+		<cfset variables.globalUtility.logEvent("UserID:#rsuser.userid# Name:#rsuser.fname# #rsuser.lname# logged in at #now()#","mura-users","Information",true) />
+		<cfif variables.configBean.getValue(property='rotateSessions',defaultValue='false')>
+			<cfset sessionRotate()>
+			<cfset getBean('utility').setSessionCookies()>
+		</cfif>
 </cffunction>
 
 <cffunction name="getUserByEmail" returntype="query" output="false">
@@ -300,7 +326,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfargument name="siteid" type="string" required="yes" default="">
 	<cfset var rsCheck=""/>
 	
-		<cfquery name="rsCheck" datasource="#variables.configBean.getReadOnlyDatasource()#" username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
+		<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rsCheck')#">
 		select * from tusers where type=2 and inactive=0 and email=<cfqueryparam cfsqltype="cf_sql_varchar" value="#trim(arguments.email)#">
 		<cfif arguments.siteid neq ''>
 		and (
@@ -412,7 +438,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfargument name="bcc"  required="yes" type="string" default="">
 <cfargument name="message" type="string" default="">
 
-<cfset var sendLoginScript=""/>
+<cfset var sendLoginScript=arguments.message/>
 <cfset var mailText=""/>
 <cfset var username=arguments.args.username/>
 <cfset var password=arguments.args.password/>
@@ -432,7 +458,11 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 <cfif arguments.siteid neq ''>
 	<cfset site=variables.settingsManager.getSite(arguments.siteid)>
-	<cfset sendLoginScript =site.getSendLoginScript()/>
+	
+	<cfif not len(sendLoginScript)>
+		<cfset sendLoginScript =site.getSendLoginScript()/>
+	</cfif>
+	
 	<cfset contactEmail=site.getContact()/>
 	<cfset contactName=site.getSite()/>
 
@@ -457,7 +487,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	</cfif>
 
 	<cfset returnURL="#protocol##urlBase##site.getContentRenderer().getURLStem(site.getSiteID(),returnID)#">
-	<cfset editProfileURL =protocol & urlBase & "/admin/index.cfm?muraAction=cEditProfile.edit">	
+	<cfset editProfileURL =protocol & urlBase & "/admin/?muraAction=cEditProfile.edit">	
 
 </cfif>
 
@@ -474,7 +504,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <!--- add extra attributes --->
 <cfset editProfileURL=editProfileURL & "&returnID=#returnID#&returnUserID=#arguments.args.userID#">
 
-<cfquery datasource="#variables.configBean.getDatasource()#"  username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+<cfquery>
 	insert into tredirects (redirectID,URL,created) values(
 	<cfqueryparam cfsqltype="cf_sql_varchar" value="#returnID#" >,
 	<cfqueryparam cfsqltype="cf_sql_varchar" value="#editProfileURL#" >,
@@ -659,6 +689,7 @@ Thanks for using #contactName#</cfoutput>
 <cffunction name="setUserStruct" output="false" access="public" returntype="void">
 <cfargument name="user">
 <cfargument name="memberships" required="true" default="">
+<cfargument name="membershipids" required="true" default="">
 
 <cfparam name="session.rememberMe" type="numeric" default="0" />
 <cfparam name="session.loginAttempts" type="numeric" default="0" />
@@ -666,6 +697,8 @@ Thanks for using #contactName#</cfoutput>
 
 <!--- clear out all existing values --->
 <cfset session.mura=structNew()>
+<cfparam name="session.mura.csrfsecretkey" default="#createUUID()#">
+<cfparam name="session.mura.csrfusedtokens" default="#structNew()#">
 
 <cfif structKeyExists(arguments,"user")>
 	<cfset session.mura.isLoggedIn=true>			
@@ -682,6 +715,11 @@ Thanks for using #contactName#</cfoutput>
 	<cfset session.mura.lastlogin=arguments.user.lastlogin>
 	<cfset session.mura.passwordCreated=arguments.user.passwordCreated>
 	<cfset session.mura.memberships=arguments.memberships>
+	<cfif structKeyExists(arguments.user,'groupID')>
+		<cfset session.mura.membershipids=arguments.user.groupID>
+	<cfelse>
+		<cfset session.mura.membershipids=arguments.membershipids>
+	</cfif>
 <cfelse>
 	<cfset session.mura.isLoggedIn=false>			
 	<cfset session.mura.userID="">
@@ -697,15 +735,17 @@ Thanks for using #contactName#</cfoutput>
 	<cfset session.mura.email="">
 	<cfset session.mura.remoteID="">
 	<cfset session.mura.memberships="">
+	<cfset session.mura.membershipids="">
 	<cfset session.mura.showTrace=false>
 </cfif>
+
 </cffunction>
 
 <cffunction name="returnLoginCheck" output="false">
 <cfargument name="$">
 	<cfset var rs="">
 	<cfif not arguments.$.currentUser().isLoggedIn() and len(arguments.$.event('returnID')) and len(arguments.$.event('returnUserID'))>
-		<cfquery name="rs" datasource="#variables.configBean.getReadOnlyDatasource()#"  username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
+		<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rs')#">
 			select created from tredirects
 			where redirectID=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.$.event('returnID')#" >
 		</cfquery>

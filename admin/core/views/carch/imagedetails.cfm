@@ -3,11 +3,11 @@
 <cfset $=application.serviceFactory.getBean('$').init(session.siteID)>
 <cfif isDefined('url.userid')>
 	<cfset rc.userBean=$.getBean('user').loadBy(userID=rc.userID,siteID=rc.siteID)>
-<cfelse>
+<cfelseif isDefined('url.contentHistID')>
 	<cfset rc.contentBean=$.getBean('content').loadBy(contentHistID=rc.contentHistID)>
 </cfif>
 
-<cfif not (isDefined('rc.fileID') and len(rc.fileID))>
+<cfif (not (isDefined('rc.fileID') and len(rc.fileID))) and isDefined('rc.contentBean')>
 	<cfset rc.rsfileAttributes=rc.contentBean.getExtendedData().getAttributesByType('File')>
 	<cfset rc.fileID=listAppend(
 				valueList(rc.rsfileAttributes.attributeValue),
@@ -33,6 +33,8 @@
 	<cfset rc.largeImageRatio=''>
 </cfif>
 
+<cfset csrf=rc.$.renderCSRFTokens(context=rc.fileid,format='url')>
+
 <cfsavecontent variable="rc.headertext">
 <cfoutput>
 <script src="#$.globalConfig('context')#/admin/assets/js/jquery/jquery.Jcrop.min.js" type="text/javascript"></script>
@@ -44,10 +46,14 @@
 <cfoutput>
 <h1>Image Details</h1>
 
-<cfinclude template="dsp_secondary_menu.cfm">
+<cfsavecontent variable="secondarynav">
+	<cfinclude template="dsp_secondary_menu.cfm">
+</cfsavecontent>
+
+#secondarynav#
 
 <cfif rc.compactDisplay neq "true" and isDefined('rc.contentBean')>
-	#application.contentRenderer.dspZoom(crumbdata=rc.contentBean.getCrumbArray(),class="navZoom alt")#
+	#$.dspZoom(crumbdata=rc.contentBean.getCrumbArray(),class="navZoom alt")#
 </cfif>
 
 <div id="image-details" class="form-horizontal fieldset-wrap">
@@ -58,24 +64,24 @@
 			<cfset rc.sourceImage=$.getURLForImage(fileID=f,size='source')>
 			<cfif len(rc.sourceImage)>		
 				<cfset rc.rsMeta=$.getBean('fileManager').readMeta(fileID=f)>
-				<h2><i class="icon-picture"></i> #HTMLEditFormat(rc.rsMeta.filename)#</h2>
+				<h2><i class="icon-picture"></i> #esapiEncode('html',rc.rsMeta.filename)#</h2>
 				<div id="image-orientation" class="control-group">
 					<label class="control-label">
-						#HTMLEditFormat(application.rbFactory.getKeyValue(session.rb,'sitemanager.adjustimage'))#
+						#esapiEncode('html',application.rbFactory.getKeyValue(session.rb,'sitemanager.adjustimage'))#
 					</label>
 					<div class="controls">
 						<select id="image-actions#f#">
 							<option value="">Please Select</option>
-							<option value="90"> #HTMLEditFormat(application.rbFactory.getKeyValue(session.rb,'sitemanager.rotateimage'))# &ndash; 90&deg;</option>
-							<option value="180"> #HTMLEditFormat(application.rbFactory.getKeyValue(session.rb,'sitemanager.rotateimage'))# &ndash; 180&deg;</option>
-							<option value="270"> #HTMLEditFormat(application.rbFactory.getKeyValue(session.rb,'sitemanager.rotateimage'))# &ndash; 270&deg;</option>
-							<option value="horizontal"> #HTMLEditFormat(application.rbFactory.getKeyValue(session.rb,'sitemanager.flipimage'))# &ndash; Horizontal</option>
-							<option value="vertical"> #HTMLEditFormat(application.rbFactory.getKeyValue(session.rb,'sitemanager.flipimage'))# &ndash; Vertical</option>
-							<option value="diagonal"> #HTMLEditFormat(application.rbFactory.getKeyValue(session.rb,'sitemanager.flipimage'))# &ndash; Diagonal</option>
-							<option value="antidiagonal"> #HTMLEditFormat(application.rbFactory.getKeyValue(session.rb,'sitemanager.flipimage'))# &ndash; Anti-Diagonal</option>
+							<option value="90"> #esapiEncode('html',application.rbFactory.getKeyValue(session.rb,'sitemanager.rotateimage'))# &ndash; 90&deg;</option>
+							<option value="180"> #esapiEncode('html',application.rbFactory.getKeyValue(session.rb,'sitemanager.rotateimage'))# &ndash; 180&deg;</option>
+							<option value="270"> #esapiEncode('html',application.rbFactory.getKeyValue(session.rb,'sitemanager.rotateimage'))# &ndash; 270&deg;</option>
+							<option value="horizontal"> #esapiEncode('html',application.rbFactory.getKeyValue(session.rb,'sitemanager.flipimage'))# &ndash; Horizontal</option>
+							<option value="vertical"> #esapiEncode('html',application.rbFactory.getKeyValue(session.rb,'sitemanager.flipimage'))# &ndash; Vertical</option>
+							<option value="diagonal"> #esapiEncode('html',application.rbFactory.getKeyValue(session.rb,'sitemanager.flipimage'))# &ndash; Diagonal</option>
+							<option value="antidiagonal"> #esapiEncode('html',application.rbFactory.getKeyValue(session.rb,'sitemanager.flipimage'))# &ndash; Anti-Diagonal</option>
 						</select>
 
-						<input type="button" onclick="flipImage('#JSStringFormat(f)#');" class="btn" value="#HTMLEditFormat(application.rbFactory.getKeyValue(session.rb,'sitemanager.apply'))#"/>
+						<input type="button" onclick="flipImage('#esapiEncode('javascript',f)#');" class="btn" value="#esapiEncode('html_attr',application.rbFactory.getKeyValue(session.rb,'sitemanager.apply'))#"/>
 					</div>
 				</div>
 
@@ -101,7 +107,7 @@
 						<cfset rc.customImageRatio=''>
 					</cfif>
 					<div class="control-group">
-						<label class="control-label">#HTMLEditFormat(customImage.getName())# (#customImage.getWidth()#x#customImage.getHeight()#)</label>
+						<label class="control-label">#esapiEncode('html',customImage.getName())# (#customImage.getWidth()#x#customImage.getHeight()#)</label>
 						<div class="controls">
 							<div id="#lcase(customImage.getName())##f#btns" class="btn-group">
 								<button type="button" class="btn btn-small cropper-reset" data-fileid="#f#" data-size="#lcase(customImage.getName())#"><i class="icon-refresh"></i> Reset</button>
@@ -121,8 +127,8 @@
 			   	<img id="jc-source-image"/>
 			</div>
 	    </div>
-	    -->
-	  
+	    --->
+
 	    <script>
 	    var currentFileID='';
 	    var currentCoords='';
@@ -156,7 +162,7 @@
 	    		//alert(transpose);
 	    		actionModal(
 		    		function(){
-				   		 $.get('./index.cfm?muraAction=carch.flipimage&fileid=' + _fileid + '&siteid=' + siteid + '&transpose=' + transpose + '&cacheid=' + Math.random(),
+				   		 $.get('./index.cfm?muraAction=carch.flipimage&fileid=' + _fileid + '&siteid=' + siteid + '&transpose=' + transpose + '#csrf#&cacheid=' + Math.random(),
 							function(){
 					    		$('##action-modal').remove();
 								$(".cropper-reset[data-fileid='" + _fileid + "']").each(function(){
@@ -165,7 +171,7 @@
 
 									$.ajax(
 								    	{
-								    		url:'./index.cfm?muraAction=carch.cropimage&fileid=' + resetFileID + '&size=' + resetSize + '&siteid=' + siteid + '&cacheid=' + Math.random(),
+								    		url:'./index.cfm?muraAction=carch.cropimage&fileid=' + resetFileID + '&size=' + resetSize + '&siteid=' + siteid + '#csrf#&cacheid=' + Math.random(),
 											success: function(data) {	
 													//alert(JSON.stringify(data));
 														
@@ -198,7 +204,7 @@
 			 		//location.href='./index.cfm?muraAction=carch.cropimage&fileid=' + currentFileID + '&size=' + currentSize + '&x=' + currentCoords.x + '&y=' + currentCoords.y + '&width=' + currentCoords.w + '&height=' + currentCoords.h + '&siteid=' + siteid;
 			
 			 		if(typeof(currentCoords) == 'object'){
-				    	$.get('./index.cfm?muraAction=carch.cropimage&fileid=' + currentFileID + '&size=' + currentSize + '&x=' + currentCoords.x + '&y=' + currentCoords.y + '&width=' + currentCoords.w + '&height=' + currentCoords.h + '&siteid=' + siteid,
+				    	$.get('./index.cfm?muraAction=carch.cropimage&fileid=' + currentFileID + '&size=' + currentSize + '&x=' + currentCoords.x + '&y=' + currentCoords.y + '&width=' + currentCoords.w + '&height=' + currentCoords.h + '&siteid=' + siteid + '#csrf#&cacheid=' + Math.random(),
 											function(data) {	
 												//alert(JSON.stringify(data));
 												reloadImg(currentSize + currentFileID);
@@ -227,7 +233,7 @@
 				actionModal(function(){
 				    $.ajax(
 				    	{
-				    		url:'./index.cfm?muraAction=carch.cropimage&fileid=' + resetFileID + '&size=' + resetSize + '&siteid=' + siteid + '&cacheid=' + Math.random(),
+				    		url:'./index.cfm?muraAction=carch.cropimage&fileid=' + resetFileID + '&size=' + resetSize + '&siteid=' + siteid + '#csrf#&cacheid=' + Math.random(),
 							success: function(data) {	
 										//alert(JSON.stringify(data));
 										
@@ -286,8 +292,11 @@
 		       	});
 	    });
 
-		<cfif rc.compactDisplay eq "true">
+		
 		$(document).ready(function(){
+			$('.load-inline').spin(spinnerArgs2);
+
+			<cfif rc.compactDisplay eq "true">
 			if (top.location != self.location) {
 				if(jQuery("##ProxyIFrame").length){
 					jQuery("##ProxyIFrame").load(
@@ -299,8 +308,9 @@
 					frontEndProxy.post({cmd:'setWidth',width:'standard'});
 				}
 			}
+			</cfif> 
 		});
-		</cfif> 
+		
 		</script>
 		
 	    <!-- /Hidden dialog -->
@@ -309,4 +319,6 @@
 <cfelse>
 	<p class="alert">This content does not have any image attached to it.</p>
 </cfif>
+
+#secondarynav#
 </cfoutput>

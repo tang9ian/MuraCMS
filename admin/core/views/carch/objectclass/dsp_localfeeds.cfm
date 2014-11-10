@@ -60,10 +60,13 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		                                    'sitemanager.content.fields.localindexlistingtable')#
 		</option>
 		<cfloop query="rc.rslist">
-			<option value="{'object':'feed','objectid':'#rc.rslist.feedID#','name':'#JSStringFormat(rc.rslist.name)# #application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.localindex')#'}">
-				#rc.rslist.name# 
-				- 
-				#application.rbFactory.getKeyValue(session.rb, 'sitemanager.content.fields.localindex')#
+
+			<cfset title=rc.rslist.name
+				& ' - '  
+				& application.rbFactory.getKeyValue(session.rb, 'sitemanager.content.fields.localindex')>
+
+			<option title="#esapiEncode('html_attr',title)#" value="{'object':'feed','objectid':'#rc.rslist.feedID#','name':'#esapiEncode('javascript',title)#'}">
+				#esapiEncode('html',title)#
 			</option>
 		</cfloop>
 	</select>

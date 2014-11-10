@@ -46,71 +46,170 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 --->
 <cfoutput>
 <h1><cfif rc.changesetID neq ''>#application.rbFactory.getKeyValue(session.rb,'changesets.editchangeset')#<cfelse>#application.rbFactory.getKeyValue(session.rb,'changesets.addchangeset')#</cfif></h1>
-
+<cfset csrfTokens= #rc.$.renderCSRFTokens(context=rc.changeset.getchangesetID(),format="url")#>
 <cfinclude template="dsp_secondary_menu.cfm">
 
-#application.utility.displayErrors(rc.changeset.getErrors())#
+<cfif not structIsEmpty(rc.changeset.getErrors())>
+  <p class="alert alert-error">#application.utility.displayErrors(rc.changeset.getErrors())#</p>
+</cfif>
 
 <cfif rc.changeset.getPublished()>
 <p class="alert">
 #application.rbFactory.getKeyValue(session.rb,'changesets.publishednotice')#
 </p>
+<cfelse>
+  <cfset hasPendingApprovals=rc.changeset.hasPendingApprovals()>
+  <cfif hasPendingApprovals>
+    <div class="alert alert-error">
+        #application.rbFactory.getKeyValue(session.rb,'changesets.haspendingapprovals')# 
+    </div>  
+  </cfif>
 </cfif>
 
 <span id="msg">
 #application.pluginManager.renderEvent("onChangesetEditMessageRender", request.event)#
 </span>
 
-<form class="fieldset-wrap" novalidate="novalidate" action="index.cfm?muraAction=cChangesets.save&siteid=#URLEncodedFormat(rc.siteid)#" method="post" name="form1" onsubmit="return validate(this);">
-<div class="fieldset">
-<div class="control-group">
-  <label class="control-label">
-    #application.rbFactory.getKeyValue(session.rb,'changesets.name')#
-  </label>
-  <div class="controls">
-  <input name="name" type="text" class="span12" required="true" message="#application.rbFactory.getKeyValue(session.rb,'changesets.titlerequired')#" value="#HTMLEditFormat(rc.changeset.getName())#" maxlength="50">
-   </div>
-</div>
+<form novalidate="novalidate" action="./?muraAction=cChangesets.save&siteid=#esapiEncode('url',rc.siteid)#" method="post" name="form1" onsubmit="return validate(this);">
 
-<div class="control-group">
-  <label class="control-label">
-    #application.rbFactory.getKeyValue(session.rb,'changesets.description')#
-  </label>
-  <div class="controls">
-  <textarea name="description" class="span12" rows="6">#HTMLEditFormat(rc.changeset.getDescription())#</textarea>
+<cfset tablist="tabBasic">
+<cfset tablabellist="Basic">
+<cfset hasCategories=application.categoryManager.getCategoryCount(rc.siteid)>
+<cfif hasCategories>
+    <cfset tablist=listAppend(tablist,'tabCategorization')>
+    <cfset tablabellist=listAppend(tablabellist,'Categorization')>
+</cfif>
+ <cfset tablist=listAppend(tablist,'tabTags')>
+<cfset tablabellist=listAppend(tablabellist,'Tags')>
+
+<div class="tabbable tabs-left mura-ui">
+    <ul class="nav nav-tabs tabs initActiveTab">
+    <cfloop from="1" to="#listlen(tabList)#" index="t">
+    <li><a href="###listGetAt(tabList,t)#" onclick="return false;"><span>#listGetAt(tabLabelList,t)#</span></a></li>
+    </cfloop>
+    </ul>
+    <div class="tab-content">
+    <div id="tabBasic" class="tab-pane fade">
+      <div class="fieldset">
+      <div class="control-group">
+        <label class="control-label">
+          #application.rbFactory.getKeyValue(session.rb,'changesets.name')#
+        </label>
+        <div class="controls">
+        <input name="name" type="text" class="span12" required="true" message="#application.rbFactory.getKeyValue(session.rb,'changesets.titlerequired')#" value="#esapiEncode('html_attr',rc.changeset.getName())#" maxlength="50">
+         </div>
+      </div>
+
+      <div class="control-group">
+        <label class="control-label">
+          #application.rbFactory.getKeyValue(session.rb,'changesets.description')#
+        </label>
+        <div class="controls">
+        <textarea name="description" class="span12" rows="6">#esapiEncode('html',rc.changeset.getDescription())#</textarea>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <label class="control-label">
+          <a href="##" rel="tooltip" title="#esapiEncode('html_attr',application.rbFactory.getKeyValue(session.rb,"tooltip.changesetclosedate"))#" data-container="body">#application.rbFactory.getKeyValue(session.rb,'changesets.closedate')# <i class="icon-question-sign"></i></a>
+          </label>
+        <div class="controls">
+           <cfif rc.changeset.getPublished()>
+              <cfif lsIsDate(rc.changeset.getCloseDate())>
+                #LSDateFormat(rc.changeset.getCloseDate(),session.dateKeyFormat)# #LSTimeFormat(rc.changeset.getCloseDate(),"medium")#
+              <cfelse>
+                 #LSDateFormat(rc.changeset.getLastUpdate(),session.dateKeyFormat)# #LSTimeFormat(rc.changeset.getLastUpdate(),"medium")#
+              </cfif>
+          <cfelse>
+             <cf_datetimeselector name="closeDate" datetime="#rc.changeset.getCloseDate()#" defaulthour="23" defaultminute="59">
+          
+        </cfif>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <label class="control-label">
+          <a href="##" rel="tooltip" title="#esapiEncode('html_attr',application.rbFactory.getKeyValue(session.rb,"tooltip.changesetpublishdate"))#" data-container="body">#application.rbFactory.getKeyValue(session.rb,'changesets.publishdate')# <i class="icon-question-sign"></i></a>
+          </label>
+        <div class="controls">
+          <cfif rc.changeset.getPublished()>
+          #LSDateFormat(rc.changeset.getLastUpdate(),session.dateKeyFormat)# #LSTimeFormat(rc.changeset.getLastUpdate(),"medium")#
+        <cfelse>
+         
+          <cf_datetimeselector name="publishDate" datetime="#rc.changeset.getpublishdate()#">
+         
+        </cfif>
+
+        </div>
+      </div>
+
+      </div>
+
+    </div>
+
+    <cfif hasCategories> 
+      <div id="tabCategorization" class="tab-pane fade">
+        <div class="fieldset">
+          <div class="control-group">
+            <!--- Category Filters --->
+            <label class="control-label">#application.rbFactory.getKeyValue(session.rb,'changesets.categoryassignments')#</label>
+            <div id="mura-list-tree" class="controls">
+              <cf_dsp_categories_nest siteID="#rc.siteID#" parentID="" nestLevel="0" categoryid="#rc.changeset.getCategoryID()#">
+            </div>
+          </div>
+        </div>
+      </div>
+    </cfif>
+
+   
+    <div id="tabTags" class="tab-pane fade">
+      <div class="fieldset">
+        <div class="control-group"> 
+          <label class="control-label">
+          #application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.tags')#
+          </label>      
+          <div class="controls">
+              <div id="tags" class="tagSelector">
+              <cfif len(rc.changeset.getTags())>
+                <cfloop list="#rc.changeset.getTags()#" index="i">
+                  <span class="tag">
+                  #esapiEncode('html',i)# <a><i class="icon-remove-sign"></i></a>
+                  <input name="tags" type="hidden" value="#esapiEncode('html_attr',i)#">
+                  </span>
+                </cfloop>
+              </cfif>
+              <input type="text" name="tags">
+            </div>
+          </div>
+
+          <script>
+          $(document).ready(function(){
+            $.get('?muraAction=cChangesets.loadtagarray&siteid=' + siteid).done(function(data){
+            var tagArray=eval('(' + data + ')'); 
+            $('##tags').tagSelector(tagArray, 'tags');
+            });
+          });
+        </script>
+      </div>
+    </div>
   </div>
-</div>
 
-<div class="control-group">
-  <label class="control-label">
-    <a href="##" rel="tooltip" title="#HTMLEditFormat(application.rbFactory.getKeyValue(session.rb,"tooltip.changesetpublishdate"))#">#application.rbFactory.getKeyValue(session.rb,'changesets.publishdate')# <i class="icon-question-sign"></i></a>
-    </label>
-  <div class="controls">
-    <cfif rc.changeset.getPublished()>
-    #LSDateFormat(rc.changeset.getLastUpdate(),session.dateKeyFormat)# #LSTimeFormat(rc.changeset.getLastUpdate(),"medium")#
-  <cfelse>
-    <input type="text" name="publishDate" value="#LSDateFormat(rc.changeset.getpublishdate(),session.dateKeyFormat)#"  maxlength="12" class="textAlt datepicker" />
-
-    <select name="publishhour" class="span1"><cfloop from="1" to="12" index="h"><option value="#h#" <cfif not LSisDate(rc.changeset.getpublishDate())  and h eq 12 or (LSisDate(rc.changeset.getpublishDate()) and (hour(rc.changeset.getpublishDate()) eq h or (hour(rc.changeset.getpublishDate()) - 12) eq h or hour(rc.changeset.getpublishDate()) eq 0 and h eq 12))>selected</cfif>>#h#</option></cfloop></select>
-    <select name="publishMinute" class="span1"><cfloop from="0" to="59" index="m"><option value="#m#" <cfif LSisDate(rc.changeset.getpublishDate()) and minute(rc.changeset.getpublishDate()) eq m>selected</cfif>>#iif(len(m) eq 1,de('0#m#'),de('#m#'))#</option></cfloop></select>
-    <select name="publishDayPart" class="span1"><option value="AM">AM</option><option value="PM" <cfif LSisDate(rc.changeset.getpublishDate()) and hour(rc.changeset.getpublishDate()) gte 12>selected</cfif>>PM</option></select>
-  </cfif>
-  </div>
-</div>
-
-</div>
 <div class="form-actions">
   <cfif rc.changesetID eq ''>
-    <input type="button" class="btn" onclick="submitForm(document.forms.form1,'add');" value="#application.rbFactory.getKeyValue(session.rb,'changesets.add')#" /><input type=hidden name="changesetID" value="">
+    <input type="button" class="btn" onclick="submitForm(document.forms.form1,'add');" value="#application.rbFactory.getKeyValue(session.rb,'changesets.add')#" /><input type=hidden name="changesetID" value="#rc.changeset.getchangesetID()#">
   <cfelse>
-    <input type="button" class="btn" value="#application.rbFactory.getKeyValue(session.rb,'changesets.delete')#" onclick="confirmDialog('#jsStringFormat(application.rbFactory.getKeyValue(session.rb,'changesets.deleteconfirm'))#','index.cfm?muraAction=cChangesets.delete&changesetID=#rc.changeset.getchangesetID()#&siteid=#URLEncodedFormat(rc.changeset.getSiteID())#')" /> 
+    <input type="button" class="btn" value="#application.rbFactory.getKeyValue(session.rb,'changesets.delete')#" onclick="confirmDialog('#esapiEncode('javascript',application.rbFactory.getKeyValue(session.rb,'changesets.deleteconfirm'))#','./?muraAction=cChangesets.delete&changesetID=#rc.changeset.getchangesetID()#&siteid=#esapiEncode('url',rc.changeset.getSiteID())##csrfTokens#')" /> 
     <input type="button" class="btn" onclick="submitForm(document.forms.form1,'update');" value="#application.rbFactory.getKeyValue(session.rb,'changesets.update')#" />
-    <cfif not rc.changeset.getPublished()>
-      <input type="button" class="btn" value="#application.rbFactory.getKeyValue(session.rb,'changesets.publishnow')#" onclick="confirmDialog('#jsStringFormat(application.rbFactory.getKeyValue(session.rb,'changesets.publishnowconfirm'))#','index.cfm?muraAction=cChangesets.publish&changesetID=#rc.changeset.getchangesetID()#&siteid=#URLEncodedFormat(rc.changeset.getSiteID())#')" /> 
+    <cfif not rc.changeset.getPublished() and not hasPendingApprovals>
+      <input type="button" class="btn" value="#application.rbFactory.getKeyValue(session.rb,'changesets.publishnow')#" onclick="confirmDialog('#esapiEncode('javascript',application.rbFactory.getKeyValue(session.rb,'changesets.publishnowconfirm'))#','./?muraAction=cChangesets.publish&changesetID=#rc.changeset.getchangesetID()#&siteid=#esapiEncode('url',rc.changeset.getSiteID())##csrfTokens#')" /> 
+    </cfif>
+    <cfif rc.changeset.getPublished()>
+        <input type="button" class="btn" value="#application.rbFactory.getKeyValue(session.rb,'changesets.rollback')#" onclick="confirmDialog('#esapiEncode('javascript',application.rbFactory.getKeyValue(session.rb,'changesets.rollbackconfirm'))#','./?muraAction=cChangesets.rollback&changesetID=#rc.changeset.getchangesetID()#&siteid=#esapiEncode('url',rc.changeset.getSiteID())##csrfTokens#')" /> 
     </cfif>
      <input type=hidden name="changesetID" value="#rc.changeset.getchangesetID()#">
   </cfif>
   <input type="hidden" name="action" value="">
+  #rc.$.renderCSRFTokens(context=rc.changeset.getchangesetID(),format="form")#
 </div>
 </form>
 </cfoutput>

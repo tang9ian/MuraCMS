@@ -44,16 +44,15 @@ For clarity, if you create a modified version of Mura CMS, you are not obligated
 modified version; it is your choice whether to do so, or to make such modified version available under the GNU General Public License 
 version 2 without this exception.  You may, if you choose, apply this exception to your own modified versions of Mura CMS.
 --->
-
 <cfoutput>
-<cfif variables.rsform.responseChart and not(refind("Mac",cgi.HTTP_USER_AGENT) and refind("MSIE 5",cgi.HTTP_USER_AGENT))>
+<cfif StructKeyExists(request, 'polllist') and  variables.rsform.responseChart and not(refind("Mac",cgi.HTTP_USER_AGENT) and refind("MSIE 5",cgi.HTTP_USER_AGENT))>
 	
 	<cfset variables.customResponse=application.pluginManager.renderEvent("onFormSubmitPollRender",variables.event)>
 	<cfif len(variables.customResponse)>
 		#variables.customResponse#
 	<cfelse>
 		<cfquery name="variables.rsTotal" datasource="#application.configBean.getDatasource(mode='readOnly')#" username="#application.configBean.getDBUsername(mode='readOnly')#" password="#application.configBean.getDBPassword(mode='readOnly')#">
-		select count(pollValue) as qty from tformresponsequestions where FormID=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.objectID#"/> and pollValue is not null
+		select count(pollValue) as qty from tformresponsequestions where FormID=<cfqueryparam cfsqltype="cf_sql_varchar" value="#$.event('formBean').getValue('contentID')#"/> and pollValue is not null
 		</cfquery>
 	
 		<div id="dsp_response" class="dataCollection">
@@ -64,7 +63,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 				SELECT tformresponsequestions.pollValue, Count(tformresponsequestions.pollValue) AS qty
 				FROM tformresponsequestions
 				GROUP BY tformresponsequestions.pollValue, tformresponsequestions.formID
-				HAVING tformresponsequestions.formID=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.objectID#"/>
+				HAVING tformresponsequestions.formID=<cfqueryparam cfsqltype="cf_sql_varchar" value="#$.event('formBean').getValue('contentID')#"/>
 				and tformresponsequestions.pollValue=<cfqueryparam cfsqltype="cf_sql_varchar" value="#variables.I#"/>
 				ORDER BY Count(tformresponsequestions.pollValue)
 			</cfquery>
@@ -84,15 +83,21 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<li><span class="pollValue">#i#:</span> <span class="pollQty">#variables.lineQty#</span> <span class="pollPercent">(#variables.percent#%)</span><div style="margin: 2px 0 0 0; height: 10px; width: #variables.percent#%; background: ##8C9EB4; font-size: 9px;">&nbsp;</div></li></cfloop></ul></div>
 	</cfif>
 </cfif>
-<cfif not variables.acceptdata>
-	<cfif variables.acceptError eq "Browser">
-		<p class="error">We're sorry the polling feature is not supported for IE 5 on the Mac</p>
-	<cfelseif variables.acceptError eq "Duplicate">
-		<p class="error">#getSite().getRBFactory().getKey("poll.onlyonevote")#</p>
-	<cfelseif variables.acceptError eq "Captcha">
-		<p class="error">#getSite().getRBFactory().getKey("captcha.error")# <a href="javascript:history.back();">#getSite().getRBFactory().getKey("captcha.tryagain")#</a></p>
-	<cfelseif variables.acceptError eq "Spam">
-		<p class="error">#getSite().getRBFactory().getKey("captcha.spam")# <a href="javascript:history.back();">#getSite().getRBFactory().getKey("captcha.tryagain")#</a></p>
+<cfset formDataBean=variables.event.getValue('formDataBean')>
+<cfif not formDataBean.getValue('acceptdata')>
+	<cfset variables.customresponse = application.pluginManager.renderEvent("onFormSubmitErrorRender",variables.event) />
+	<cfif Len(variables.customresponse)>
+		#variables.customresponse#
+	<cfelseif formDataBean.getValue('acceptError') eq "Browser">
+		<p class="#this.alertDangerClass#">We're sorry the polling feature is not supported for IE 5 on the Mac</p>
+	<cfelseif formDataBean.getValue('acceptError') eq "Duplicate">
+		<p class="#this.alertDangerClass#">#getSite().getRBFactory().getKey("poll.onlyonevote")#</p>
+	<cfelseif formDataBean.getValue('acceptError') eq "Captcha">
+		<p class="#this.alertDangerClass#">#getSite().getRBFactory().getKey("captcha.error")# <a href="javascript:history.back();">#getSite().getRBFactory().getKey("captcha.tryagain")#</a></p>
+	<cfelseif formDataBean.getValue('acceptError') eq "Spam">
+		<p class="#this.alertDangerClass#">#getSite().getRBFactory().getKey("captcha.spam")# <a href="javascript:history.back();">#getSite().getRBFactory().getKey("captcha.tryagain")#</a></p>
+	<cfelse>
+		<div class="#this.alertDangerClass#">#application.utility.displayErrors(formDataBean.getErrors())#</div>
 	</cfif>
 <cfelse>
 		<div id="frm#replace(variables.rsform.contentID,'-','','ALL')#">
@@ -109,7 +114,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 				#variables.customResponse#
 			<cfelse>
 				<cfif isdefined("request.redirect_label")>
-					<p class="success"><a href="#request.redirect_url#">#request.redirect_label#</a></p>
+					<p class="#this.alertSuccessClass#"><a href="#request.redirect_url#">#request.redirect_label#</a></p>
 				<cfelse>
 					<cflocation addtoken="false" url="#request.redirect_url#">
 				</cfif>

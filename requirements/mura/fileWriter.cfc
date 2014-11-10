@@ -47,7 +47,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfcomponent extends="mura.cfobject" output="false">
 <cfset variables.useMode=true>
 <cffunction name="init" output="false" returntype="any">
-<cfargument name="useMode" required="true" default="true">
+<cfargument name="useMode" required="true" default="">
 <cfargument name="tempDir" required="true" default="#application.configBean.getTempDir()#">
 
 <cfif findNoCase(server.os.name,"Windows")>
@@ -56,7 +56,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfif isBoolean(arguments.useMode)>
 	<cfset variables.useMode=arguments.useMode>
 	<cfelse>
-	<cfset variables.useMode=true>
+	<cfset variables.useMode=application.configBean.getValue("useFileMode")>
 	</cfif>
 </cfif>
 
@@ -237,9 +237,81 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfargument name="excludeList" default="" required="true" />
 	<cfargument name="sinceDate" default="" required="true" />
 	<cfargument name="excludeHiddenFiles" default="true" required="true" />
-	<cfset getBean("utility").copyDir(argumentCollection=arguments)>
-</cffunction>
+	<cfset var rsAll = "">
+	<cfset var rs = "">
+	<cfset var i="">
+	<cfset var errors=arrayNew(1)>
+	<cfset var copyItem="">
 
+	<cfset arguments.baseDir=pathFormat(arguments.baseDir)>
+	<cfset arguments.destDir=pathFormat(arguments.destDir)>
+	<cfset arguments.excludeList=pathFormat(arguments.excludeList)>
+	
+	<cfif arguments.baseDir neq arguments.destDir>	
+		<cfdirectory directory="#arguments.baseDir#" name="rsAll" action="list" recurse="true" />
+		<!--- filter out Subversion hidden folders --->
+		
+		<cfset rsAll=fixQueryPaths(rsAll)>
+		
+		<cfquery name="rsAll" dbtype="query">
+			SELECT * FROM rsAll
+			WHERE 
+			1=1
+			<cfif arguments.excludeHiddenFiles>
+				and directory NOT LIKE '%/.svn%'
+				and directory NOT LIKE '%/.git%'
+				and name not like '.%'
+			</cfif>
+			<cfif len(arguments.excludeList)>
+				<cfloop list="#arguments.excludeList#" index="i">
+					and directory NOT LIKE '%#i#%'
+				</cfloop>
+			</cfif>
+			
+			<cfif isDate(arguments.sinceDate)>
+				and dateLastModified >= #createODBCDateTime(arguments.sinceDate)#
+			</cfif>
+		</cfquery>
+
+		<cfset copyItem=arguments.destDir>
+		<cftry>
+			<cfset createDir(directory=copyItem)>
+			<cfcatch><!---<cfset arrayAppend(errors,copyItem)>---></cfcatch>
+		</cftry>
+		
+		<cfquery name="rs" dbtype="query">
+			select * from rsAll where lower(type) = 'dir'
+		</cfquery>
+		
+		<cfloop query="rs">
+			<cfset copyItem="#replace('#rs.directory#/',arguments.baseDir,arguments.destDir)##rs.name#/">
+			<cfif not DirectoryExists(copyItem)>
+			<cftry>
+				<cfset createDir(directory=copyItem)>
+				<cfcatch><!---<cfset arrayAppend(errors,copyItem)>---></cfcatch>
+			</cftry>
+			</cfif>
+		</cfloop>
+		
+		<cfquery name="rs" dbtype="query">
+			select * from rsAll where lower(type) = 'file'
+		</cfquery>
+		
+		<cfloop query="rs">
+			<cfset copyItem="#replace('#rs.directory#/',arguments.baseDir,arguments.destDir)#">
+			<cfif fileExists(copyItem)>
+				<cffile action="delete" file="#copyItem#">
+			</cfif>
+			
+			<cftry>
+				<cfset copyFile(source="#rs.directory#/#rs.name#", destination=copyItem, sinceDate=arguments.sinceDate)>
+				<cfcatch><cfset arrayAppend(errors,copyItem)></cfcatch>
+			</cftry>
+		</cfloop>
+	</cfif>
+	
+	<cfreturn errors>
+</cffunction>
 <cffunction name="getFreeSpace" output="false">
 	<cfargument name="file">
 	<cfargument name="unit" default="gb">
@@ -302,6 +374,21 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfcatch></cfcatch>
 		</cftry>
 	</cfif>
+</cffunction>
+
+<cffunction name="PathFormat" access="private" output="no" returntype="string" hint="Convert path into Windows or Unix format.">
+	<cfargument name="path" required="yes" type="string" hint="The path to convert.">
+	<cfset arguments.path = Replace(arguments.path, "\", "/", "ALL")>
+	<cfreturn arguments.path>
+</cffunction>
+
+<cffunction name="fixQueryPaths" output="false">
+	<cfargument name="rsDir">
+	<cfargument name="path" default="directory">
+	<cfloop query="rsDir">
+		<cfset querySetCell(rsDir,arguments.path,pathFormat(rsDir[arguments.path][rsDir.currentrow]),rsDir.currentrow)>
+	</cfloop>
+	<cfreturn rsDir>
 </cffunction>
 
 </cfcomponent>

@@ -52,10 +52,12 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			        size="#evaluate((application.settingsManager.getSite(rc.siteid).getcolumnCount() * 6)-4)#" 
 			        style="width:310px;">
 				<cfloop query="rc.rsUserDefinedTemplates">
-					<option value="Component~#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.type.component')# - #rc.rsUserDefinedTemplates.menutitle#~#rc.rsUserDefinedTemplates.contentid#">
-						#application.rbFactory.getKeyValue(session.rb, 'sitemanager.content.type.component')# 
-						- 
-						#rc.rsUserDefinedTemplates.menutitle#
+
+					<cfset title=application.rbFactory.getKeyValue(session.rb, 'sitemanager.content.type.component')
+						& ' - ' 
+						& rc.rsUserDefinedTemplates.menutitle>
+					<option title="#esapiEncode('html_attr',title)#" value="Component~#esapiEncode('html',title)#~#rc.rsUserDefinedTemplates.contentid#">
+						#esapiEncode('html',title)#
 					</option>
 				</cfloop>
 			</select>

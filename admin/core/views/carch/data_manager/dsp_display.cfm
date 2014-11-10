@@ -46,14 +46,9 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 --->
 
 <cfsilent>
-<cfif rc.contentBean.getResponseDisplayFields() neq "~">
-  <cfset summaryList=listfirst(rc.contentBean.getResponseDisplayFields(),"~")>
-  <cfset detailList=listLast(rc.contentBean.getResponseDisplayFields(),"~")>
-  <cfelse>
-  <cfset summaryList="">
-  <cfset detailList="">
-</cfif>
-<cfhtmlhead text='<script src="assets/js/manage-data.js?coreversion=#application.coreversion#" type="text/javascript"></script>'>
+<cfset detailList = Left(rc.contentBean.getResponseDisplayFields(), 1) neq '~' ? ListFirst(rc.contentBean.getResponseDisplayFields(), '~') : ''>
+<cfset summaryList = Right(rc.contentBean.getResponseDisplayFields(), 1) neq '~' ? ListLast(rc.contentBean.getResponseDisplayFields(), '~') : ''>
+<cfhtmlhead text='<script src="assets/js/manageData.js?coreversion=#application.coreversion#" type="text/javascript"></script>'>
 </cfsilent>
 <script type="text/javascript">
 function setFields(){
@@ -71,7 +66,7 @@ document.getElementById('responseDisplayFields').value=document.getElementById('
       <td valign="top">#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.availablefields')#<br/>
         <select name="availableFields" size="10" id="availableFields" class="multiSelect">
           <cfloop list="#rc.fieldnames#" index="f">
-            <option value="#f#">#f#</option>
+            <option value="#esapiEncode('html_attr',f)#">#esapiEncode('html',f)#</option>
           </cfloop>
         </select></td>
       <td><table>
@@ -83,7 +78,7 @@ document.getElementById('responseDisplayFields').value=document.getElementById('
               <select name="summaryList" id="summaryList" size="4" class="multiSelect">
                 <cfif summaryList neq "">
                   <cfloop list="#summaryList#" delimiters="^" index="f">
-                    <option value="#f#">#f#</option>
+                    <option value="#esapiEncode('html_attr',f)#">#esapiEncode('html',f)#</option>
                   </cfloop>
                 </cfif>
               </select>
@@ -93,14 +88,14 @@ document.getElementById('responseDisplayFields').value=document.getElementById('
               <input type="button" value="#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.down')#" onclick="dataManager.moveDown('summaryList','summaryList2');" class="objectNav btn">            </td>
           </tr>
           <tr>
-            <td class="nested"><input type="button" value=">>" onclick="addObject('availableFields','detailList','detailList2');" class="objectNav btn">
+            <td class="nested"><input type="button" value=">>" onclick="dataManager.addObject('availableFields','detailList','detailList2');" class="objectNav btn">
               <br />
               <input type="button" value="<<" onclick="dataManager.deleteObject('detailList','detailList2');" class="objectNav btn">            </td>
             <td class="nested"> #application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.detaildisplayfields')#<br />
               <select name="detailList"  id="detailList" size="4" style="width:310px;">
                 <cfif detailList neq "">
                   <cfloop list="#detailList#" delimiters="^" index="f">
-                    <option value="#f#">#f#</option>
+                    <option value="#esapiEncode('html_attr',f)#">#esapiEncode('html',f)#</option>
                   </cfloop>
                 </cfif>
               </select>
@@ -131,7 +126,7 @@ document.getElementById('responseDisplayFields').value=document.getElementById('
   <label class="control-label">#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.fields.sortby')#:</label>
   <div class="controls"><select name="sortBy" class="dropdown">
           <cfloop list="#rc.fieldnames#" index="f">
-            <option value="#f#" <cfif f eq rc.contentBean.getSortBy()>selected</cfif>>#f#</option>
+            <option value="#esapiEncode('html_attr',f)#" <cfif f eq rc.contentBean.getSortBy()>selected</cfif>>#esapiEncode('html',f)#</option>
           </cfloop>
         </select>
         <select name="sortDirection" class="dropdown">
@@ -147,8 +142,8 @@ document.getElementById('responseDisplayFields').value=document.getElementById('
 
 <input type="hidden" value="setDisplay" name="action">
 <input type="hidden" name="muraAction" value="cArch.datamanager" />
-<input type="hidden" name="contentid" value="#HTMLEditFormat(rc.contentid)#" />
-<input type="hidden" name="siteid" value="#HTMLEditFormat(session.siteid)#" />
-<input type="hidden" name="moduleid" value="#rc.moduleid#" />
+<input type="hidden" name="contentid" value="#esapiEncode('html_attr',rc.contentid)#" />
+<input type="hidden" name="siteid" value="#esapiEncode('html_attr',session.siteid)#" />
+<input type="hidden" name="moduleid" value="#esapiEncode('html_attr',rc.moduleid)#" />
 </cfoutput>
 </form>

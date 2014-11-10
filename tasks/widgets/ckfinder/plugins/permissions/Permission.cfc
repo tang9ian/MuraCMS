@@ -51,9 +51,12 @@
     	<cfargument name="command" required="true" type="string">
 
 		<cfset var fileSystem = APPLICATION.CreateCFC("Utils.FileSystem") />
-        
-	    <cfif listcontains("CopyFiles,CreateFolder,DeleteFile", arguments.command)>
+	    <cfif listFindNoCase("CreateFolder,DeleteFiles", arguments.command)>
 			<cfif not hasPermission(THIS.currentFolder.getURL(), "editor")>
+                <cfthrow errorcode="#REQUEST.constants.CKFINDER_CONNECTOR_ERROR_ACCESS_DENIED#" type="ckfinder" />
+            </cfif>
+         <cfelseif arguments.command eq 'CopyFiles'>
+            <cfif not (hasPermission(THIS.currentFolder.getURL(), "editor") and hasPermission("#APPLICATION.CreateCFC("Core.Config").getResourceTypeConfig(url.type).url##form['FILES[0][FOLDER]']#","read"))>
                 <cfthrow errorcode="#REQUEST.constants.CKFINDER_CONNECTOR_ERROR_ACCESS_DENIED#" type="ckfinder" />
             </cfif>
         <cfelseif arguments.command eq "DeleteFolder">
@@ -63,18 +66,20 @@
             <cfif not isFolderEmpty(THIS.currentFolder.getServerPath())>
                 <cfthrow message="Cannot delete folder since it is not empty." />
             </cfif>        	
-        <cfelseif arguments.command eq "FileUpload,RenameFile,RenameFolder">
+        <cfelseif listFindNoCase("FileUpload,RenameFile,RenameFolder",arguments.command)>
 			<cfif not hasPermission(THIS.currentFolder.getURL(), "author")>
-                <cfset THIS.throwError(REQUEST.constants.CKFINDER_CONNECTOR_ERROR_ACCESS_DENIED) />
-                <cfreturn false />
+                <cfthrow errorcode="#REQUEST.constants.CKFINDER_CONNECTOR_ERROR_ACCESS_DENIED#" type="ckfinder" />
             </cfif>
         <cfelseif arguments.command eq "GetFiles">
-	        <!---<cfthrow message="This is a test calling hasPermission for 'read' with #THIS.currentFolder.getURL()#: #hasPermission(this.currentFolder.getURL(), 'read')# " />--->
 			<cfif not hasPermission(THIS.currentFolder.getURL(), "read")>
                 <cfthrow errorcode="#REQUEST.constants.CKFINDER_CONNECTOR_ERROR_ACCESS_DENIED#" type="ckfinder" />
             </cfif>
         <cfelseif arguments.command eq "MoveFiles">
-            <cfif not hasPermission(THIS.currentFolder.getURL(), "editor")>
+            <cfif not (hasPermission(THIS.currentFolder.getURL(), "editor") and hasPermission("#APPLICATION.CreateCFC("Core.Config").getResourceTypeConfig(url.type).url##form['FILES[0][FOLDER]']#","editor"))>
+                <cfthrow errorcode="#REQUEST.constants.CKFINDER_CONNECTOR_ERROR_ACCESS_DENIED#" type="ckfinder" />
+            </cfif>
+         <cfelseif arguments.command eq "Permissions">
+             <cfif not(application.permUtility.isUserInGroup('Admin',application.settingsManager.getSite(session.siteid).getPrivateUserPoolID(),0) or application.permUtility.isS2())>
                 <cfthrow errorcode="#REQUEST.constants.CKFINDER_CONNECTOR_ERROR_ACCESS_DENIED#" type="ckfinder" />
             </cfif>
          </cfif>
@@ -115,7 +120,7 @@
 		<!--- Labels --->
 		<cfscript>
 			var nodeLabels = XMLElemNew(THIS.xmlObject, "Labels");
-			nodeLabels.xmlAttributes["admingroups"] = application.rbFactory.getKeyValue(session.rb,'user.adminusergroups');
+			nodeLabels.xmlAttributes["admingroups"] = application.rbFactory.getKeyValue(session.rb,'user.admingroups');
 			nodeLabels.xmlAttributes["membergroups"] = application.rbFactory.getKeyValue(session.rb,'user.membergroups');
 			nodeLabels.xmlAttributes["permissions"] = application.rbFactory.getKeyValue(session.rb,'permissions');
 			nodeLabels.xmlAttributes["editor"] = application.rbFactory.getKeyValue(session.rb,'permissions.editor');
@@ -135,7 +140,7 @@
                 <cfset var perm=application.permUtility.getGroupPerm(request.rslist.userid,attributes.contentid,attributes.siteid)/>
                 <cfscript>
 					var node = XMLElemNew(THIS.xmlObject, "Group");
-					node.xmlText = request.rslist.GroupName;
+					node.xmlAttributes["name"] = request.rslist.GroupName;
 					node.xmlAttributes["perm"] = perm;
 					node.xmlAttributes["groupid"] = request.rslist.UserID;
 					ArrayAppend(private.xmlChildren, node);
@@ -152,7 +157,7 @@
                 <cfset var perm=application.permUtility.getGroupPerm(request.rslist.userid,attributes.contentid,attributes.siteid)/>
                 <cfscript>
 					var node = XMLElemNew(THIS.xmlObject, "Group");
-					node.xmlText = request.rslist.GroupName;
+					node.xmlAttributes["name"] = request.rslist.GroupName;
 					node.xmlAttributes["perm"] = perm;
 					node.xmlAttributes["groupid"] = request.rslist.UserID;
 					ArrayAppend(private.xmlChildren, node);

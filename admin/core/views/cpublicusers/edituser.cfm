@@ -54,7 +54,14 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 select * from rsSubTypes where subType <> 'Default'
 </cfquery>
 <cfset variables.pluginEvent=createObject("component","mura.event").init(event.getAllValues())/>
-<cfset rsPluginScripts=application.pluginManager.getScripts("onUserEdit",rc.siteID)>
+
+<cfset pluginEventMappings=duplicate($.getBean('pluginManager').getEventMappings(eventName='onUserEdit',siteid=rc.siteid))>
+ <cfif arrayLen(pluginEventMappings)>
+    <cfloop from="1" to="#arrayLen(pluginEventMappings)#" index="i">
+        <cfset pluginEventMappings[i].eventName='onUserEdit'>
+    </cfloop>
+ </cfif>
+
 <cfset tabLabelList='#application.rbFactory.getKeyValue(session.rb,'user.basic')#,#application.rbFactory.getKeyValue(session.rb,'user.addressinformation')#,#application.rbFactory.getKeyValue(session.rb,'user.groupmemberships')#,#application.rbFactory.getKeyValue(session.rb,'user.interests')#'>
 <cfset tablist="tabBasic,tabAddressinformation,tabGroupmemberships,tabInterests">
 <cfif rsSubTypes.recordcount>
@@ -64,11 +71,11 @@ select * from rsSubTypes where subType <> 'Default'
 <cfset tabLabelList=listAppend(tabLabelList,application.rbFactory.getKeyValue(session.rb,'user.advanced'))>
 <cfset tabList=listAppend(tabList,"tabAdvanced")>
 </cfsilent>
-<cfoutput><form novalidate="novalidate" action="index.cfm?muraAction=cPublicUsers.update&userid=#URLEncodedFormat(rc.userid)#&routeid=#rc.routeid#&siteid=#URLEncodedFormat(rc.siteid)#" method="post" enctype="multipart/form-data" name="form1" onsubmit="return validate(this);"  autocomplete="off" >
+<cfoutput><form novalidate="novalidate" action="./?muraAction=cPublicUsers.update&userid=#esapiEncode('url',rc.userBean.getUserID())#&routeid=#rc.routeid#&siteid=#esapiEncode('url',rc.siteid)#" method="post" enctype="multipart/form-data" name="form1" onsubmit="return validate(this);"  autocomplete="off" >
 	<h1>#application.rbFactory.getKeyValue(session.rb,'user.memberform')#</h1>
 	
 	<div id="nav-module-specific" class="btn-group">
-	<a class="btn" href="##" title="#HTMLEditFormat(application.rbFactory.getKeyValue(session.rb,'sitemanager.back'))#" onclick="window.history.back(); return false;"><i class="icon-circle-arrow-left"></i> #HTMLEditFormat(application.rbFactory.getKeyValue(session.rb,'sitemanager.back'))#</a>
+	<a class="btn" href="##" title="#esapiEncode('html_attr',application.rbFactory.getKeyValue(session.rb,'sitemanager.back'))#" onclick="window.history.back(); return false;"><i class="icon-circle-arrow-left"></i> #esapiEncode('html',application.rbFactory.getKeyValue(session.rb,'sitemanager.back'))#</a>
 	</div>
 	
 	<cfif len(rc.userBean.getUsername())>
@@ -79,7 +86,7 @@ select * from rsSubTypes where subType <> 'Default'
 		<cfif strikes.isBlocked()>
 			<p class="alert alert-error">
 			#application.rbFactory.getKeyValue(session.rb,'user.blocked')#: #LSTimeFormat(strikes.blockedUntil(),"short")#
-			<a href="?muraAction=cPublicUsers.edituser&userid=#URLEncodedFormat(rc.userid)#&type=2&siteid=#URLEncodedFormat(rc.siteid)#&removeBlock">[#application.rbFactory.getKeyValue(session.rb,'user.remove')#]</a>
+			<a href="?muraAction=cPublicUsers.edituser&userid=#esapiEncode('url',rc.userid)#&type=2&siteid=#esapiEncode('url',rc.siteid)#&removeBlock">[#application.rbFactory.getKeyValue(session.rb,'user.remove')#]</a>
 			</p>
 		</cfif>
 	</cfif>
@@ -112,14 +119,14 @@ select * from rsSubTypes where subType <> 'Default'
 			<div class="span6">
 		    	<label class="control-label">#application.rbFactory.getKeyValue(session.rb,'user.fname')#*</label>
 			    <div class="controls">
-			    	<input id="fname" name="fname" type="text" value="#HTMLEditFormat(rc.userBean.getfname())#"  required="true" message="#application.rbFactory.getKeyValue(session.rb,'user.fnamerequired')#" class="span12">
+			    	<input id="fname" name="fname" type="text" value="#esapiEncode('html_attr',rc.userBean.getfname())#"  required="true" message="#application.rbFactory.getKeyValue(session.rb,'user.fnamerequired')#" class="span12">
 			  	</div>
 		    </div>
 			
 			<div class="span6">
 			    <label class="control-label">#application.rbFactory.getKeyValue(session.rb,'user.lname')#*</label>
 			    <div class="controls">
-			      	<input id="lname" name="lname" type="text" value="#HTMLEditFormat(rc.userBean.getlname())#"  required="true" message="#application.rbFactory.getKeyValue(session.rb,'user.lnamerequired')#" class="span12">
+			      	<input id="lname" name="lname" type="text" value="#esapiEncode('html_attr',rc.userBean.getlname())#"  required="true" message="#application.rbFactory.getKeyValue(session.rb,'user.lnamerequired')#" class="span12">
 			  	</div>
 		    </div>
 	    </div>
@@ -127,31 +134,31 @@ select * from rsSubTypes where subType <> 'Default'
 		<div class="control-group">
 			<div class="span6">
 		      <label class="control-label">#application.rbFactory.getKeyValue(session.rb,'user.company')#</label>
-		      <div class="controls"><input id="organization" name="company" type="text" value="#HTMLEditFormat(rc.userBean.getcompany())#"  class="span12"></div>
+		      <div class="controls"><input id="organization" name="company" type="text" value="#esapiEncode('html_attr',rc.userBean.getcompany())#"  class="span12"></div>
 		    </div>
 				
 			<div class="span6">
 		      <label class="control-label">#application.rbFactory.getKeyValue(session.rb,'user.jobtitle')#</label>
-		      <div class="controls"><input id="jobtitle" name="jobtitle" type="text" value="#HTMLEditFormat(rc.userBean.getjobtitle())#"  class="span12"></div>
+		      <div class="controls"><input id="jobtitle" name="jobtitle" type="text" value="#esapiEncode('html_attr',rc.userBean.getjobtitle())#"  class="span12"></div>
 		    </div>
 		</div>
 		
 		<div class="control-group">
 			<div class="span6">
 		      <label class="control-label">#application.rbFactory.getKeyValue(session.rb,'user.email')#*</label>
-		      <div class="controls"><input id="email" name="email" type="text" value="#HTMLEditFormat(rc.userBean.getemail())#" class="span12" required="true" validate="email" message="#application.rbFactory.getKeyValue(session.rb,'user.emailvalidate')#"></div>
+		      <div class="controls"><input id="email" name="email" type="text" value="#esapiEncode('html_attr',rc.userBean.getemail())#" class="span12" required="true" validate="email" message="#application.rbFactory.getKeyValue(session.rb,'user.emailvalidate')#"></div>
 		    </div>
 				
 			<div class="span6">
 		      <label class="control-label">#application.rbFactory.getKeyValue(session.rb,'user.mobilephone')#</label>
-		      <div class="controls"><input id="mobilePhone" name="mobilePhone" type="text" value="#HTMLEditFormat(rc.userBean.getMobilePhone())#" class="span12"></div>
+		      <div class="controls"><input id="mobilePhone" name="mobilePhone" type="text" value="#esapiEncode('html_attr',rc.userBean.getMobilePhone())#" class="span12"></div>
 		    </div>
 	    </div>
 			
 		<div class="control-group">
 			<div class="span6">
 	      <label class="control-label">#application.rbFactory.getKeyValue(session.rb,'user.username')#*</label>
-	      <div class="controls"><input id="username"  name="usernameNoCache" type="text" value="#HTMLEditFormat(rc.userBean.getusername())#" class="span12" required="true" message="The 'Username' field is required" autocomplete="off"></div>
+	      <div class="controls"><input id="username"  name="usernameNoCache" type="text" value="#esapiEncode('html_attr',rc.userBean.getusername())#" class="span12" required="true" message="The 'Username' field is required" autocomplete="off"></div>
 	    	</div>
 		</div>
 			
@@ -210,75 +217,75 @@ select * from rsSubTypes where subType <> 'Default'
 	<div class="control-group">
 		<div class="span6">
 	      <label class="control-label">#application.rbFactory.getKeyValue(session.rb,'user.address1')#</label>
-	      <div class="controls"><input id="address1" name="address1" type="text" value="#HTMLEditFormat(rc.address1)#"  class="span12"></div>
+	      <div class="controls"><input id="address1" name="address1" type="text" value="#esapiEncode('html_attr',rc.address1)#"  class="span12"></div>
 	    </div>
 			
 		<div class="span6">
 	      <label class="control-label">#application.rbFactory.getKeyValue(session.rb,'user.address2')#</label>
-	      <div class="controls"><input id="address2" name="address2" type="text" value="#HTMLEditFormat(rc.address2)#"  class="span12"></div>
+	      <div class="controls"><input id="address2" name="address2" type="text" value="#esapiEncode('html_attr',rc.address2)#"  class="span12"></div>
 	    </div>
     </div>		
 
 	<div class="control-group">
 		<div class="span5">
 	      <label class="control-label">#application.rbFactory.getKeyValue(session.rb,'user.city')#</label>
-	      <div class="controls"><input id="city" name="city" type="text" value="#HTMLEditFormat(rc.city)#" class="span12"></div>
+	      <div class="controls"><input id="city" name="city" type="text" value="#esapiEncode('html_attr',rc.city)#" class="span12"></div>
 	    </div>
 			
 		<div class="span1">
 	      <label class="control-label">#application.rbFactory.getKeyValue(session.rb,'user.state')#</label>
-	      <div class="controls"><input id="state" name="state" type="text" value="#HTMLEditFormat(rc.state)#" class="span12"></div>
+	      <div class="controls"><input id="state" name="state" type="text" value="#esapiEncode('html_attr',rc.state)#" class="span12"></div>
 	    </div>
 		
 		<div class="span2">
 	      <label class="control-label">#application.rbFactory.getKeyValue(session.rb,'user.zip')#</label>
-	      <div class="controls"><input id="zip" name="zip" type="text" value="#HTMLEditFormat(rc.zip)#" class="span12"></div>
+	      <div class="controls"><input id="zip" name="zip" type="text" value="#esapiEncode('html_attr',rc.zip)#" class="span12"></div>
 	    </div>
 		
 		<div class="span4">
 	      <label class="control-label">#application.rbFactory.getKeyValue(session.rb,'user.country')#</label>
-	      <div class="controls"><input id="country" name="country" type="text" value="#HTMLEditFormat(rc.country)#" class="span12"></div>
+	      <div class="controls"><input id="country" name="country" type="text" value="#esapiEncode('html_attr',rc.country)#" class="span12"></div>
 	    </div>
     </div>
 		
 	<div class="control-group">
 		<div class="span6">
 	      <label class="control-label">#application.rbFactory.getKeyValue(session.rb,'user.phone')#</label>
-	      <div class="controls"><input id="phone" name="phone" type="text" value="#HTMLEditFormat(rc.phone)#" class="span12"></div>
+	      <div class="controls"><input id="phone" name="phone" type="text" value="#esapiEncode('html_attr',rc.phone)#" class="span12"></div>
 	    </div>	
 			
 		<div class="span6">
 	      <label class="control-label">#application.rbFactory.getKeyValue(session.rb,'user.fax')#</label>
-	      <div class="controls"><input id="fax" name="fax" type="text" value="#HTMLEditFormat(rc.fax)#" class="span12"></div>
+	      <div class="controls"><input id="fax" name="fax" type="text" value="#esapiEncode('html_attr',rc.fax)#" class="span12"></div>
 	    </div> 
 	</div>		
 	
 	<div class="control-group">
 		<div class="span6">
 	      <label class="control-label">#application.rbFactory.getKeyValue(session.rb,'user.website')# (#application.rbFactory.getKeyValue(session.rb,'user.includehttp')#)</label>
-	      <div class="controls"><input id="addressURL" name="addressURL" type="text" value="#HTMLEditFormat(rc.addressURL)#" class="span12"></div>
+	      <div class="controls"><input id="addressURL" name="addressURL" type="text" value="#esapiEncode('html_attr',rc.addressURL)#" class="span12"></div>
 	    </div>
 			
 		<div class="span6">
 	      <label class="control-label">#application.rbFactory.getKeyValue(session.rb,'user.email')#</label>
-	      <div class="controls"><input id="addressEmail" name="addressEmail" validate="email" message="#application.rbFactory.getKeyValue(session.rb,'user.emailvalidate')#" type="text" value="#HTMLEditFormat(rc.addressEmail)#" class="span12"></div>
+	      <div class="controls"><input id="addressEmail" name="addressEmail" validate="email" message="#application.rbFactory.getKeyValue(session.rb,'user.emailvalidate')#" type="text" value="#esapiEncode('html_attr',rc.addressEmail)#" class="span12"></div>
 	    </div>
 	</div>
 		
 	<div class="control-group">
       <label class="control-label">#application.rbFactory.getKeyValue(session.rb,'user.hours')#</label>
-      <div class="controls"><textarea id="hours" name="hours" rows="6" class="span6" >#HTMLEditFormat(rc.hours)#</textarea></div>
+      <div class="controls"><textarea id="hours" name="hours" rows="6" class="span6" >#esapiEncode('html',rc.hours)#</textarea></div>
     </div>
 
 	<input type="hidden" name="isPrimary" value="1" />
 		
 	<cfelse>
 		<div class="control-group">
-			<ul class="navTask nav nav-pills"><li><a href="index.cfm?muraAction=cPublicUsers.editAddress&userid=#URLEncodedFormat(rc.userid)#&siteid=#URLEncodedFormat(rc.siteid)#&routeID=#rc.routeid#&addressID="><i class="icon-plus-sign"></i> #application.rbFactory.getKeyValue(session.rb,'user.addnewaddress')#</a></li></ul>
+			<ul class="navTask nav nav-pills"><li><a href="./?muraAction=cPublicUsers.editAddress&userid=#esapiEncode('url',rc.userid)#&siteid=#esapiEncode('url',rc.siteid)#&routeID=#rc.routeid#&addressID="><i class="icon-plus-sign"></i> #application.rbFactory.getKeyValue(session.rb,'user.addnewaddress')#</a></li></ul>
 			<cfset rsAddresses=rc.userBean.getAddresses()>
 		
 			<cfif rsAddresses.recordcount>
-				<table class="table table-condensed table-striped table-bordered mura-table-grid">
+				<table class="mura-table-grid">
 				<tr><th>#application.rbFactory.getKeyValue(session.rb,'user.primary')#</th><th>#application.rbFactory.getKeyValue(session.rb,'user.address')#</th><th class="adminstration"></th></tr>
 				<cfloop query="rsAddresses">
 				<tr>
@@ -286,17 +293,17 @@ select * from rsSubTypes where subType <> 'Default'
 					<input type="radio" name="primaryAddressID" value="#rsAddresses.addressID#" <cfif rsAddresses.isPrimary eq 1 or rsAddresses.recordcount eq 1>checked</cfif>>
 					</td>
 					<td class="var-width">
-					<cfif rsAddresses.addressName neq ''><a title="#application.rbFactory.getKeyValue(session.rb,'user.edit')#" href="index.cfm?muraAction=cPublicUsers.editAddress&userid=#URLEncodedFormat(rc.userid)#&siteid=#URLEncodedFormat(rc.siteid)#&routeID=#URLEncodedFormat(rc.routeid)#&addressID=#rsAddresses.addressID#">#rsAddresses.addressName#</a><br /></cfif>
-					<cfif rsAddresses.address1 neq ''>#HTMLEditFormat(rsAddresses.address1)#<br /></cfif>
-					<cfif rsAddresses.address2 neq ''>#HTMLEditFormat(rsAddresses.address2)#<br /></cfif>
-					<cfif rsAddresses.city neq ''>#HTMLEditFormat(rsAddresses.city)# </cfif><cfif rsAddresses.state neq ''><cfif rsaddresses.city neq ''>,</cfif> #HTMLEditFormat(rsAddresses.state)# </cfif><cfif rsaddresses.zip neq ''> #HTMLEditFormat(rsAddresses.zip)#</cfif><cfif rsAddresses.city neq '' or rsAddresses.state neq '' or rsAddresses.zip neq ''><br/></cfif>
-					<cfif rsAddresses.phone neq ''>#application.rbFactory.getKeyValue(session.rb,'user.phone')#: #HTMLEditFormat(rsAddresses.phone)#<br/></cfif>
-					<cfif rsAddresses.fax neq ''>#application.rbFactory.getKeyValue(session.rb,'user.fax')#: #HTMLEditFormat(rsAddresses.fax)#<br/></cfif>
-					<cfif rsAddresses.addressURL neq ''>#application.rbFactory.getKeyValue(session.rb,'user.website')#: <a href="#rsAddresses.addressURL#" target="_blank">#HTMLEditFormat(rsAddresses.addressURL)#</a><br/></cfif>
-					<cfif rsAddresses.addressEmail neq ''>#application.rbFactory.getKeyValue(session.rb,'user.email')#: <a href="mailto:#rsAddresses.addressEmail#">#HTMLEditFormat(rsAddresses.addressEmail)#</a></cfif>
+					<cfif rsAddresses.addressName neq ''><a title="#application.rbFactory.getKeyValue(session.rb,'user.edit')#" href="./?muraAction=cPublicUsers.editAddress&userid=#esapiEncode('url',rc.userid)#&siteid=#esapiEncode('url',rc.siteid)#&routeID=#esapiEncode('url',rc.routeid)#&addressID=#rsAddresses.addressID#">#rsAddresses.addressName#</a><br /></cfif>
+					<cfif rsAddresses.address1 neq ''>#esapiEncode('html',rsAddresses.address1)#<br /></cfif>
+					<cfif rsAddresses.address2 neq ''>#esapiEncode('html',rsAddresses.address2)#<br /></cfif>
+					<cfif rsAddresses.city neq ''>#esapiEncode('html',rsAddresses.city)# </cfif><cfif rsAddresses.state neq ''><cfif rsaddresses.city neq ''>,</cfif> #esapiEncode('html',rsAddresses.state)# </cfif><cfif rsaddresses.zip neq ''> #esapiEncode('html',rsAddresses.zip)#</cfif><cfif rsAddresses.city neq '' or rsAddresses.state neq '' or rsAddresses.zip neq ''><br/></cfif>
+					<cfif rsAddresses.phone neq ''>#application.rbFactory.getKeyValue(session.rb,'user.phone')#: #esapiEncode('html',rsAddresses.phone)#<br/></cfif>
+					<cfif rsAddresses.fax neq ''>#application.rbFactory.getKeyValue(session.rb,'user.fax')#: #esapiEncode('html',rsAddresses.fax)#<br/></cfif>
+					<cfif rsAddresses.addressURL neq ''>#application.rbFactory.getKeyValue(session.rb,'user.website')#: <a href="#rsAddresses.addressURL#" target="_blank">#esapiEncode('html',rsAddresses.addressURL)#</a><br/></cfif>
+					<cfif rsAddresses.addressEmail neq ''>#application.rbFactory.getKeyValue(session.rb,'user.email')#: <a href="mailto:#rsAddresses.addressEmail#">#esapiEncode('html',rsAddresses.addressEmail)#</a></cfif>
 					</td>
-					<td nowrap class="actions"><ul class="users"><li class="edit"><a title="#application.rbFactory.getKeyValue(session.rb,'user.edit')#" href="index.cfm?muraAction=cPublicUsers.editAddress&userid=#URLEncodedFormat(rc.userid)#&siteid=#URLEncodedFormat(rc.siteid)#&routeID=#rc.routeid#&addressID=#rsAddresses.addressID#"><i class="icon-pencil"></i></a></li>
-					<cfif rsAddresses.isPrimary neq 1><li class="delete"><a title="Delete" href="index.cfm?muraAction=cPublicUsers.updateAddress&userid=#URLEncodedFormat(rc.userid)#&action=delete&siteid=#URLEncodedFormat(rc.siteid)#&routeID=#URLEncodedFormat(rc.routeid)#&addressID=#rsAddresses.addressID#" onclick="return confirmDialog('#jsStringFormat(application.rbFactory.getKeyValue(session.rb,'user.deleteaddressconfirm'))#',this.href);"><i class="icon-remove-sign"></i></a></li><cfelse><li class="delete disabled">#application.rbFactory.getKeyValue(session.rb,'user.delete')#</li></cfif></ul></td>
+					<td nowrap class="actions"><ul class="users"><li class="edit"><a title="#application.rbFactory.getKeyValue(session.rb,'user.edit')#" href="./?muraAction=cPublicUsers.editAddress&userid=#esapiEncode('url',rc.userid)#&siteid=#esapiEncode('url',rc.siteid)#&routeID=#rc.routeid#&addressID=#rsAddresses.addressID#"><i class="icon-pencil"></i></a></li>
+					<cfif rsAddresses.isPrimary neq 1><li class="delete"><a title="Delete" href="./?muraAction=cPublicUsers.updateAddress&userid=#esapiEncode('url',rc.userid)#&action=delete&siteid=#esapiEncode('url',rc.siteid)#&routeID=#esapiEncode('url',rc.routeid)#&addressID=#rsAddresses.addressID#" onclick="return confirmDialog('#esapiEncode('javascript',application.rbFactory.getKeyValue(session.rb,'user.deleteaddressconfirm'))#',this.href);"><i class="icon-remove-sign"></i></a></li><cfelse><li class="delete disabled">#application.rbFactory.getKeyValue(session.rb,'user.delete')#</li></cfif></ul></td>
 				</tr>
 				</cfloop>
 				</table>
@@ -317,7 +324,7 @@ select * from rsSubTypes where subType <> 'Default'
 	      	</label>
 	     	<div class="controls">
 	     	<cfloop query="rc.rspublicgroups">
-				<label class="checkbox inline">
+				<label class="checkbox">
 					<input name="groupid" type="checkbox" value="#rc.rspublicgroups.UserID#" <cfif listfind(rc.userBean.getgroupid(),rc.rspublicgroups.UserID) or listfind(rc.groupid,rc.rsPublicGroups.UserID)>checked</cfif>> #rc.rspublicgroups.groupname#
 				</label>
 				</cfloop>
@@ -329,18 +336,22 @@ select * from rsSubTypes where subType <> 'Default'
 	</div>
 </div>
 	
-<div id="tabInterests" class="tab-pane fade">
-	<div class="fieldset">
-		<div class="control-group" id="mura-list-tree">
-			<cfloop collection="#application.settingsManager.getSites()#" item="site">
-				<cfif application.settingsManager.getSite(site).getPublicUserPoolID() eq application.settingsManager.getSite(rc.siteID).getPublicUserPoolID()>
-						<cfoutput><label class="control-label">#application.settingsManager.getSite(site).getSite()#</label></cfoutput>
-						<cf_dsp_categories_nest siteID="#rc.siteID#" parentID="" categoryID="#rc.categoryID#" nestLevel="0"  userBean="#rc.userBean#">
-				</cfif>
-			</cfloop> 
+<!--- Interests Tab --->
+	<div id="tabInterests" class="tab-pane fade">
+		<div class="fieldset">
+			<div id="mura-list-tree" class="control-group">
+
+				<cf_dsp_categories_nest 
+					siteID="#rc.siteID#" 
+					parentID="" 
+					categoryID="#rc.categoryID#" 
+					nestLevel="0" 
+					userBean="#rc.userBean#">
+
+			</div>
 		</div>
 	</div>
-</div>
+<!--- /Interests Tab --->
 	
 <cfif rsSubTypes.recordcount>
 <div id="tabExtendedattributes" class="tab-pane fade">
@@ -401,38 +412,36 @@ select * from rsSubTypes where subType <> 'Default'
 		<div class="control-group">
 		<div class="span6">
      	 <label class="control-label">#application.rbFactory.getKeyValue(session.rb,'user.tags')#</label>
-     	 <div class="controls"><input id="tags" name="tags" type="text" value="#HTMLEditFormat(rc.userBean.getTags())#" class="span12"></div>
+     	 <div class="controls"><input id="tags" name="tags" type="text" value="#esapiEncode('html_attr',rc.userBean.getTags())#" class="span12"></div>
      	 </div>
 		<div class="span6">
      	 <label class="control-label">#application.rbFactory.getKeyValue(session.rb,'user.remoteid')#</label>
-      <div class="controls"><input id="remoteID" name="remoteID" type="text" value="#HTMLEditFormat(rc.userBean.getRemoteID())#"  class="span12"></div>
+      <div class="controls"><input id="remoteID" name="remoteID" type="text" value="#esapiEncode('html_attr',rc.userBean.getRemoteID())#"  class="span12"></div>
 		</div>
     </div>
 </div>		
 </div>
 	</cfoutput>
-		<cfoutput query="rsPluginScripts" group="pluginID">
-		<!---<cfset tabLabelList=tabLabelList & ",'#jsStringFormat(rsPluginScripts.name)#'"/>--->
-		<cfset tabLabelList=listAppend(tabLabelList,rsPluginScripts.name)/>
-		<cfset tabID="tab" & application.contentRenderer.createCSSID(rsPluginScripts.name)>
-		<cfset tabList=listAppend(tabList,tabID)>
-		<cfset pluginEvent.setValue("tabList",tabLabelList)>
+	<cfif arrayLen(pluginEventMappings)>
+	<cfoutput>
+	<cfloop from="1" to="#arrayLen(pluginEventMappings)#" index="i">
+		<cfset renderedEvent=$.getBean('pluginManager').renderEvent(eventToRender=pluginEventMappings[i].eventName,currentEventObject=$,index=i)>
+		<cfif len(trim(renderedEvent))>
+			<cfset tabLabelList=listAppend(tabLabelList,pluginEventMappings[i].pluginName)/>
+			<cfset tabID="tab" & $.createCSSID(pluginEventMappings[i].pluginName)>
+			<cfset tabList=listAppend(tabList,tabID)>
+			<cfset pluginEvent.setValue("tabList",tabLabelList)>
 			<div id="#tabID#" class="tab-pane fade">
-			<cfoutput>
-			<cfset rsPluginScript=application.pluginManager.getScripts("onUserEdit",rc.siteID,rsPluginScripts.moduleID)>
-			<cfif rsPluginScript.recordcount>
-			#application.pluginManager.renderScripts("onUserEdit",rc.siteid,pluginEvent,rsPluginScript)#
-			<cfelse>
-			<cfset rsPluginScript=application.pluginManager.getScripts("on#rc.type#Edit",rc.siteID,rsPluginScripts.moduleID)>
-			#application.pluginManager.renderScripts("on#rc.type#Edit",rc.siteid,pluginEvent,rsPluginScript)#
-			</cfif>
-			</cfoutput>
+				#renderedEvent#
 			</div>
-		</cfoutput>
+		</cfif>
+	</cfloop>
+	</cfoutput>
+	</cfif>
 </cfsavecontent>	
 <cfoutput>	
 
-<div class="tabbable tabs-left">
+<div class="tabbable tabs-left mura-ui">
 <ul class="nav nav-tabs tabs initActiveTab">
 <cfloop from="1" to="#listlen(tabList)#" index="t">
 <li<cfif listGetAt(tabList,t) eq 'tabExtendedattributes'> id="tabExtendedattributesLI" class="hide"</cfif>><a href="###listGetAt(tabList,t)#" onclick="return false;"><span>#listGetAt(tabLabelList,t)#</span></a></li>
@@ -441,11 +450,12 @@ select * from rsSubTypes where subType <> 'Default'
 <div class="tab-content">
 #tabContent#
 <div class="load-inline tab-preloader"></div>
+<script>$('.tab-preloader').spin(spinnerArgs2);</script>
 <div class="form-actions">
 	<cfif rc.userid eq ''>
 		<input type="button" class="btn" onclick="submitForm(document.forms.form1,'add');" value="#application.rbFactory.getKeyValue(session.rb,'user.add')#" />
     <cfelse>
-        <input type="button" class="btn" onclick="submitForm(document.forms.form1,'delete','#jsStringFormat(application.rbFactory.getKeyValue(session.rb,'user.deleteuserconfirm'))#');" value="#application.rbFactory.getKeyValue(session.rb,'user.delete')#" /> 
+        <input type="button" class="btn" onclick="submitForm(document.forms.form1,'delete','#esapiEncode('javascript',application.rbFactory.getKeyValue(session.rb,'user.deleteuserconfirm'))#');" value="#application.rbFactory.getKeyValue(session.rb,'user.delete')#" /> 
 		<input type="button" class="btn" onclick="submitForm(document.forms.form1,'update');" value="#application.rbFactory.getKeyValue(session.rb,'user.update')#" />
 	</cfif>
 </div>
@@ -458,8 +468,9 @@ select * from rsSubTypes where subType <> 'Default'
 <input type="hidden" name="groupid" value="">
 <input type="hidden" name="ContactForm" value="">
 <input type="hidden" name="isPublic" value="1">
-<input type="hidden" name="returnurl" value="#HTMLEditFormat(rc.returnurl)#">
+<input type="hidden" name="returnurl" value="#esapiEncode('html_attr',rc.returnurl)#">
 <cfif not rsNonDefault.recordcount><input type="hidden" name="subtype" value="Default"/></cfif>		
+#rc.$.renderCSRFTokens(context=rc.userBean.getUserID(),format="form")#
 </cfoutput>
 
 </form>

@@ -52,7 +52,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 <cfinclude template="dsp_secondary_menu.cfm">
 
-<form <cfif rc.mlid eq ''>class="fieldset-wrap"</cfif> novalidate="novalidate" action="index.cfm?muraAction=cMailingList.update" method="post" enctype="multipart/form-data" name="form1" onsubmit="return validate(this);">
+<form <cfif rc.mlid eq ''>class="fieldset-wrap"</cfif> novalidate="novalidate" action="./?muraAction=cMailingList.update" method="post" enctype="multipart/form-data" name="form1" onsubmit="return validate(this);">
 
 <cfif rc.listBean.getispurge() neq 1>
 	<cfif rc.mlid eq ''>
@@ -62,24 +62,26 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 				#application.rbFactory.getKeyValue(session.rb,'mailinglistmanager.name')#
 			</label>
 			<div class="controls">
-				<input type="text" name="Name" value="#HTMLEditFormat(rc.listBean.getname())#" required="true" message="#application.rbFactory.getKeyValue(session.rb,'mailinglistmanager.namerequired')#" class="span12">
+				<input type="text" name="Name" value="#esapiEncode('html_attr',rc.listBean.getname())#" required="true" message="#application.rbFactory.getKeyValue(session.rb,'mailinglistmanager.namerequired')#" class="span12">
 			</div>
 		</div>
 	<cfelse>
-		<div class="tabbable tabs-left">
+		<div class="tabbable tabs-left mura-ui">
 		<ul class="nav nav-tabs tabs initActiveTab">
 		<cfloop from="1" to="#listlen(tabList)#" index="t">
 		<li><a href="###listGetAt(tabList,t)#" onclick="return false;"><span>#listGetAt(tabLabelList,t)#</span></a></li>
 		</cfloop>
 		</ul>
+		
 		<div class="tab-content">
 		<div id="tabBasic" class="tab-pane fade">
+		<div class="fieldset">
 		<div class="control-group">
 			<label class="control-label">
 				#application.rbFactory.getKeyValue(session.rb,'mailinglistmanager.name')#
 			</label>
 			<div class="controls">
-				<input type=text name="Name" value="#HTMLEditFormat(rc.listBean.getname())#" required="true" message="#application.rbFactory.getKeyValue(session.rb,'mailinglistmanager.namerequired')#" class="span12">
+				<input type=text name="Name" value="#esapiEncode('html_attr',rc.listBean.getname())#" required="true" message="#application.rbFactory.getKeyValue(session.rb,'mailinglistmanager.namerequired')#" class="span12">
 			</div>
 		</div>
 	</cfif>
@@ -102,37 +104,38 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	</div>
 
 <cfelse>
-	<div class="tabbable tabs-left">
-	<ul class="nav nav-tabs tabs initActiveTab">
+	<div class="tabbable tabs-left mura-ui">
+		<ul class="nav nav-tabs tabs initActiveTab">
 	<cfloop from="1" to="#listlen(tabList)#" index="t">
 	<li><a href="###listGetAt(tabList,t)#" onclick="return false;"><span>#listGetAt(tabLabelList,t)#</span></a></li>
 	</cfloop>
 	</ul>
-	<div class="tab-content">
-	<div id="tabBasic" class="tab-pane fade">
-
-	<div class="control-group">
+			
+		<div class="tab-content">
+		<div id="tabBasic" class="tab-pane fade">
+			<div class="fieldset">
+				<div class="control-group">
 		<label class="control-label">
 			#application.rbFactory.getKeyValue(session.rb,'mailinglistmanager.masterdonotemaillistname')#
 		</label>
 		<div class="controls">
-			<input type="text" name="Name" value="#HTMLEditFormat(rc.listBean.getname())#" required="true" message="#application.rbFactory.getKeyValue(session.rb,'mailinglistmanager.namerequired')#" class="span12">
+			<input type="text" name="Name" value="#esapiEncode('html_attr',rc.listBean.getname())#" required="true" message="#application.rbFactory.getKeyValue(session.rb,'mailinglistmanager.namerequired')#" class="span12">
 			<input type=hidden name="ispurge" value="1"><input type=hidden name="ispublic" value="1">
 		</div>
 	</div>
 </cfif>
 
-<div class="control-group">
+	<div class="control-group">
 	<label class="control-label">
 		#application.rbFactory.getKeyValue(session.rb,'mailinglistmanager.description')#
 	</label>
 	<div class="controls">
-		<textarea id="description" name="description" rows="6" class="span12">#HTMLEditFormat(rc.listBean.getdescription())#</textarea>
-		<input type="hidden" name="siteid" value="#HTMLEditFormat(rc.siteid)#">
+		<textarea id="description" name="description" rows="6" class="span12">#esapiEncode('html',rc.listBean.getdescription())#</textarea>
+		<input type="hidden" name="siteid" value="#esapiEncode('html_attr',rc.siteid)#">
 	</div>
 </div>
-
-<div class="control-group">
+	
+	<div class="control-group">
 	<label class="control-label">#application.rbFactory.getKeyValue(session.rb,'mailinglistmanager.uploadlistmaintenancefile')#</dt>
 	<div class="controls">
 		<label for="da" class="radio inline">
@@ -146,43 +149,42 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		</label>
 	</div>
 </div>
-
-<div class="control-group">
+	
+	<div class="control-group">
 	<label class="control-label">#application.rbFactory.getKeyValue(session.rb,'mailinglistmanager.uploademailaddressfile')#</label>
 	<div class="controls">
 		<input type="file" name="listfile" accept="text/plain" >
 	</div>
 </div>
-
-<cfif rc.mlid neq ''>
-<div class="control-group">
+	
+	<cfif rc.mlid neq ''>
+	<div class="control-group">
 	<div class="controls">
 		<label for="cm" class="checkbox inline">
 			<input type="checkbox" id="cm" name="clearMembers" value="1" /> #application.rbFactory.getKeyValue(session.rb,'mailinglistmanager.clearoutexistingmembers')#
 		</label>
 	</div>
 </div>
-</cfif>      
-
-</div>
+	</cfif>      
+	
 <cfif rc.mlid neq ''>
+	</div>
 	<cfinclude template="dsp_tab_usage.cfm">
 </cfif>
 	
-	<div class="clearfix form-actions">			
+	<div class="form-actions">			
 		<cfif rc.mlid eq ''>
 			<input type="button" class="btn" onclick="submitForm(document.forms.form1,'add');" value="#application.rbFactory.getKeyValue(session.rb,'mailinglistmanager.add')#" />
 			<input type=hidden name="mlid" value="#createuuid()#">
 		<cfelse>
 			<cfif not rc.listBean.getispurge()>
-				<input type="button" class="btn" onclick="submitForm(document.forms.form1,'delete','#jsStringFormat(application.rbFactory.getKeyValue(session.rb,'mailinglistmanager.deleteconfirm'))#');" value="#application.rbFactory.getKeyValue(session.rb,'mailinglistmanager.delete')#" />
+				<input type="button" class="btn" onclick="submitForm(document.forms.form1,'delete','#esapiEncode('javascript',application.rbFactory.getKeyValue(session.rb,'mailinglistmanager.deleteconfirm'))#');" value="#application.rbFactory.getKeyValue(session.rb,'mailinglistmanager.delete')#" />
 			</cfif> 
 			<input type="button" class="btn" onclick="submitForm(document.forms.form1,'update');" value="#application.rbFactory.getKeyValue(session.rb,'mailinglistmanager.update')#" />
 			<input type=hidden name="mlid" value="#rc.listBean.getmlid()#">
 		</cfif>
 		<input type="hidden" name="action" value="">
 	</div>
-</div>
 </div>
 
 </form>

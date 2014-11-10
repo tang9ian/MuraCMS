@@ -26,8 +26,8 @@ function CheckAuthentication()
   }
 }
 
-config.licenseName  = 'Mura CMS';
-config.licenseKey = 'VSYA-KXHX-KXVB-8XHA-2L6P-66LF-FDMT';
+config.licenseName	= 'Mura CMS';
+config.licenseKey = 'VJ42-3FHF-3FVT-9FH2-TU71-G6D1-XDXF';
 
 /* To make it easy to configure CKFinder, the config.baseUrl and config.baseDir can be used.
  * Those are helper variables used later in this config file.
@@ -40,16 +40,21 @@ config.licenseKey = 'VSYA-KXHX-KXVB-8XHA-2L6P-66LF-FDMT';
  *   config.baseUrl = '/userfiles/';
  */
 
+currentSite=application.settingsManager.getSite(session.siteid);
+
+
+config.defaultAlledExtensions='7z,aiff,asf,avi,bmp,csv,doc,docx,fla,flv,gif,gz,gzip,ics,jpeg,jpg,mid,mov,mp3,mp4,mpc,mpeg,mpg,ods,odt,pdf,png,ppt,pptx,ppsx,pxd,qt,ram,rar,rm,rmi,rmvb,rtf,sdc,sitd,swf,sxc,sxw,tar,tgz,tif,tiff,txt,vsd,wav,wma,wmv,xls,xlsx,zip,m4v,less';
+
 //ATTENTION: The trailing slash is required.
-config.baseUrl = application.configBean.getAssetPath() & '/' & session.siteid & '/assets/';
-config.baseDir = "#application.configBean.getAssetDir()##application.configBean.getFileDelim()##session.siteid##application.configBean.getFileDelim()#assets/";
+config.baseUrl = application.configBean.getAssetPath() & '/' & currentSite.getFilePoolID() & '/assets/';
+config.baseDir = "#application.configBean.getAssetDir()##application.configBean.getFileDelim()##currentSite.getFilePoolID()##application.configBean.getFileDelim()#assets/";
 /*
  * Thumbnails : thumbnails settings. All thumbnails will end up in the same
  * directory, no matter the resource type.
  */
 config.thumbnails = structNew();
-config.thumbnails.url = config.baseUrl & '/Thumbs';
-config.thumbnails.baseDir = config.baseDir & '/Thumbs';
+config.thumbnails.url = config.baseUrl & 'Thumbs';
+config.thumbnails.baseDir = config.baseDir & 'Thumbs';
 config.thumbnails.enabled = true;
 config.thumbnails.directAccess = true;
 config.thumbnails.maxWidth = 100;
@@ -152,10 +157,10 @@ config.resourceType = arrayNew(1);
 
 config.resourceType[1] = structNew();
 config.resourceType[1].name = 'Files';
-config.resourceType[1].url = config.baseUrl & '/File';
-config.resourceType[1].directory = config.baseDir & '/File';
+config.resourceType[1].url = config.baseUrl & 'File';
+config.resourceType[1].directory = config.baseDir & 'File';
 config.resourceType[1].maxSize = 0;
-config.resourceType[1].allowedExtensions = '7z,aiff,asf,avi,bmp,csv,doc,docx,fla,flv,gif,gz,gzip,ics,jpeg,jpg,mid,mov,mp3,mp4,mpc,mpeg,mpg,ods,odt,pdf,png,ppt,pptx,pxd,qt,ram,rar,rm,rmi,rmvb,rtf,sdc,sitd,swf,sxc,sxw,tar,tgz,tif,tiff,txt,vsd,wav,wma,wmv,xls,xlsx,zip,m4v';
+config.resourceType[1].allowedExtensions = config.defaultAlledExtensions;
 config.resourceType[1].deniedExtensions = '';
 application.serviceFactory.getBean("fileWriter").touchDir(config.resourceType[1].directory);
 
@@ -179,7 +184,7 @@ application.serviceFactory.getBean("fileWriter").touchDir(config.resourceType[3]
 
 
 if (isdefined("url.type")){
-	if(currentUser.getS2() and application.configBean.getValue('fmShowApplicationRoot') neq 0){
+	if(currentUser.getS2() && (!isBoolean(application.configBean.getValue('fmShowApplicationRoot')) || application.configBean.getValue('fmShowApplicationRoot'))){
 	  config.resourceType[4] = structNew();
 	  config.resourceType[4].name = 'Application_Root';
 	  config.resourceType[4].url =  application.configBean.getContext();
@@ -200,7 +205,7 @@ if (isdefined("url.type")){
 	    temp.directory ="#application.configBean.getAssetDir()##application.configBean.getFileDelim()##rsSites.siteID[i]##application.configBean.getFileDelim()#assets/";
 	    temp.maxSize = 0;
 	    if(application.configBean.getValue('fmAllowedExtensions') eq ''){
-	      temp.allowedExtensions = '7z,aiff,asf,avi,bmp,csv,doc,docx,fla,flv,gif,gz,gzip,jpeg,jpg,mid,mov,mp3,mp4,mpc,mpeg,mpg,ods,odt,pdf,png,ppt,pptx,pxd,qt,ram,rar,rm,rmi,rmvb,rtf,sdc,sitd,swf,sxc,sxw,tar,tgz,tif,tiff,txt,vsd,wav,wma,wmv,xls,xlsx,zip,m4v';
+	      temp.allowedExtensions = config.defaultAlledExtensions;
 	    } else {
 	      temp.allowedExtensions = application.configBean.getValue('fmAllowedExtensions');    
 	    }
@@ -208,7 +213,7 @@ if (isdefined("url.type")){
 	    
 	    arrayAppend(application.CKFinderResources,temp);
 	    
-	    if(application.configBean.getValue('fmShowSiteFiles') neq 0){
+	    if(!isBoolean(application.configBean.getValue('fmShowSiteFiles')) || application.configBean.getValue('fmShowSiteFiles')){
 	      temp = structNew();
 	      temp.name = '#rsSites.siteID[i]#_Site_Files';
 	      temp.url =  application.configBean.getContext() & '/' & rsSites.siteID[i] & '/' ;
@@ -318,6 +323,7 @@ if (APPLICATION.CFVersion gte 8 or StructKeyExists(SERVER,"bluedragon")) {
   include("plugins/fileeditor/plugin.cfm");
   include("plugins/imageresize/plugin.cfm");
   include("plugins/permissions/plugin.cfm");
+  include("plugins/csrf/plugin.cfm");
 }
 </cfscript>
 

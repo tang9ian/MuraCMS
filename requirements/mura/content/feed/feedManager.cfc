@@ -81,12 +81,25 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 </cffunction>
 
 <cffunction name="getFeed" returntype="query" access="public" output="false">
-	<cfargument name="feedBean"  type="any" />
-	<cfargument name="tag"  required="true" default="" />
-	<cfargument name="aggregation"  required="true" default="false" />
+	<cfargument name="feedBean"  type="any">
+	<cfargument name="tag"  required="true" default="">
+	<cfargument name="aggregation"  required="true" default="false">
 	<cfargument name="applyPermFilter" required="true" default="false">
+	<cfargument name="countOnly" default="false">
+	<cfargument name="menuType" default="default">
+	<cfargument name="from" required="true" default="">
+	<cfargument name="to" required="true" default="">
 
-	<cfreturn variables.feedgateway.getFeed(arguments.feedBean,arguments.tag,arguments.aggregation,arguments.applyPermFilter) />
+	<cfreturn variables.feedgateway.getFeed(
+		feedBean=arguments.feedBean
+		, tag=arguments.tag
+		, aggregation=arguments.aggregation
+		, applyPermFilter=arguments.applyPermFilter
+		, countOnly=arguments.countOnly
+		, menuType=arguments.menuType
+		, from=arguments.from
+		, to=arguments.to
+	) />
 </cffunction>
 
 <cffunction name="getFeedIterator" returntype="any" access="public" output="false">
@@ -94,8 +107,10 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfargument name="tag"  required="true" default="" />
 	<cfargument name="aggregation"  required="true" default="false" />
 	<cfargument name="applyPermFilter" required="true" default="false">
+	<cfargument name="from" required="true" default="#now()#">
+	<cfargument name="to" required="true" default="#now()#">
 
-	<cfset var rs =  variables.feedgateway.getFeed(arguments.feedBean,arguments.tag,arguments.aggregation,arguments.applyPermFilter) />
+	<cfset var rs =  variables.feedgateway.getFeed(arguments.feedBean,arguments.tag,arguments.aggregation,arguments.applyPermFilter,arguments.from,arguments.to) />
 	<cfset var it = getBean("contentIterator")>
 	<cfset it.setQuery(rs)>
 	<cfreturn it/>	
@@ -182,7 +197,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 </cffunction>
 
-<cffunction name="doAutoImport" access="public" returntype="struct" output="false">		
+<cffunction name="doAutoImport" access="public" output="false">		
 	<cfargument name="siteid">
 	<cfset var rs=getFeeds(arguments.siteid,'Remote',0,1)>
 	<cfset var importArgs=structNew()>
@@ -266,7 +281,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfset pluginEvent.setValue("siteID",feedBean.getSiteID())>
 		
 		<cfset variables.pluginManager.announceEvent("onBeforeFeedDelete",pluginEvent)>
-		<cfset variables.trashManager.throwIn(feedBean)>
+		<cfset variables.trashManager.throwIn(feedBean,'feed')>
 		<cfset variables.globalUtility.logEvent("feedID:#feedBean.getfeedID()# Name:#feedBean.getName()# was deleted","mura-content","Information",true) />
 		<cfset variables.feedDAO.delete(arguments.feedID) />
 		
@@ -283,15 +298,14 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfargument name="userID"  type="string" default="" />
 
 			<cfset var rs="" />
-			<cfset var allowFeed=true />
 			<cfset var rLen=listLen(arguments.feedBean.getRestrictGroups()) />
 			<cfset var G = 0 />
 			
 			<cfif listFind(session.mura.memberships,'S2IsPrivate;#arguments.feedBean.getSiteID()#')>
 				<cfreturn true />
-			</cfif>
-			
-			<cfif  arguments.feedBean.getRestricted()>
+			<cfelseif arguments.feedBean.getIsNew()>
+				<cfreturn false>
+			<cfelseif  arguments.feedBean.getRestricted()>
 						<cfquery name="rs" datasource="#variables.configBean.getReadOnlyDatasource()#"  username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
 						select tusers.userid from tusers 
 						<cfif rLen> inner join tusersmemb 
@@ -319,9 +333,10 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 						<cfif not rs.recordcount>
 							<cfreturn false />
 						</cfif>
+			<cfelse>
+				<cfreturn true>
 			</cfif>
-			
-		<cfreturn allowFeed>
+		
 </cffunction>
 
 <cffunction name="getDefaultFeeds" returntype="query" access="public" output="false">

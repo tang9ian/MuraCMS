@@ -49,6 +49,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
 <cfsilent>
+<cfparam name="session.frontEndProxyLoc" default="">
 <cfset event=request.event>
 <cfset contentRenderer=application.settingsManager.getSite(event.getValue("siteID")).getContentRenderer()>
 <cfset href = "">
@@ -84,18 +85,18 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <script>
 	function reload(){
 		if (top.location != self.location) {
-			frontEndProxy = new Porthole.WindowProxy("#session.frontEndProxyLoc##application.configBean.getContext()#/admin/assets/js/porthole/proxy.html");
+			frontEndProxy = new Porthole.WindowProxy("#esapiEncode('javascript',session.frontEndProxyLoc)##application.configBean.getContext()#/admin/assets/js/porthole/proxy.html");
 			if (jQuery("##ProxyIFrame").length) {
 				jQuery("##ProxyIFrame").load(function(){
-					frontEndProxy.post({cmd:'setLocation',location:encodeURIComponent("#JSStringFormat(href)#")});
+					frontEndProxy.post({cmd:'setLocation',location:encodeURIComponent("#esapiEncode('javascript',href)#")});
 				});
 			}
 			else {
-				frontEndProxy.post({cmd:'setLocation',location:encodeURIComponent("#JSStringFormat(href)#")});
+				frontEndProxy.post({cmd:'setLocation',location:encodeURIComponent("#esapiEncode('javascript',href)#")});
 			}
 			
 		} else {
-			location.href="#JSStringFormat(href)#";
+			location.href="#esapiEncode('javascript',href)#";
 		}
 	}
 </script>

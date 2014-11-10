@@ -46,11 +46,16 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 --->
 <cfinclude template="js.cfm">
 <cfsilent>
+<cfset rc.items=rc.contentBean.getVersionHistoryIterator()> 
 <cfset crumbdata=application.contentManager.getCrumbList(rc.contentid,rc.siteid)>
 <cfset rc.perm=application.permUtility.getnodeperm(crumbdata)> 
 <cfset nodeLevelList="Page,Folder,Calendar,Gallery,Link,File"/>
 <cfset hasChangesets=application.settingsManager.getSite(rc.siteID).getHasChangesets()>
+<cfset hasChangesetAccess=application.permUtility.getModulePerm("00000000000000000000000000000000014","#session.siteid#")>
 <cfset stats=rc.contentBean.getStats()>
+<cfset poweruser=$.currentUser().isSuperUser() or $.currentUser().isAdminUser()>
+<cfset isLocked=$.siteConfig('hasLockableNodes') and len(stats.getLockID()) and stats.getLockType() eq 'node'>
+<cfset isLockedBySomeoneElse=isLocked and stats.getLockID() neq session.mura.userid>
 <cfif rc.contentBean.getType() eq 'File'>
 <cfset rsFile=application.serviceFactory.getBean('fileManager').readMeta(rc.contentBean.getFileID())>
 <cfset fileExt=rsFile.fileExt>
@@ -67,119 +72,187 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfinclude template="dsp_secondary_menu.cfm">
 
 	<cfif rc.moduleid eq '00000000000000000000000000000000000'>
-		#application.contentRenderer.dspZoom(crumbdata=crumbdata,class="navZoom alt")#
+		#$.dspZoom(crumbdata=crumbdata,class="navZoom alt")#
 	</cfif>
 </cfif>
 
-</cfoutput>
-<cfoutput>
-<table class="table table-striped table-condensed table-bordered mura-table-grid">
+<cfinclude template="dsp_status.cfm">
+
+<table class="mura-table-grid">
 <thead>
-  <tr><th class="var-width">#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.title')#</th>
+<tr>
+<th colspan="2"><a class="btn " id="viewDiff"><i class="icon-code-fork"></i> #application.rbFactory.getKeyValue(session.rb,'sitemanager.content.compare')#</a></th> 
+<th class="var-width">#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.title')#</th>
 <cfif rc.contentBean.getType() eq "file" and stats.getMajorVersion()><th>#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.version.file')#</th></cfif>
 <th class="notes">#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.notes')#</th>
 <cfif hasChangesets><th>#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.changeset')#</th></cfif> 
 <th>#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.status')#</th>
+<!---
 <th>#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.display')#</th>
 <cfif rc.contentBean.getType() neq "file"><th>#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.objects')#</th></cfif> 
 <th>#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.feature')#</th> 
 <th>#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.nav')#</th> 
+--->
 <th>#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.update')#</th> 
 <th>#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.time')#</th>
-<th>#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.authoreditor')#</th> </cfoutput>
+<th>#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.authoreditor')#</th>
 <th nowrap class="actions">&nbsp;</th>
+</cfoutput>
 </tr> 
 </thead>
 <tbody>
-<cfoutput query="rc.rshist">
+<cfloop condition="rc.items.hasNext()">
+<cfoutput>
 <cfsilent>
-<cfif rc.rshist.active and rc.rshist.approved>
+<cfset rc.item=rc.items.next()>
+
+<cfif rc.item.getactive() and rc.item.getapproved()>
 	<cfset isActiveRenderered=true>
 	<cfset versionStatus=application.rbFactory.getKeyValue(session.rb,'sitemanager.content.published')>
-<cfelseif not rc.rshist.approved and len(rc.rshist.changesetID)>
+<cfelseif listFindNoCase('Pending,Rejected',rc.item.getapprovalstatus())>
+	<cfset versionStatus=application.rbFactory.getKeyValue(session.rb,'sitemanager.content.#rc.item.getApprovalStatus()#')>
+<cfelseif not rc.item.getapproved() and len(rc.item.getchangesetID())>
 	<cfset versionStatus=application.rbFactory.getKeyValue(session.rb,'sitemanager.content.queued')>
-<cfelseif not rc.rshist.approved>
-	<cfset versionStatus=application.rbFactory.getKeyValue(session.rb,'sitemanager.content.draft')>
+<cfelseif not rc.item.getapproved()>
+	<cfif rc.item.getApprovalStatus() eq 'Cancelled'>
+		<cfset versionStatus=application.rbFactory.getKeyValue(session.rb,'sitemanager.content.canceled')>
+	<cfelse>
+		<cfset versionStatus=application.rbFactory.getKeyValue(session.rb,'sitemanager.content.draft')>
+	</cfif>
 <cfelse>
 	<cfset versionStatus=application.rbFactory.getKeyValue(session.rb,'sitemanager.content.archived')>
 </cfif>
 </cfsilent> 
-<tr>
+<tr data-contenthistid="#rc.item.getContentHistID()#" data-siteid="#rc.item.getSiteID()#">
+<td>
+	<input type="radio" name="compare1" value="#rc.item.getContentHistID()#"<cfif rc.items.currentIndex() eq 1> checked</cfif>/>
+</td>
+<td>
+	<input type="radio" name="compare2" value="#rc.item.getContentHistID()#"<cfif rc.items.currentIndex() eq 1> checked</cfif>/>
+</td>
 <td class="title var-width">
-	<a title="Edit" href="index.cfm?muraAction=cArch.edit&contenthistid=#rc.rshist.ContenthistID#&contentid=#rc.rshist.ContentID#&type=#rc.type#&parentid=#URLEncodedFormat(rc.parentid)#&topid=#URLEncodedFormat(rc.topid)#&siteid=#URLEncodedFormat(rc.siteid)#&startrow=#rc.startrow#&moduleid=#rc.moduleid#&return=hist&compactDisplay=#rc.compactDisplay#">#HTMLEditFormat(left(rc.rshist.menutitle,90))#</a>
+	<cfif not isLockedBySomeoneElse or poweruser>
+	<a title="Edit" href="./?muraAction=cArch.edit&contenthistid=#rc.item.getContenthistID()#&contentid=#rc.item.getContentID()#&type=#esapiEncode('url',rc.type)#&parentid=#esapiEncode('url',rc.parentid)#&topid=#esapiEncode('url',rc.topid)#&siteid=#esapiEncode('url',rc.siteid)#&startrow=#esapiEncode('url',rc.startrow)#&moduleid=#esapiEncode('url',rc.moduleid)#&return=hist&compactDisplay=#esapiEncode('url',rc.compactDisplay)#" class="draftprompt" data-targetversion="true" data-siteid="#rc.item.getSiteID()#" data-contentid="#rc.item.getContentID()#" data-contenthistid="#rc.item.getContentHistID()#">
+	</cfif>
+	#esapiEncode('html',left(rc.item.getmenutitle(),90))#
+	<cfif not isLockedBySomeoneElse or poweruser>
+	</a>
+	</cfif>
 </td>
 <cfif rc.contentBean.getType() eq "file" and stats.getMajorVersion()>
 	<td>
-	<cfif rc.rshist.majorversion>
-		#rc.rshist.majorversion#.#rc.rshist.minorversion#
+	<cfif rc.item.getmajorversion()>
+		#rc.item.getmajorversion()#.#rc.item.getminorversion()#
 		<cfelse>&nbsp;
 	</cfif>
 	</td>
 </cfif>
-<td class="notes"><cfif rc.rsHist.notes neq ''><a rel="tooltip" data-original-title="#application.contentRenderer.setParagraphs(htmleditformat(rc.rshist.notes))#">View&nbsp;Note</a></cfif></td>
-<cfif hasChangesets><td class="changeset"><cfif isDate(rc.rshist.changesetPublishDate)><a href="##" rel="tooltip" title="#HTMLEditFormat(LSDateFormat(rc.rshist.changesetPublishDate,"short"))#"> <i class="icon-question-sign"></i></a></cfif>#HTMLEditFormat(rc.rshist.changesetName)#</td></cfif> 
+<td class="notes"><cfif rc.item.getnotes() neq ''><a rel="tooltip" data-original-title="#esapiEncode('html_attr',rc.item.getnotes())#">View&nbsp;Note</a></cfif></td>
+<cfif hasChangesets>
+	<td class="changeset">
+		<cfif isDate(rc.item.getchangesetPublishDate())><a href="##" rel="tooltip" title="#esapiEncode('html_attr',LSDateFormat(rc.item.getchangesetPublishDate(),"short"))#"> <i class="icon-calendar"></i></a></cfif>
+		<cfif hasChangesetAccess>
+			<a href="./?muraAction=cChangesets.assignments&siteID=#rc.item.getsiteid()#&changesetID=#rc.item.getchangesetID()#">		#esapiEncode('html',rc.item.getchangesetName())#
+			</a>
+		<cfelse>
+			#esapiEncode('html',rc.item.getchangesetName())#
+		</cfif>
+	</td>
+</cfif> 
 <td class="status">#versionStatus#</td> 
-
-<td class="display<cfif rc.rshist.Display eq 2> scheduled</cfif>"> 
-	<cfif rc.rshist.Display eq 1>
-	<i class="icon-ok" title="#application.rbFactory.getKeyValue(session.rb,"sitemanager.true")#"></i><span>#application.rbFactory.getKeyValue(session.rb,"sitemanager.true")#</span> 
-      
-    <cfelseif rc.rshist.Display eq 2>
-      <a href="##" rel="tooltip" title="#HTMLEditFormat('#LSDateFormat(rc.rshist.displaystart,"short")#&nbsp;-&nbsp;#LSDateFormat(rc.rshist.displaystop,"short")#')#"> <i class="icon-calendar"></i></a>
-     <cfelse>
-     <i class="icon-ban-circle" title="#application.rbFactory.getKeyValue(session.rb,"sitemanager.false")#
-"></i><span>#application.rbFactory.getKeyValue(session.rb,"sitemanager.false")#
-</span>
-    </cfif>
+<!---
+<td class="display<cfif rc.item.getDisplay() eq 2> scheduled</cfif>"> 
+	<cfif rc.item.getDisplay() and (rc.item.getDisplay() eq 1 and rc.item.getapproved())>	
+ 		<i class="icon-ok" title="#application.rbFactory.getKeyValue(session.rb,'sitemanager.yes')#"></i><span>#application.rbFactory.getKeyValue(session.rb,'sitemanager.yes')#</span>
+ 	<cfelseif(rc.item.getDisplay() eq 2 and rc.item.getapproved() and rc.item.getapproved())>#LSDateFormat(rc.item.getdisplaystart(),"short")# - #LSDateFormat(rc.item.getdisplaystop(),"short")#	
+  <cfelse>
+    <i class="icon-ban-circle" title="#application.rbFactory.getKeyValue(session.rb,'sitemanager.no')#"></i><span>#application.rbFactory.getKeyValue(session.rb,'sitemanager.no')#</span>
+  </cfif>
 </td>
+
 <cfif rc.contentBean.getType() neq "file">
 	<td class="objects">
-	<cfif inheritObjects eq 'cascade'>
-				<i class="icon-arrow-down" title="#rc.rshist.inheritobjects#"></i>
-				<cfelseif inheritObjects eq 'reject'>
-					<i class="icon-ban-circle" title="#rc.rshist.inheritobjects#"></i>
+	<cfif rc.item.getinheritObjects() eq 'cascade'>
+				<i class="icon-arrow-down" title="#rc.item.getinheritobjects()#"></i>
+				<cfelseif rc.item.getinheritObjects() eq 'reject'>
+					<i class="icon-ban-circle" title="#rc.item.getinheritobjects()#"></i>
 				<cfelse>
-					<span class="bullet" title="#rc.rshist.inheritobjects#">&bull;</span>
+					<span class="bullet" title="#rc.item.getinheritobjects()#">&bull;</span>
 			</cfif>
-			<span>#application.rbFactory.getKeyValue(session.rb,'sitemanager.#lcase(rc.rshist.inheritobjects)#')#</span></td>
+			<span>#application.rbFactory.getKeyValue(session.rb,'sitemanager.#lcase(rc.item.getinheritobjects())#')#</span></td>
 </cfif>
-<td class="feature<cfif rc.rshist.isfeature eq 2>> scheduled</cfif>"> 
-	<cfif rc.rshist.isfeature eq 1>
+
+<td class="feature<cfif rc.item.getisfeature() eq 2>> scheduled</cfif>"> 
+	<cfif rc.item.getisfeature() eq 1>
 			<i class="icon-ok" title="#application.rbFactory.getKeyValue(session.rb,"sitemanager.yes")#"></i> #application.rbFactory.getKeyValue(session.rb,"sitemanager.yes")#
-		<cfelseif rc.rshist.isfeature eq 2>
-			<a href="##" rel="tooltip" title="#HTMLEditFormat('#LSDateFormat(rc.rshist.featurestart,"short")#&nbsp;-&nbsp;#LSDateFormat(rc.rshist.featurestop,"short")#')#"> <i class="icon-calendar"></i></a>
+		<cfelseif rc.item.getisfeature() eq 2>
+			<a href="##" rel="tooltip" title="#esapiEncode('html_attr','#LSDateFormat(rc.item.getfeaturestart(),"short")#&nbsp;-&nbsp;#LSDateFormat(rc.item.getfeaturestop(),"short")#')#"> <i class="icon-calendar"></i></a>
 		<cfelse>
 			<i class="icon-ban-circle" title="#application.rbFactory.getKeyValue(session.rb,"sitemanager.no")#"></i>
 			<span>#application.rbFactory.getKeyValue(session.rb,"sitemanager.no")#</span>
 		</cfif>
 </td>
+
 <td class="nav-display">
-<cfif isnav>
-<i class="icon-ok" title="#application.rbFactory.getKeyValue(session.rb,'sitemanager.#yesnoformat(rc.rshist.isnav)#')#"></i>
-<cfelse><i class="icon-ban-circle" title="#application.rbFactory.getKeyValue(session.rb,'sitemanager.#yesnoformat(rc.rshist.isnav)#')#"></i>
+<cfif rc.item.getisnav()>
+<i class="icon-ok" title="#application.rbFactory.getKeyValue(session.rb,'sitemanager.#yesnoformat(rc.item.getisnav())#')#"></i>
+<cfelse><i class="icon-ban-circle" title="#application.rbFactory.getKeyValue(session.rb,'sitemanager.#yesnoformat(rc.item.getisnav())#')#"></i>
 </cfif>
-<span>#application.rbFactory.getKeyValue(session.rb,'sitemanager.#yesnoformat(rc.rshist.isnav)#')#</span>
-			 </td>
-<td class="last-updated">#LSDateFormat(rc.rshist.lastupdate,session.dateKeyFormat)#</td> 
-<td class="time">#LSTimeFormat(rc.rshist.lastupdate,"short")#</td>
-<td class="user">#HTMLEditFormat(rc.rshist.lastUpdateBy)#</td> 
-<td class="actions"><ul><li class="edit"><a title="#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.edit')#" href="index.cfm?muraAction=cArch.edit&contenthistid=#rc.rshist.ContenthistID#&contentid=#rc.rshist.ContentID#&type=#rc.type#&parentid=#URLEncodedFormat(rc.parentid)#&topid=#URLEncodedFormat(rc.topid)#&siteid=#URLEncodedFormat(rc.siteid)#&startrow=#rc.startrow#&moduleid=#rc.moduleid#&return=hist&compactDisplay=#rc.compactDisplay#"><i class="icon-pencil"></i></a></li>
-<cfswitch expression="#rc.rsHist.type#">
-<cfcase value="Page,Folder,Calendar,Gallery,Link,File">
-	<cfset previewURL='http://#application.settingsManager.getSite(rc.siteid).getDomain()##application.configBean.getServerPort()##application.configBean.getContext()##application.contentRenderer.getURLStem(rc.siteid,rc.contentBean.getFilename())#?previewid=#rc.rshist.contenthistid#'>
-	<cfif rc.compactDisplay eq 'true'>
-		<li class="preview"><a title="#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.preview')#" href="##" onclick="frontEndProxy.post({cmd:'setLocation',location:encodeURIComponent('#JSStringFormat(previewURL)#')});return false;"><i class="icon-globe"></i></a></li>
+<span>#application.rbFactory.getKeyValue(session.rb,'sitemanager.#yesnoformat(rc.item.getisnav())#')#</span>
+ </td>
+ --->
+<td class="last-updated">#LSDateFormat(rc.item.getlastupdate(),session.dateKeyFormat)#</td> 
+<td class="time">#LSTimeFormat(rc.item.getlastupdate(),"short")#</td>
+<td class="user">#esapiEncode('html',rc.item.getlastUpdateBy())#</td> 
+<td class="actions">
+
+	<ul>
+	<cfif not isLockedBySomeoneElse or poweruser>
+		<li class="edit">
+		<a title="#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.edit')#" href="./?muraAction=cArch.edit&contenthistid=#rc.item.getContenthistID()#&contentid=#rc.item.getContentID()#&type=#esapiEncode('url',rc.type)#&parentid=#esapiEncode('url',rc.parentid)#&topid=#esapiEncode('url',rc.topid)#&siteid=#esapiEncode('url',rc.siteid)#&startrow=#esapiEncode('url',rc.startrow)#&moduleid=#esapiEncode('url',rc.moduleid)#&return=hist&compactDisplay=#esapiEncode('url',rc.compactDisplay)#" class="draftprompt" data-targetversion="true" data-siteid="#rc.item.getSiteID()#" data-contentid="#rc.item.getContentID()#" data-contenthistid="#rc.item.getContentHistID()#"><i class="icon-pencil"></i></a>
 	<cfelse>
-		<li class="preview"><a title="#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.preview')#" href="##" onclick="return preview('#previewURL#','#rc.rshist.TargetParams#');"><i class="icon-globe"></i></a></li>
+		<li class="edit disabled">
+		<i class="icon-pencil"></i>
+	</cfif>
+	</li>
+<cfswitch expression="#rc.item.gettype()#">
+<cfcase value="Page,Folder,Calendar,Gallery,Link,File">
+	<cfset previewURL='http://#application.settingsManager.getSite(rc.siteid).getDomain()##application.configBean.getServerPort()##application.configBean.getContext()##$.getURLStem(rc.siteid,rc.contentBean.getFilename())#?previewid=#rc.item.getcontenthistid()#'>
+	<cfif rc.compactDisplay eq 'true'>
+		<li class="preview"><a title="#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.preview')#" href="##" onclick="frontEndProxy.post({cmd:'setLocation',location:encodeURIComponent('#esapiEncode('javascript',previewURL)#')});return false;"><i class="icon-globe"></i></a></li>
+	<cfelse>
+		<li class="preview"><a title="#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.preview')#" href="##" onclick="return preview('#previewURL#','#rc.item.getTargetParams()#');"><i class="icon-globe"></i></a></li>
 	</cfif>
 </cfcase>
 </cfswitch>
 
-<cfif not rc.rshist.active and (rc.perm neq 'none')><li class="delete"><a title="#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.delete')#" href="index.cfm?muraAction=cArch.update&contenthistid=#rc.rshist.ContentHistID#&action=delete&contentid=#URLEncodedFormat(rc.contentid)#&type=#rc.type#&parentid=#URLEncodedFormat(rc.parentid)#&topid=#URLEncodedFormat(rc.topid)#&siteid=#URLEncodedFormat(rc.siteid)#&startrow=#rc.startrow#&moduleid=#rc.moduleid#&compactDisplay=#rc.compactDisplay#" onclick="return confirmDialog('#jsStringFormat(application.rbFactory.getKeyValue(session.rb,'sitemanager.content.deleteversionconfirm'))#',this.href)"><i class="icon-remove-sign"></i></a></li><cfelse><li class="delete disabled"><span><i class="icon-remove-sign"></i></span></li></cfif></ul></td></tr></cfoutput></tbody></table>
+ <li class="audit-trail"><a title="#application.rbFactory.getKeyValue(session.rb,"sitemanager.content.audittrail")#" href="./?muraAction=cArch.audit&contentid=#rc.item.getContentID()#&contenthistid=#rc.item.getContentHistID()#&type=#rc.item.gettype()#&parentid=#rc.item.getparentID()#&topid=#esapiEncode('url',rc.topid)#&siteid=#esapiEncode('url',rc.item.getsiteid())#&moduleid=#rc.item.getmoduleid()#&compactDisplay=#esapiEncode('url',rc.compactDisplay)#"><i class="icon-sitemap"></i></a></li>
 
-<cfif rc.compactDisplay eq "true">
+
+	<!--- Delete --->
+	<cfif not rc.item.getactive() and not isLockedBySomeoneElse and (rc.perm eq 'editor' or (listFind(session.mura.memberships,'Admin;#application.settingsManager.getSite(rc.siteid).getPrivateUserPoolID()#;0') or listFind(session.mura.memberships,'S2') ) )>
+		<li class="delete">
+			<a title="#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.delete')#" href="./?muraAction=cArch.update&amp;contenthistid=#rc.item.getContentHistID()#&amp;action=delete&amp;contentid=#esapiEncode('url',rc.contentid)#&amp;type=#esapiEncode('url',rc.type)#&amp;parentid=#esapiEncode('url',rc.parentid)#&amp;topid=#esapiEncode('url',rc.topid)#&amp;siteid=#esapiEncode('url',rc.siteid)#&amp;startrow=#esapiEncode('url',rc.startrow)#&amp;moduleid=#esapiEncode('url',rc.moduleid)#&amp;compactDisplay=#esapiEncode('url',rc.compactDisplay)##rc.$.renderCSRFTokens(context=rc.item.getContentHistID() & 'delete',format='url')#" onclick="return confirmDialog('#esapiEncode('javascript',application.rbFactory.getKeyValue(session.rb,'sitemanager.content.deleteversionconfirm'))#',this.href)">
+				<i class="icon-remove-sign"></i>
+			</a>
+		</li>
+	<cfelse>
+		<li class="delete disabled">
+			<span>
+				<i class="icon-remove-sign"></i>
+			</span>
+		</li>
+	</cfif>
+	<!--- /Delete --->
+
+</ul></td></tr></cfoutput>
+</cfloop> 
+</tbody></table>
 <script type="text/javascript">
+
+
 jQuery(document).ready(function(){
+	<cfif rc.compactDisplay eq "true">
 	if (top.location != self.location) {
 		if(jQuery("#ProxyIFrame").length){
 			jQuery("#ProxyIFrame").load(
@@ -191,6 +264,56 @@ jQuery(document).ready(function(){
 			frontEndProxy.post({cmd:'setWidth',width:'standard'});
 		}
 	}
+	</cfif>
+
+ 	var currentAudit='';
+
+	$('.audit-trail').on('mouseover',function(){
+
+		var contenthistid=$(this).parents('tr').attr('data-contenthistid');
+		currentAudit=contenthistid;
+
+		$.ajax({
+		  url: 'index.cfm',
+		  data: {
+		  		muraAction: 'carch.getaudittrail',
+		  		contenthistid:$(this).parents('tr').attr('data-contenthistid'),
+		  		siteid:$(this).parents('tr').attr('data-siteid')
+		  		}
+		  ,
+		  success: function(data){
+		  		$('tr.info').removeClass('info');
+		  		if(currentAudit==contenthistid){
+		  			for(var i=0;i < data.length;i++){
+		  				$("tr[data-contenthistid='" + data[i] + "']").addClass('info');
+		  			}
+		  		}
+		  	},
+		  error: function(data){
+		  		$('tr.info').removeClass('info');
+		  		//alert(data.responseText);
+		  	}
+		  	,
+		  dataType: "json"
+		});
+		
+	})
+
+	$('.audit-trail').on('mouseout',function(){
+		$('tr.info').removeClass('info');
+		currentAudit='';
+	});
+
+	$('#viewDiff').click(function(e){
+		e.preventDefault();
+		siteManager.openContentDiff($('input[name="compare1"]:checked').val(),$('input[name="compare2"]:checked').val(),siteid);
+	});
+
+
+
 });
 </script>
-</cfif> 
+<cfif $.siteConfig('hasLockableNodes')>
+<cfinclude template="draftpromptjs.cfm">	
+</cfif>
+

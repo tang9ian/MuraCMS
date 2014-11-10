@@ -64,6 +64,9 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset variables.instance.height="AUTO"/>
 	<cfset variables.instance.isNew=1/>
 
+	<cfset variables.primaryKey = 'sizeid'>
+	<cfset variables.entityName = 'imageSize'>
+
 	<cfreturn this>
 </cffunction>
 
@@ -71,6 +74,11 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfargument name="configBean">
 	<cfset variables.configBean=arguments.configBean>
 	<cfreturn this>
+</cffunction>
+
+<cffunction name="setName" output="false">
+	<cfargument name="name">
+	<cfset variables.instance.name=getBean('contentUtility').formatFilename(arguments.name)>
 </cffunction>
 
 <cffunction name="setHeight" output="false">
@@ -94,6 +102,10 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfargument name="name">
 	<cfargument name="siteID" default="#variables.instance.siteID#">
 	
+	<cfif isDefined('arguments.name')>
+		<cfset arguments.name=getBean('contentUtility').formatFilename(arguments.name)>
+	</cfif>
+	
 	<cfset variables.instance.isNew=1/>
 	<cfset var rs=getQuery(argumentCollection=arguments)>
 
@@ -105,11 +117,10 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfreturn this>
 </cffunction>
 
-<cffunction name="getQuery"  access="public" output="false" returntype="query">
-
+<cffunction name="getQuery" access="public" output="false" returntype="query">
 
 	<cfset var rs=""/>
-	<cfquery name="rs" cachedwithin="#createTimeSpan(0, 0, 0, 1)#" datasource="#variables.configBean.getReadOnlyDatasource()#" username="#variables.configBean.getReadOnlyDbUsername()#" password="#variables.configBean.getReadOnlyDbPassword()#">
+	<cfquery attributeCollection="#variables.configBean.getReadOnlyQRYAttrs(name='rs',cachedwithin=createTimeSpan(0, 0, 0, 1))#">
 	select * from timagesizes 
 	where
 	<cfif structKeyExists(arguments,'sizeid')>
@@ -132,10 +143,10 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 	<cfif getQuery().recordcount>
 		
-		<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+		<cfquery>
 		update timagesizes set
 		siteID=<cfqueryparam cfsqltype="cf_sql_varchar" value="#variables.instance.siteID#">,
-		name=<cfqueryparam cfsqltype="cf_sql_varchar" value="#getBean('contentUtility').formatFilename(variables.instance.name)#">,
+		name=<cfqueryparam cfsqltype="cf_sql_varchar" value="#variables.instance.name#">,
 		height=<cfqueryparam cfsqltype="cf_sql_varchar" value="#variables.instance.height#">,
 		width=<cfqueryparam cfsqltype="cf_sql_varchar" value="#variables.instance.width#">
 		where sizeid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#variables.instance.sizeID#">
@@ -143,11 +154,11 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		
 	<cfelse>
 		
-		<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+		<cfquery>
 		insert into timagesizes (sizeid,siteid,name,height,width) values(
 		<cfqueryparam cfsqltype="cf_sql_varchar" value="#variables.instance.sizeID#">,
 		<cfqueryparam cfsqltype="cf_sql_varchar" value="#variables.instance.siteID#">,
-		<cfqueryparam cfsqltype="cf_sql_varchar" value="#getBean('contentUtility').formatFilename(variables.instance.name)#">,
+		<cfqueryparam cfsqltype="cf_sql_varchar" value="#variables.instance.name#">,
 		<cfqueryparam cfsqltype="cf_sql_varchar" value="#variables.instance.height#">,
 		<cfqueryparam cfsqltype="cf_sql_varchar" value="#variables.instance.width#">
 		)
@@ -162,7 +173,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 <cffunction name="delete"  access="public" output="false">
 
-	<cfquery datasource="#variables.configBean.getDatasource()#" username="#variables.configBean.getDBUsername()#" password="#variables.configBean.getDBPassword()#">
+	<cfquery>
 		delete from timagesizes 
 		where sizeid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#variables.instance.sizeID#">
 	</cfquery>

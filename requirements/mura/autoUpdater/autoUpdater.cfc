@@ -75,6 +75,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfset var destination="">
 <cfset var autoUpdateSleep=variables.configBean.getValue("autoUpdateSleep")>
 
+<cfsetting requestTimeout = "7200">
+
 <cfif listFind(session.mura.memberships,'S2')>
 	<cfif updateVersion gt currentVersion>
 		<cflock type="exclusive" name="autoUpdate#arguments.siteid##application.instanceID#" timeout="600">
@@ -89,7 +91,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		</cfif>
 		
 		<cfif len(variables.configBean.getProxyServer())>
-			<cfhttp url="http://trac.blueriver.com/mura/changeset" result="diff" getasbinary="yes" 
+			<cfhttp url="http://webservices.getmura.com/mura/changeset" result="diff" getasbinary="yes" 
 			proxyUser="#variables.configBean.getProxyUser()#" proxyPassword="#variables.configBean.getProxyPassword()#"
 			proxyServer="#variables.configBean.getProxyServer()#" proxyPort="#variables.configBean.getProxyPort()#">
 			<cfhttpparam type="url" name="format" value="zip">
@@ -99,7 +101,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfhttpparam type="url" name="new" value="#updateVersion#">
 			</cfhttp>
 		<cfelse>
-			<cfhttp url="http://trac.blueriver.com/mura/changeset" result="diff" getasbinary="yes">
+			<cfhttp url="http://webservices.getmura.com/mura/changeset" result="diff" getasbinary="yes">
 			<cfhttpparam type="url" name="format" value="zip">
 			<cfhttpparam type="url" name="old_path" value="#svnUpdateDir#">
 			<cfhttpparam type="url" name="old" value="#currentVersion#">
@@ -178,7 +180,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 							<cfset variables.fileWriter.moveFile(source="#currentDir##zipFileName##variables.fileDelim##rs.entry#",destination="#destination#")>
 							<cfcatch>
 								<!--- patch to make sure autoupdates do not stop for mode errors --->
-								<cfif not findNoCase("change mode of file",cfcatch.message) and listLast(rs.entry,".") neq "jar">
+								<cfif not findNoCase("change mode of file",cfcatch.message) and not listFindNoCase('jar,class',listLast(rs.entry,"."))>
 									<cfrethrow>
 								</cfif>
 							</cfcatch>
@@ -206,6 +208,11 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	
 	<cfset returnStruct.currentVersion=updateVersion/>
 	<cfset returnStruct.files=updatedArray>
+
+	<cfif server.ColdFusion.ProductName EQ "Railo">
+		<cfscript>pagePoolClear();</cfscript>
+	</cfif>
+
 	<cfreturn returnStruct>
 	
 <cfelse>

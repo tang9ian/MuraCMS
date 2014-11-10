@@ -45,7 +45,17 @@ modified version; it is your choice whether to do so, or to make such modified v
 version 2 without this exception.  You may, if you choose, apply this exception to your own modified versions of Mura CMS.
 --->
 
-<cfsilent><cfparam name="attributes.siteID" default="">
+<cfsilent>
+<cfscript>
+	if(structKeyExists(server,'railo')){
+		backportdir='';
+		include "/mura/backport/backport.cfm";
+	} else {
+		backportdir='/mura/backport/';
+		include "#backportdir#backport.cfm";
+	}
+</cfscript>
+<cfparam name="attributes.siteID" default="">
 <cfparam name="attributes.parentID" default="">
 <cfparam name="attributes.nestLevel" default="0">
 <cfset rslist=application.categoryManager.getCategories(attributes.siteID,attributes.ParentID) />
@@ -60,14 +70,14 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfloop query="rslist">
 <tr>
 <td class="add">
- <a href="javascript:;" onmouseover="categoryManager.showMenu('newContentMenu',this,'#rslist.categoryid#','#attributes.siteid#');"><i class="icon-plus-sign"></i></a></td>
-<td class="var-width"><ul <cfif rslist.hasKids>class="nest#variables.nestlevel#on"<cfelse>class="nest#variables.nestlevel#off"</cfif>><li class="Category#iif(rslist.restrictGroups neq '',de('Locked'),de(''))#"><a title="Edit" href="index.cfm?muraAction=cCategory.edit&categoryID=#rslist.categoryID#&parentID=#rslist.parentID#&siteid=#URLEncodedFormat(attributes.siteid)#">#rslist.name#</a></li></ul></td>
-<td><cfif isOpen><i class="icon-ok" title="#application.rbFactory.getKeyValue(session.rb,'categorymanager.#yesnoformat(rslist.isOpen)#')#"></i>
+ <a href="javascript:;" onmouseover="categoryManager.showMenu('newContentMenu',this,'#rslist.categoryid#','#esapiEncode('javascript',attributes.siteid)#');"><i class="icon-plus-sign"></i></a></td>
+<td class="var-width"><ul <cfif rslist.hasKids>class="nest#variables.nestlevel#on"<cfelse>class="nest#variables.nestlevel#off"</cfif>><li class="Category#iif(rslist.restrictGroups neq '',de('Locked'),de(''))#"><a title="Edit" href="./?muraAction=cCategory.edit&categoryID=#rslist.categoryID#&parentID=#rslist.parentID#&siteid=#esapiEncode('url',attributes.siteid)#">#esapiEncode('html',rslist.name)#</a></li></ul></td>
+<td><cfif rslist.isOpen><i class="icon-ok" title="#application.rbFactory.getKeyValue(session.rb,'categorymanager.#yesnoformat(rslist.isOpen)#')#"></i>
 <cfelse><i class="icon-ban-circle" title="#application.rbFactory.getKeyValue(session.rb,'categorymanager.#yesnoformat(rslist.isOpen)#')#"></i></cfif>
 <span>#application.rbFactory.getKeyValue(session.rb,'categorymanager.#yesnoformat(rslist.isOpen)#')#</span></td>
 
 <td>
-	<cfif isInterestGroup>
+	<cfif rslist.isInterestGroup>
 		<i class="icon-ok" title="#application.rbFactory.getKeyValue(session.rb,'categorymanager.#yesnoformat(rslist.isInterestGroup)#')#"></i>
 	<cfelse>
 	<i class="icon-ban-circle" title="#application.rbFactory.getKeyValue(session.rb,'categorymanager.#yesnoformat(rslist.isInterestGroup)#')#"></i>
@@ -76,16 +86,16 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 </td>
 
 <td>
-	<cfif isActive>
+	<cfif rslist.isActive>
 		<i class="icon-ok" title="#application.rbFactory.getKeyValue(session.rb,'categorymanager.#yesnoformat(rslist.isActive)#')#"></i>
 	<cfelse>
 	<i class="icon-ban-circle" title="#application.rbFactory.getKeyValue(session.rb,'categorymanager.#yesnoformat(rslist.isActive)#')#"></i>
 	</cfif>
 	<span>#application.rbFactory.getKeyValue(session.rb,'categorymanager.#yesnoformat(rslist.isActive)#')#</span>
 </td>
-<td class="actions"><ul><li class="edit"><a title="#application.rbFactory.getKeyValue(session.rb,'categorymanager.edit')#" href="index.cfm?muraAction=cCategory.edit&categoryID=#rslist.categoryID#&parentID=#rslist.parentID#&siteid=#URLEncodedFormat(attributes.siteid)#"><i class="icon-pencil"></i></a></li><li class="delete"><a title="#application.rbFactory.getKeyValue(session.rb,'categorymanager.delete')#" href="index.cfm?muraAction=cCategory.update&action=delete&categoryID=#rslist.categoryID#&siteid=#URLEncodedFormat(attributes.siteid)#" onClick="return confirmDialog('#jsStringFormat(application.rbFactory.getKeyValue(session.rb,'categorymanager.deleteconfirm'))#',this.href)"><i class="icon-remove-sign"></i></a></li></ul></td>
+<td class="actions"><ul><li class="edit"><a title="#application.rbFactory.getKeyValue(session.rb,'categorymanager.edit')#" href="./?muraAction=cCategory.edit&categoryID=#rslist.categoryID#&parentID=#rslist.parentID#&siteid=#esapiEncode('url',attributes.siteid)#"><i class="icon-pencil"></i></a></li><li class="delete"><a title="#application.rbFactory.getKeyValue(session.rb,'categorymanager.delete')#" href="./?muraAction=cCategory.update&action=delete&categoryID=#rslist.categoryID#&siteid=#esapiEncode('url',attributes.siteid)##attributes.muraScope.renderCSRFTokens(context=rslist.categoryid,format="url")#" onClick="return confirmDialog('#esapiEncode('javascript',application.rbFactory.getKeyValue(session.rb,'categorymanager.deleteconfirm'))#',this.href)"><i class="icon-remove-sign"></i></a></li></ul></td>
 </tr>
-<cf_dsp_nest siteID="#attributes.siteID#" parentID="#rslist.categoryID#" nestLevel="#evaluate(attributes.nestLevel +1)#" >
+<cf_dsp_nest siteID="#attributes.siteID#" parentID="#rslist.categoryID#" nestLevel="#evaluate(attributes.nestLevel +1)#"  muraScope="#attributes.muraScope#">
 </cfloop>
 </cfoutput>
 <cfelseif attributes.nestlevel eq 0>

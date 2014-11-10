@@ -114,9 +114,9 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 </cffunction>
 
 <cffunction name="track" output="false" returntype="void">	
-	<cfargument name="placementID" required="true" type="string">
-	<cfargument name="type" required="true" type="string">
-	<cfargument name="rate" required="true" type="numeric">
+	<cfargument name="placementID"  type="string">
+	<cfargument name="type"  type="string">
+	<cfargument name="rate"  type="numeric">
 	
 	<cfset var rsCheck="" />
 	<cfset var statHour=hour(now())>

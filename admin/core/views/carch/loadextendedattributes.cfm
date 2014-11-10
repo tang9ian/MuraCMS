@@ -56,6 +56,11 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfset request.event.setValue('contentBean',contentBean)>
 <cfset subtype=application.classExtensionManager.getSubTypeByName(rc.type,rc.subtype,rc.siteid)>
 
+<cfif contentBean.getIsNew()>
+	<cfset contentBean.setType(rc.type)>
+	<cfset contentBean.setSubType(rc.subtype)>
+</cfif>
+
 <cfloop list="#application.contentManager.getTabList()#" index="container">
 	<cfif container eq 'Extended Attributes'>
 		<cfset container='Default'>
@@ -72,7 +77,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<span class="extendset" extendsetid="#extendSetBean.getExtendSetID()#" categoryid="#extendSetBean.getCategoryID()#" #style#>
 		<input name="extendSetID" type="hidden" value="#extendSetBean.getExtendSetID()#"/>
 		<div class="fieldset">
-			<h2>#HTMLEditFormat(extendSetBean.getName())#</h2>
+			<h2>#esapiEncode('html',extendSetBean.getName())#</h2>
 		<cfsilent>
 		<cfset attributesArray=extendSetBean.getAttributes() />
 		</cfsilent>
@@ -82,24 +87,48 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<div class="control-group">
 		      	<label class="control-label">
 				<cfif len(attributeBean.getHint())>
-				<a href="##" rel="tooltip" title="#HTMLEditFormat(attributeBean.gethint())#">#attributeBean.getLabel()# <i class="icon-question-sign"></i></a>
+				<a href="##" rel="tooltip" title="#esapiEncode('html_attr',attributeBean.gethint())#">#attributeBean.getLabel()# <i class="icon-question-sign"></i></a>
 				<cfelse>
-				#attributeBean.getLabel()#
+				#esapiEncode('html',attributeBean.getLabel())#
 				</cfif>
-				<cfif attributeBean.getType() eq "File" and len(attributeValue) and attributeValue neq 'useMuraDefault'> 
+				</label>
+				<div class="controls">
+					#attributeBean.renderAttribute(theValue=attributeValue,bean=contentBean,compactDisplay=rc.compactDisplay,size='medium')#
+					<cfif attributeBean.getValidation() eq "URL">
+						<cfif len(application.serviceFactory.getBean('settingsManager').getSite(session.siteid).getRazunaSettings().getHostname())>
+							<div class="btn-group">
+		     	 				<a class="btn dropdown-toggle" data-toggle="dropdown" href="##">
+		     	 				 	<i class="icon-folder-open"></i> #application.rbFactory.getKeyValue(session.rb,'sitemanager.content.browseassets')#
+		     	 				</a>
+		     	 				<ul class="dropdown-menu">
+		     	 					<li><a href="##" type="button" data-completepath="false" data-target="#esapiEncode('javascript',attributeBean.getName())#" data-resourcetype="user" class="mura-file-type-selector mura-ckfinder" title="Select a File from Server">
+		     	 						<i class="icon-folder-open"></i> #application.rbFactory.getKeyValue(session.rb,'sitemanager.content.local')#</a></li>
+		     	 					<li><a href="##" type="button" onclick="renderRazunaWindow('#esapiEncode('javascript',attributeBean.getName())#');return false;" class="mura-file-type-selector btn-razuna-icon" value="URL-Razuna" title="Select a File from Razuna"><i></i> Razuna</a></li>
+		     	 				</ul>
+		     	 			</div>
+						<cfelse>
+							<div class="btn-group">
+			     	 			<button type="button" data-target="#esapiEncode('javascript',attributeBean.getName())#" data-resourcetype="user" class="btn mura-file-type-selector mura-ckfinder" title="Select a File from Server"><i class="icon-folder-open"></i> Browse Assets</button>
+			     	 		</div>
+						</cfif>
+					</cfif>
+					
+				</div>
+					<!---<cfif attributeBean.getType() eq "File" and len(attributeValue) and attributeValue neq 'useMuraDefault'> 
+				
 					<cfif listFindNoCase("png,jpg,jpeg",application.serviceFactory.getBean("fileManager").readMeta(attributeValue).fileExt)>
 						<a href="./index.cfm?muraAction=cArch.imagedetails&contenthistid=#contentBean.getContentHistID()#&siteid=#contentBean.getSiteID()#&fileid=#attributeValue#"><img id="assocImage" src="#application.configBean.getContext()#/tasks/render/small/index.cfm?fileid=#attributeValue#&cacheID=#createUUID()#" /></a>
 					</cfif>
 
-					<a href="#application.configBean.getContext()#/tasks/render/file/?fileID=#attributeValue#" target="_blank">[Download]</a> <input type="checkbox" value="true" name="extDelete#attributeBean.getAttributeID()#"/> Delete</cfif>
+					<a href="#application.configBean.getContext()#/tasks/render/file/index.cfm?fileID=#attributeValue#" target="_blank">[Download]</a> <input type="checkbox" value="true" name="extDelete#attributeBean.getAttributeID()#"/> Delete
+					
+					
+				</cfif>--->
 				</label>
 				<!--- if it's an hidden type attribute then flip it to be a textbox so it can be editable through the admin --->
 				<cfif attributeBean.getType() IS "Hidden">
 					<cfset attributeBean.setType( "TextBox" ) />
 				</cfif>	
-				<div class="controls">
-					#attributeBean.renderAttribute(attributeValue)#
-				</div>
 			</div>
 		</cfloop>
 		</div><!--- /.fieldset --->
@@ -139,6 +168,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 <cfset returnsets.hasSummary=subType.getHasSummary()>
 <cfset returnsets.hasBody=subType.getHasBody()>
-
-<cfoutput>#createObject("component","mura.json").encode(returnsets)#</cfoutput>
+<cfset returnsets.hasAssocFile=subType.getHasAssocFile()>
+<cfset returnsets.hasConfigurator=subType.getHasConfigurator()>
+<cfcontent type="application/json; charset=utf-8" reset="true"><cfoutput>#createObject("component","mura.json").encode(returnsets)#</cfoutput><cfabort>
 

@@ -59,7 +59,7 @@ select * from rsSubTypes where subType <> 'Default'
 </cfif>
 <cfset tabLabelList=listAppend(tabLabelList,application.rbFactory.getKeyValue(session.rb,'user.advanced'))>
 <cfset tabList=listAppend(tabList,"tabAdvanced")>
-<form novalidate="novalidate" action="index.cfm?muraAction=cEditProfile.update" method="post" enctype="multipart/form-data" name="form1" class="columns" onsubmit="return validate(this);">
+<form novalidate="novalidate" action="./?muraAction=cEditProfile.update" method="post" enctype="multipart/form-data" name="form1" class="columns" onsubmit="return validate(this);">
 <cfoutput><h1>#application.rbFactory.getKeyValue(session.rb,'user.editprofile')#</h1>
 
 	<cfif not structIsEmpty(rc.userBean.getErrors())>
@@ -68,7 +68,7 @@ select * from rsSubTypes where subType <> 'Default'
 	
 	<p>(*Required, **Required to login to Site)<p>
 
-<div class="tabbable tabs-left">
+<div class="tabbable tabs-left mura-ui">
 
 	<ul class="nav nav-tabs tabs initActiveTab">
 	<cfloop from="1" to="#listlen(tabList)#" index="t">
@@ -105,13 +105,13 @@ select * from rsSubTypes where subType <> 'Default'
 			<div class="span6">
 	     		<label class="control-label">#application.rbFactory.getKeyValue(session.rb,'user.fname')#*</label>
 			    <div class="controls">
-			    	<input id="fname" name="fname" type="text" class="span12" value="#HTMLEditFormat(rc.userBean.getfname())#" required="true" message="#application.rbFactory.getKeyValue(session.rb,'user.fnamerequired')#">
+			    	<input id="fname" name="fname" type="text" class="span12" value="#esapiEncode('html_attr',rc.userBean.getfname())#" required="true" message="#application.rbFactory.getKeyValue(session.rb,'user.fnamerequired')#">
 			    </div>
 		    </div>
 		    
 		    <div class="span6">
 	      		<label class="control-label">#application.rbFactory.getKeyValue(session.rb,'user.lname')#*</label>
-	      		<div class="controls"><input id="lname" name="lname" type="text" value="#HTMLEditFormat(rc.userBean.getlname())#" required="true" message="#application.rbFactory.getKeyValue(session.rb,'user.lnamerequired')#" class="span12">
+	      		<div class="controls"><input id="lname" name="lname" type="text" value="#esapiEncode('html_attr',rc.userBean.getlname())#" required="true" message="#application.rbFactory.getKeyValue(session.rb,'user.lnamerequired')#" class="span12">
 	        </div>
 		</div>
     </div>
@@ -121,30 +121,30 @@ select * from rsSubTypes where subType <> 'Default'
 		<div class="control-group">
 			<div class="span6">
 	      		<label class="control-label">#application.rbFactory.getKeyValue(session.rb,'user.company')#</label>
-	      		<div class="controls"><input id="organization" name="company" type="text" value="#HTMLEditFormat(rc.userBean.getcompany())#"  class="span12"></div>
+	      		<div class="controls"><input id="organization" name="company" type="text" value="#esapiEncode('html_attr',rc.userBean.getcompany())#"  class="span12"></div>
 	        </div>
 			
 			<div class="span6">
 	      	<label class="control-label">#application.rbFactory.getKeyValue(session.rb,'user.jobtitle')#</label>
-	      	<div class="controls"><input id="jobtitle" name="jobtitle" type="text" value="#HTMLEditFormat(rc.userBean.getjobtitle())#"  class="span12"></div>
+	      	<div class="controls"><input id="jobtitle" name="jobtitle" type="text" value="#esapiEncode('html_attr',rc.userBean.getjobtitle())#"  class="span12"></div>
 	      	</div>
 		</div>
 		
 		<div class="control-group">
 			<div class="span6">
 	      		<label class="control-label">#application.rbFactory.getKeyValue(session.rb,'user.email')#*</label>
-	      		<div class="controls"><input id="email" name="email" type="text" validate="email" message="#application.rbFactory.getKeyValue(session.rb,'user.emailvalidate')#" value="#HTMLEditFormat(rc.userBean.getemail())#" class="span12"></div>
+	      		<div class="controls"><input id="email" name="email" type="text" validate="email" message="#application.rbFactory.getKeyValue(session.rb,'user.emailvalidate')#" value="#esapiEncode('html_attr',rc.userBean.getemail())#" class="span12"></div>
 	      	</div>
 	      	
 			<div class="span6">
 	      		<label class="control-label">#application.rbFactory.getKeyValue(session.rb,'user.mobilephone')#</label>
-	      		<div class="controls"><input id="mobilePhone" name="mobilePhone" type="text" value="#HTMLEditFormat(rc.userBean.getMobilePhone())#" class="span12"></div>
+	      		<div class="controls"><input id="mobilePhone" name="mobilePhone" type="text" value="#esapiEncode('html_attr',rc.userBean.getMobilePhone())#" class="span12"></div>
 			</div>
 		</div>
 		
 		<div class="control-group">
       		<label class="control-label">#application.rbFactory.getKeyValue(session.rb,'user.username')#**</label>
-      		<div class="controls"><input id="username" name="usernameNoCache" type="text" value="#HTMLEditFormat(rc.userBean.getusername())#" class="span6" message="#application.rbFactory.getKeyValue(session.rb,'user.usernamerequired')#" >
+      		<div class="controls"><input id="username" name="usernameNoCache" type="text" value="#esapiEncode('html_attr',rc.userBean.getusername())#" class="span6" message="#application.rbFactory.getKeyValue(session.rb,'user.usernamerequired')#" >
           </div>
     </div>
 		
@@ -169,6 +169,7 @@ select * from rsSubTypes where subType <> 'Default'
         <cfif len(rc.userBean.getPhotoFileID())>
 	        <div class="controls">
 	        	<a href="./index.cfm?muraAction=cArch.imagedetails&userid=#rc.userBean.getUserID()#&siteid=#rc.userBean.getSiteID()#&fileid=#rc.userBean.getPhotoFileID()#"><img id="assocImage" src="#application.configBean.getContext()#/tasks/render/medium/index.cfm?fileid=#rc.userBean.getPhotoFileID()#&cacheID=#createUUID()#" /></a>
+	        	
 	        	<input type="checkbox" name="removePhotoFile" value="true"> #application.rbFactory.getKeyValue(session.rb,'user.delete')# 
 	        </div>
         </cfif>
@@ -182,11 +183,11 @@ select * from rsSubTypes where subType <> 'Default'
 		<div class="fieldset">
 
 			<div class="control-group">
-				<ul class="navTask nav nav-pills"><li><a href="index.cfm?muraAction=cPrivateUsers.editAddress&userID=#session.mura.userID#&siteid=#rc.userBean.getsiteid()#&routeID=#rc.routeid#&addressID=&returnURL=#urlencodedformat(cgi.query_string)#">#application.rbFactory.getKeyValue(session.rb,'user.addnewaddress')#</a></li></ul>
+				<ul class="navTask nav nav-pills"><li><a href="./?muraAction=cPrivateUsers.editAddress&userID=#session.mura.userID#&siteid=#rc.userBean.getsiteid()#&routeID=#rc.routeid#&addressID=&returnURL=#esapiEncode('url',cgi.query_string)#">#application.rbFactory.getKeyValue(session.rb,'user.addnewaddress')#</a></li></ul>
 				
 		      <cfset rsAddresses=rc.userBean.getAddresses()>
 				<cfif rsAddresses.recordcount>
-				<table class="table table-condensed table-stripedtable-bordered mura-table-grid">
+				<table class="mura-table-grid">
 				<tr><th>#application.rbFactory.getKeyValue(session.rb,'user.primary')#</th><th>#application.rbFactory.getKeyValue(session.rb,'user.address')#</th><th class="adminstration"></th></tr>
 				<cfloop query="rsAddresses">
 				<tr>
@@ -203,8 +204,8 @@ select * from rsSubTypes where subType <> 'Default'
 					<cfif rsAddresses.addressURL neq ''>#application.rbFactory.getKeyValue(session.rb,'user.website')#: <a href="#rsAddresses.addressURL#" target="_blank">#rsAddresses.addressURL#</a><br/></cfif>
 					<cfif rsAddresses.addressEmail neq ''>#application.rbFactory.getKeyValue(session.rb,'user.email')#: <a href="mailto:#rsAddresses.addressEmail#">#rsAddresses.addressEmail#</a></cfif>
 					</td>
-					<td nowrap class="actions"><ul class="users"><li class="edit"><a title="#application.rbFactory.getKeyValue(session.rb,'user.edit')#" href="index.cfm?muraAction=cPrivateUsers.editAddress&userID=#session.mura.userID#&siteid=#rc.userBean.getsiteid()#&routeID=#rc.routeid#&addressID=#rsAddresses.addressID#&returnURL=#urlencodedformat(cgi.query_string)#"><i class="icon-pencil"></i></a></li>
-					<cfif rsAddresses.isPrimary neq 1><li class="delete"><a title="Delete" href="index.cfm?muraAction=cPrivateUsers.updateAddress&userID=#session.mura.userID#&action=delete&siteid=#rc.userBean.getsiteid()#&routeID=#rc.routeid#&addressID=#rsAddresses.addressID#&returnURL=#urlencodedformat(cgi.query_string)#" onclick="return confirmDialog('#jsStringFormat(application.rbFactory.getKeyValue(session.rb,'user.deleteaddressconfirm'))#',this.href);"><i class="icon-remove-sign"></i></a></li><cfelse><li class="delete disabled">#application.rbFactory.getKeyValue(session.rb,'user.delete')#</li></cfif></ul></td>
+					<td nowrap class="actions"><ul class="users"><li class="edit"><a title="#application.rbFactory.getKeyValue(session.rb,'user.edit')#" href="./?muraAction=cPrivateUsers.editAddress&userID=#session.mura.userID#&siteid=#rc.userBean.getsiteid()#&routeID=#rc.routeid#&addressID=#rsAddresses.addressID#&returnURL=#esapiEncode('url',cgi.query_string)#"><i class="icon-pencil"></i></a></li>
+					<cfif rsAddresses.isPrimary neq 1><li class="delete"><a title="Delete" href="./?muraAction=cPrivateUsers.updateAddress&userID=#session.mura.userID#&action=delete&siteid=#rc.userBean.getsiteid()#&routeID=#rc.routeid#&addressID=#rsAddresses.addressID#&returnURL=#esapiEncode('url',cgi.query_string)#" onclick="return confirmDialog('#esapiEncode('javascript',application.rbFactory.getKeyValue(session.rb,'user.deleteaddressconfirm'))#',this.href);"><i class="icon-remove-sign"></i></a></li><cfelse><li class="delete disabled">#application.rbFactory.getKeyValue(session.rb,'user.delete')#</li></cfif></ul></td>
 				</tr>
 				</cfloop>
 				</table>
@@ -257,7 +258,7 @@ select * from rsSubTypes where subType <> 'Default'
 			<div class="control-group">
 				<label class="control-label">#application.rbFactory.getKeyValue(session.rb,'user.tags')#</label>
 				<div class="controls">
-					<input id="tags" name="tags" type="text" value="#HTMLEditFormat(rc.userBean.getTags())#" class="span12">
+					<input id="tags" name="tags" type="text" value="#esapiEncode('html_attr',rc.userBean.getTags())#" class="span12">
 				</div>
 			</div>
 		</div>
@@ -273,11 +274,12 @@ select * from rsSubTypes where subType <> 'Default'
 		<input type="hidden" name="contact" value="0">
 		<input type="hidden" name="userid" value="#rc.userBean.getuserid()#">
 		<input type="hidden" name="siteid" value="#rc.userBean.getsiteid()#">
+		#rc.$.renderCSRFTokens(format="form")#
 <!---		
 <cfhtmlhead text='<link rel="stylesheet" href="css/tab-view.css" type="text/css" media="screen">'>
 <cfhtmlhead text='<script type="text/javascript" src="assets/js/tab-view.js"></script>'>
 <script type="text/javascript">
-initTabs(Array("#jsStringFormat(application.rbFactory.getKeyValue(session.rb,'user.basic'))#","#jsStringFormat(application.rbFactory.getKeyValue(session.rb,'user.addressinformation'))#","#jsStringFormat(application.rbFactory.getKeyValue(session.rb,'user.interests'))#"<cfif rsSubTypes.recordcount>,"#jsStringFormat(application.rbFactory.getKeyValue(session.rb,'user.extendedattributes'))#"</cfif>,"#jsStringFormat(application.rbFactory.getKeyValue(session.rb,'user.advanced'))#"),#rc.activeTab#,0,0);
+initTabs(Array("#esapiEncode('javascript',application.rbFactory.getKeyValue(session.rb,'user.basic'))#","#esapiEncode('javascript',application.rbFactory.getKeyValue(session.rb,'user.addressinformation'))#","#esapiEncode('javascript',application.rbFactory.getKeyValue(session.rb,'user.interests'))#"<cfif rsSubTypes.recordcount>,"#esapiEncode('javascript',application.rbFactory.getKeyValue(session.rb,'user.extendedattributes'))#"</cfif>,"#esapiEncode('javascript',application.rbFactory.getKeyValue(session.rb,'user.advanced'))#"),#rc.activeTab#,0,0);
 </script>	
 --->
 	</cfoutput>

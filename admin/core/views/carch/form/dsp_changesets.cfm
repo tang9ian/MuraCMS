@@ -13,7 +13,7 @@ var currentChangesetSelection="";
 var currentChangesetID="";
 </cfif>
 
-var publishitemfromchangeset="#JSStringFormat(application.rbFactory.getKeyValue(session.rb,'sitemanager.content.publishitemfromchangeset'))#"
+var publishitemfromchangeset="#esapiEncode('javascript',application.rbFactory.getKeyValue(session.rb,'sitemanager.content.publishitemfromchangeset'))#"
 function removeChangesetPrompt(changesetID){
 	
 	if(currentChangesetID!="" && changesetID!=currentChangesetID){
@@ -32,8 +32,10 @@ function saveToChangeset(changesetid,siteid,keywords){
 	var pars = 'muraAction=cArch.availablechangesets&compactDisplay=true&siteid=' + siteid  + '&keywords=' + keywords + '&changesetid=' + changesetid +'&cacheid=' + Math.random();
 	var d = jQuery('##changesetContainer');
 	d.html('<div class="load-inline"></div>');
+	$('##changesetContainer .load-inline').spin(spinnerArgs2);
 	jQuery.get(url + "?" + pars, 
 			function(data) {
+			$('##changesetContainer .load-inline').spin(false);
 			jQuery('##changesetContainer').html(data);
 			stripe('stripe');
 			});
@@ -42,12 +44,17 @@ function saveToChangeset(changesetid,siteid,keywords){
 			resizable: false,
 			modal: true,
 			buttons: {
-				'#JSStringFormat(application.rbFactory.getKeyValue(session.rb,"sitemanager.content.save"))#': function() {
+				'#esapiEncode('javascript',application.rbFactory.getKeyValue(session.rb,"sitemanager.content.save"))#': function() {
 					jQuery(this).dialog('close');
 					if (siteManager.configuratorMode == 'backEnd') {
 						if(siteManager.ckContent()){
 							jQuery("##changesetID").val(currentChangesetSelection);
 							jQuery("##removePreviousChangeset").val(document.getElementById("_removePreviousChangeset").checked);
+							if(currentChangesetSelection=='other'){
+								jQuery("##changesetname").val(jQuery("##_changesetname").val());
+							} else {
+								jQuery("##changesetname").val('');
+							}
 							submitForm(document.contentForm, 'add');
 						}
 					} else {
@@ -63,7 +70,7 @@ function saveToChangeset(changesetid,siteid,keywords){
 	return false;	
 }
 </script>
-<div style="display:none" title="#HTMLEditFormat(application.rbFactory.getKeyValue(session.rb,"sitemanager.content.assigntochangeset"))#" id="changesetContainer">
+<div style="display:none" title="#esapiEncode('html_attr',application.rbFactory.getKeyValue(session.rb,"sitemanager.content.assigntochangeset"))#" id="changesetContainer">
 
 </div>
 </cfoutput>

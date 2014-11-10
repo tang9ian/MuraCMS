@@ -54,7 +54,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfif rc.rsReturnsByUser.recordcount>
 	<ul class="metadata">
 	<cfoutput query="rc.rsReturnsByUser">
-	<li>#rc.rsReturnsByUser.email#</li>
+	<li>#esapiEncode('html',rc.rsReturnsByUser.email)#</li>
 	</cfoutput>
 	</ul>
 </cfif>
@@ -62,7 +62,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfif rc.rsReturns.recordcount>
 	<ul class="metadata">
 	<cfoutput query="rc.rsReturns">
-	<li>#rc.rsReturns.url# - #rc.rsReturns.returnCount#</li>
+	<li>#esapiEncode('html',rc.rsReturns.url)# - #esapiEncode('html',rc.rsReturns.returnCount)#</li>
 	</cfoutput>
 	</ul>
 </cfif>

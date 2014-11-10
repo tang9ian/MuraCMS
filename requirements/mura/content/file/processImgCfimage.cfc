@@ -54,6 +54,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfset variables.settingsManager=arguments.settingsManager/>
 		<cfset variables.instance.imageInterpolation=arguments.configBean.getImageInterpolation()> 
 		<cfset variables.fileWriter=getBean("fileWriter")>
+		<cfset variables.instance.imageQuality=arguments.configBean.getImageQuality()> 
 
 		<cfif StructKeyExists(SERVER,"bluedragon") and not listFindNoCase("bicubic,bilinear,nearest",variables.instance.imageInterpolation)>
 			<cfset variables.instance.imageInterpolation="bicubic">
@@ -64,10 +65,14 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 	<cffunction name="touchDir" returntype="void" output="false">
 		<cfargument name="dir" required="Yes" type="string">
-		<cfargument name="mode" required="no" type="string" default="777">
+		<cfargument name="mode" required="no" type="string" default="#variables.configBean.getDefaultfilemode()#">
 		
 		<cfif not directoryExists(dir)>
-			<cfdirectory directory="#dir#" action="create" mode="#arguments.mode#">
+			<cfif variables.configBean.getUseFileMode()>
+				<cfdirectory directory="#dir#" action="create" mode="#arguments.mode#">
+			<cfelse>
+				<cfdirectory directory="#dir#" action="create">
+			</cfif>
 		</cfif>
 	</cffunction>
 
@@ -115,7 +120,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		</cfif>
 	</cfif>
 	
-	<cfset NewImageLocal = listLast(NewImageLocal,variables.configBean.getFileDelim())>
+	<cfset NewImageLocal = listLast(replace(NewImageLocal,"\","/","all"),'/')>
 	
 	<cfif not FileExists(NewImageSource)>
 		
@@ -138,7 +143,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 		<!--- If the custom image size is not valid return the small --->
 		<cfif not isNumeric(arguments.Width) and not isNumeric(arguments.Height)>
-			<cfreturn arguments.fileID & "_small." & OriginalImageType>
+			<cfreturn "#OriginalImageFilename#_small.#OriginalImageType#">
 		</cfif>
 
 		<cfset variables.fileWriter.copyFile(source=OriginalImageFile,destination=NewImageSource)>
@@ -166,12 +171,12 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfif arguments.Width eq "AUTO">
 			<cfif ThisImage.height gt arguments.height>
 				<cfset ImageResize(ThisImage,'',arguments.height,variables.instance.imageInterpolation)>
-				<cfset ImageWrite(ThisImage,arguments.image,1)>
+				<cfset ImageWrite(ThisImage,arguments.image,variables.instance.imageQuality)>
 			</cfif>
 		<cfelseif arguments.Height eq "AUTO">
 			<cfif ThisImage.width gt arguments.width>
 				<cfset ImageResize(ThisImage,arguments.width,'',variables.instance.imageInterpolation)>
-				<cfset ImageWrite(ThisImage,arguments.image,1)>
+				<cfset ImageWrite(ThisImage,arguments.image,variables.instance.imageQuality)>
 			</cfif>
 		<cfelse>
 			<cfset ImageAspectRatio = ThisImage.Width / ThisImage.height />
@@ -180,18 +185,18 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfif ImageAspectRatio eq NewAspectRatio>
 				<cfif ThisImage.width gt arguments.width>
 					<cfset ImageResize(ThisImage,arguments.width,'',variables.instance.imageInterpolation)>
-					<cfset ImageWrite(ThisImage,arguments.image,1)>
+					<cfset ImageWrite(ThisImage,arguments.image,variables.instance.imageQuality)>
 				</cfif>
 			<cfelseif ImageAspectRatio lt NewAspectRatio>
 				<cfset ImageResize(ThisImage,arguments.width,'',variables.instance.imageInterpolation)>
 				<cfset CropY = (ThisImage.height - arguments.height)/2 />
 				<cfset ImageCrop(ThisImage, 0, CropY, arguments.Width, arguments.height) />
-				<cfset ImageWrite(ThisImage,arguments.image,1)>
+				<cfset ImageWrite(ThisImage,arguments.image,variables.instance.imageQuality)>
 			<cfelseif ImageAspectRatio gt NewAspectRatio>
 				<cfset ImageResize(ThisImage,'',arguments.height,variables.instance.imageInterpolation)>
 				<cfset CropX = (ThisImage.width - arguments.width)/2 />
 				<cfset ImageCrop(ThisImage, CropX, 0, arguments.width, arguments.height) />
-				<cfset ImageWrite(ThisImage,arguments.image,1)>
+				<cfset ImageWrite(ThisImage,arguments.image,variables.instance.imageQuality)>
 			</cfif>
 		</cfif>
 
@@ -309,15 +314,16 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfset var fileObjSource=""/>
 		<cfset var refused=false />
 		<cfset var serverFilename=arguments.file.serverfilename />
-		<cfset var serverDirectory=arguments.file.serverDirectory & variables.configBean.getFileDelim() />
+		<cfset var serverDirectory=arguments.file.serverDirectory & "/" />
 		<cfset var site=variables.settingsManager.getSite(arguments.siteID)>
+		<cfset var pid=createUUID()>
 
 		<cfset fileStruct.fileObj = '' />
 		<cfset fileStruct.fileObjSmall = '' />
 		<cfset fileStruct.fileObjMedium =  ''/>
 		<cfset fileStruct.fileObjSource =  ''/>
 	
-		<cfset touchDir("#variables.configBean.getFileDir()##variables.configBean.getFileDelim()##arguments.siteID#")> 
+		<cfset touchDir("#variables.configBean.getFileDir()#/#arguments.siteID#")> 
 				
 		<cfif listLen(serverfilename," ") gt 1>
 			<cfset serverFilename=replace(serverFilename," ","-","ALL") />
@@ -328,15 +334,16 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cffile action="rename" source="#serverDirectory##arguments.file.serverfile#" destination="#serverDirectory##serverFilename#.#arguments.file.serverFileExt#" attributes="normal">
 		</cfif>
 
-		<cfset fileStruct.fileObj = "#serverDirectory##serverFilename#.#arguments.file.serverFileExt#" />
+		<cffile action="rename" source="#serverDirectory##serverFilename#.#arguments.file.serverFileExt#" destination="#serverDirectory##pid#-#serverFilename#.#arguments.file.serverFileExt#" attributes="normal">
+		<cfset fileStruct.fileObj = "#serverDirectory##pid#-#serverFilename#.#arguments.file.serverFileExt#" />
 			
 		<!--- BEGIN IMAGE MANIPULATION --->
 		<cfif listFindNoCase('jpg,jpeg,png,gif',arguments.file.ServerFileExt)>
 			
 			<cfif variables.configBean.getFileStore() eq "fileDir">		
-				<cfset fileStruct.fileObjSource =  '#serverDirectory##getCustomImage(image=fileStruct.fileObj,height='Auto',width=3000)#'/>						
+				<cfset fileStruct.fileObjSource = '#serverDirectory##getCustomImage(image=fileStruct.fileObj,height='Auto',width=variables.configBean.getMaxSourceImageWidth())#'/>						
 			<cfelse>
-				<cfset fileStruct.fileObjSource =fileStruct.fileObj>
+				<cfset fileStruct.fileObjSource = fileStruct.fileObj>
 			</cfif>
 		
 			<cfset fileStruct.fileObjSmall = "#serverDirectory##getCustomImage(image=fileStruct.fileObjSource,height=site.getSmallImageHeight(),width=site.getSmallImageWidth())#" />
@@ -357,6 +364,13 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cffile action="delete" file="#fileStruct.fileObj#">
 			<cffile action="rename" destination="#fileStruct.fileObj#" source="#fileStruct.fileObjLarge#">
 			<cfset structDelete(fileStruct,"fileObjLarge")>
+
+			
+			<cfif variables.configBean.getFileStore() neq "fileDir">		
+				<!--- clean up source--->
+				<cffile action="delete" file="#fileStruct.fileObjSource#">
+			</cfif>
+			
 		</cfif>
 		
 		<cfset fileStruct.theFile=fileStruct.fileObj/>

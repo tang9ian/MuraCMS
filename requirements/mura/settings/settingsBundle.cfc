@@ -55,14 +55,13 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfset variables.zipTool	= createObject("component","mura.Zip") />
 		<cfset variables.fileWriter	= getBean("fileWriter")>
 		<cfset variables.utility	= application.utility.getBean("utility")>
-		<cfset variables.fileDelim	= application.configBean.getFileDelim()>
 		<cfset variables.dirName	= "Bundle_#createUUID()#" />
 		<cfset variables.BundleDir	= variables.dirName />
-		<cfset variables.workDir	= "#expandPath('/muraWRM/admin/')#temp#variables.fileDelim#">
-		<cfset variables.procDir	= "#workdir#proc#variables.fileDelim#" />
-		<cfset variables.unpackPath	= "#procDir##BundleDir##variables.fileDelim#" />
-		<cfset variables.backupDir	= "#variables.procDir##variables.dirName##variables.fileDelim#" />
-		<cfset variables.unpackPath	= "#variables.procDir##variables.BundleDir##variables.fileDelim#" />
+		<cfset variables.workDir	= "#expandPath('/muraWRM/admin/')#temp/">
+		<cfset variables.procDir	= "#workdir#proc/" />
+		<cfset variables.unpackPath	= "#procDir##BundleDir#/" />
+		<cfset variables.backupDir	= "#variables.procDir##variables.dirName#/" />
+		<cfset variables.unpackPath	= "#variables.procDir##variables.BundleDir#/" />
 		
 		<cfif not directoryExists(variables.workDir)>
 			<cfset variables.fileWriter.createDir(directory="#variables.workDir#")>
@@ -100,7 +99,6 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		</cfif>
 
 		<cfdirectory action="list" directory="#variables.unpackPath#" name="rsImportFiles" filter="*.xml">
-
 		<!--- this is done for cf7 compatability --->
 		<cfquery name="rsImportFiles" dbtype="query">
 			select * from rsImportFiles where lower(type)='file'
@@ -110,6 +108,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfset fname = rereplace(rsImportFiles.name,"^wddx_(.*)\.xml","\1") />
 			<cffile action="read" file="#variables.unpackPath##rsImportFiles.name#" variable="importWDDX" charset="utf-8">
 			<cftry>
+				<cfset importWDDX =REReplace(importWDDX,'[\x0]','','ALL')>
 				<cfwddx action="wddx2cfml" input=#importWDDX# output="importValue">
 			<cfcatch>
 				<cfdump var="An error happened while trying to deserialize #rsImportFiles.name#.">
@@ -128,7 +127,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfargument name="keyFactory" type="any" required="true">
 		<cfargument name="dsn" type="string" default="#variables.configBean.getDatasource()#" required="true">
 
-		<cfset var filePath = variables.configBean.getValue('filedir') & variables.fileDelim & arguments.siteID & variables.fileDelim & "cache#variables.fileDelim#file#variables.fileDelim#" />
+		<cfset var filePath = variables.configBean.getValue('filedir') & '/' & arguments.siteID & '/' & "cache/file/" />
 		<cfset var toName	= "" />
 		<cfset var keys		= arguments.keyFactory />
 		<cfset var nFileID	= "" />
@@ -142,23 +141,23 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfloop query="rstfiles">
 			<cfset nFileID = rstfiles.fileID />
 			<cfdirectory name="rsNameFiles" directory="#filePath#" filter="#nFileID#*.*">
+
 			<cfloop query="rsNameFiles">
 				<cfset toName = replace(rsNameFiles.name,nFileID,keys.get(nFileID))>
-				<cfset variables.fileWriter.renameFile(source="#filePath##variables.fileDelim##rsNameFiles.name#", destination="#filePath##variables.fileDelim##toName#")>
+				<cfset variables.fileWriter.renameFile(source="#filePath#/#rsNameFiles.name#", destination="#filePath#/#toName#")>
 			</cfloop>
 		</cfloop>
 	</cffunction>
 
 	<cffunction name="bundleFiles" returntype="void">
 		<cfargument name="siteID" type="string" default="" required="true">
-		<cfargument name="dsn" type="string" default="#variables.configBean.getDatasource()#" required="true">
 		<cfargument name="includeVersionHistory" type="boolean" default="true" required="true">
 		<cfargument name="includeTrash" type="boolean" default="true" required="true">
 		<cfargument name="moduleID" type="string" default="" required="true">
 		<cfargument name="sinceDate" type="any" default="">
 		<cfargument name="includeUsers" type="boolean" default="false" required="true">
 		
-		<cfset var siteRoot = variables.configBean.getValue('webroot') & variables.fileDelim & arguments.siteID /> 
+		<cfset var siteRoot = variables.configBean.getValue('webroot') & '/' & arguments.siteID /> 
 		<cfset var zipDir	= "" />
 		<cfset var rstplugins = "" />
 		<cfset var rsInActivefiles = "" />
@@ -183,11 +182,11 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfif len(arguments.siteID)>
 			<cfset  getBean("fileManager").cleanFileCache(arguments.siteID)>
 			<cfset variables.zipTool.AddFiles(zipFilePath="#variables.backupDir#sitefiles.zip",directory=siteRoot,recurse="true",sinceDate=arguments.sinceDate)>
-	
+			<cfset var filePoolID=getBean('settingsManager').getSite(arguments.siteid).getFilePoolID()>
 			<!--- We do not want to include files collected from mura forms or the advertising manager --->
-			<cfquery name="rsInActivefiles" datasource="#arguments.dsn#">
+			<cfquery name="rsInActivefiles">
 				select fileID,fileExt from tfiles  
-				where siteid = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#"/> 
+				where siteid = <cfqueryparam cfsqltype="cf_sql_varchar" value="#filePoolID#"/> 
 				and moduleid in ('00000000000000000000000000000000000','00000000000000000000000000000000003'<cfif len(arguments.moduleID)>,<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.moduleID#" list="true"></cfif><cfif arguments.includeUsers>,'00000000000000000000000000000000008'</cfif>)
 				and (
 							
@@ -212,25 +211,24 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			</cfquery>
 			
 			<cfloop query="rsInActivefiles">
-				<cfdirectory action="list" name="rscheck" directory="#variables.configBean.getValue('filedir')##variables.fileDelim##arguments.siteid##variables.fileDelim#cache#variables.fileDelim#file#variables.fileDelim#" filter="#rsInActivefiles.fileID#*">
-								
+				<cfdirectory action="list" name="rscheck" directory="#variables.configBean.getValue('filedir')#/#filePoolID#/cache/file/" filter="#rsInActivefiles.fileID#*">	
 				<cfif rscheck.recordcount>
 					<cfloop query="rscheck">
-						<cfset deleteList=listAppend(deleteList,"cache#variables.fileDelim#file#variables.fileDelim##rscheck.name#","|")>
+						<cfset deleteList=listAppend(deleteList,"cache/file/#rscheck.name#","|")>
 					</cfloop>
 				</cfif>
 						
 			</cfloop>
 
 			<cfif variables.configBean.getValue('assetdir') neq variables.configBean.getValue('webroot')>
-				<cfset zipDir = variables.configBean.getValue('assetdir') & variables.fileDelim & arguments.siteID />
-				<cffile action="write" file="#zipDir##variables.fileDelim#blank.txt" output="empty file" />  
-				<cfset variables.zipTool.AddFiles(zipFilePath="#variables.backupDir#assetfiles.zip",directory=#zipDir#,recurse="true",sinceDate=arguments.sinceDate,excludeDirs="cache")>
+				<cfset zipDir = variables.configBean.getValue('assetdir') & '/' & filePoolID />
+				<cffile action="write" file="#zipDir#/blank.txt" output="empty file" />  
+				<cfset variables.zipTool.AddFiles(zipFilePath="#variables.backupDir#assetfiles.zip",directory=zipDir,recurse="true",sinceDate=arguments.sinceDate,excludeDirs="cache")>
 			</cfif> 
 			<cfif variables.configBean.getValue('filedir') neq variables.configBean.getValue('webroot')>
-				<cfset zipDir = variables.configBean.getValue('filedir') & variables.fileDelim & arguments.siteID /> 
-				<cffile action="write" file="#zipDir##variables.fileDelim#blank.txt" output="empty file" />  
-				<cfset variables.zipTool.AddFiles(zipFilePath="#variables.backupDir#filefiles.zip",directory=#zipDir#,recurse="true",sinceDate=arguments.sinceDate,excludeDirs="assets")>
+				<cfset zipDir = variables.configBean.getValue('filedir') & '/' & filePoolID /> 
+				<cffile action="write" file="#zipDir#/blank.txt" output="empty file" />  
+				<cfset variables.zipTool.AddFiles(zipFilePath="#variables.backupDir#filefiles.zip",directory=zipDir,recurse="true",sinceDate=arguments.sinceDate,excludeDirs="assets")>
 						
 				<cfif len(deleteList)>
 					<cfset variables.zipTool.deleteFiles(zipFilePath="#variables.backupDir#filefiles.zip",files="#deleteList#")>
@@ -245,7 +243,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		</cfif>
 		
 		<!--- Plugins --->
-		<cfquery datasource="#arguments.dsn#" name="rstplugins">
+		<cfquery name="rstplugins">
 			select * from tplugins where 
 			1=1	
 			<cfif len(arguments.siteID)>
@@ -261,10 +259,10 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfif rstplugins.recordcount>
 			<cfif not directoryExists("#variables.backupDir#plugins/")>
 				<cfdirectory action="create" directory="#variables.backupDir#plugins/">
-				<cffile action="write" file="#variables.backupDir#plugins#variables.fileDelim#blank.txt" output="empty file" /> 
+				<cffile action="write" file="#variables.backupDir#plugins/blank.txt" output="empty file" /> 
 			</cfif>
 			<cfloop query="rstplugins">
-				<cfset variables.utility.copyDir( expandPath("/plugins/#rstplugins.directory#"),"#variables.backupDir#plugins/#rstplugins.directory#" )>
+				<cfset variables.utility.copyDir("#variables.configBean.getPluginDir()#/#rstplugins.directory#","#variables.backupDir#plugins/#rstplugins.directory#" )>
 			</cfloop>
 			<cfset variables.zipTool.AddFiles(zipFilePath="#variables.backupDir#pluginfiles.zip",directory="#variables.backupDir#plugins/",recurse="true")>
 		</cfif>
@@ -286,7 +284,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfargument name="themeDir" type="string" default="" required="true">
 		
 		<cfset var zipPath = "" />
-		<cfset var siteRoot = variables.configBean.getValue('webroot') & variables.fileDelim & arguments.siteID /> 
+		<cfset var siteRoot = variables.configBean.getValue('webroot') & '/' & arguments.siteID /> 
 		<cfset var tmpDir = "" />
 		<cfset var destDir = "" />
 		<cfset var qCheck = "" />
@@ -303,31 +301,38 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		</cfif>
 		
 		<cfif len(arguments.siteID)>
+			<cfset var site=getBean('settingsManager').getSite(arguments.siteid)>
+			<cfset var filePoolID=site.getFilePoolID()>
+
 			<cfif arguments.contentMode eq "all">
 				
-				<cfif not isDate(arguments.sinceDate)>
+				<cfif not isDate(arguments.sinceDate) and not site.getHasSharedFilePool()>
 					<!---
-					<cfset variables.utility.deleteDir( variables.configBean.getValue('filedir') & variables.fileDelim  & arguments.siteID & variables.fileDelim & "assets"  )>
+					<cfset variables.utility.deleteDir( variables.configBean.getValue('filedir') & '/'  & filePoolID & '/' & "assets"  )>
 					--->
-					<cfset variables.utility.deleteDir( variables.configBean.getValue('filedir') & variables.fileDelim  & arguments.siteID & variables.fileDelim & "cache"  )>
+					<cfset variables.utility.deleteDir( variables.configBean.getValue('filedir') & '/'  & filePoolID & '/' & "cache"  )>
 				</cfif>
 				<cfif fileExists( getBundle() & "sitefiles.zip" )>
 					<cfset zipPath = getBundle() & "sitefiles.zip" />
 					
-					<cfset destDir = variables.configBean.getValue('filedir') & variables.fileDelim & arguments.siteID />
-					<cfset variables.zipTool.Extract(zipFilePath="#zipPath#",extractPath=destDir, overwriteFiles=true, extractDirs="cache")>
-					
-					<cfset destDir = variables.configBean.getValue('assetdir') & variables.fileDelim & arguments.siteID />
-					<cfset variables.zipTool.Extract(zipFilePath="#zipPath#",extractPath=destDir, overwriteFiles=true, extractDirs="assets")>
+					<cfif not fileExists( getBundle() & "filefiles.zip" )>
+						<cfset destDir = variables.configBean.getValue('filedir') & '/' & filePoolID />
+						<cfset variables.zipTool.Extract(zipFilePath="#zipPath#",extractPath=destDir, overwriteFiles=true, extractDirs="cache")>
+					</cfif>
+
+					<cfif not fileExists( getBundle() & "assetfiles.zip" )>
+						<cfset destDir = variables.configBean.getValue('assetdir') & '/' & filePoolID />
+						<cfset variables.zipTool.Extract(zipFilePath="#zipPath#",extractPath=destDir, overwriteFiles=true, extractDirs="assets")>
+					</cfif>
 				</cfif>
 				<cfif fileExists( getBundle() & "assetfiles.zip" )>
 					<cfset zipPath = getBundle() & "assetfiles.zip" />
-					<cfset destDir = variables.configBean.getValue('assetdir') & variables.fileDelim & arguments.siteID & variables.fileDelim & "assets" & variables.fileDelim />
+					<cfset destDir = variables.configBean.getValue('assetdir') & '/' & filePoolID />
 					<cfset variables.zipTool.Extract(zipFilePath="#zipPath#",extractPath=destDir, overwriteFiles=true)>
 				</cfif>
 				<cfif fileExists( getBundle() & "filefiles.zip" )>
 					<cfset zipPath = getBundle() & "filefiles.zip" />
-					<cfset destDir = variables.configBean.getValue('filedir') & variables.fileDelim & arguments.siteID />
+					<cfset destDir = variables.configBean.getValue('filedir') & '/' & filePoolID />
 					<cfset variables.zipTool.Extract(zipFilePath="#zipPath#",extractPath=destDir, overwriteFiles=true)>
 				</cfif>
 			</cfif>
@@ -336,7 +341,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 				<cfset variables.zipTool.Extract(zipFilePath="#zipPath#",extractPath=siteRoot, overwriteFiles=true, excludeDirs="cache|assets")>
 			<cfelseif arguments.renderingMode eq "theme" and len(arguments.themeDir)>
 				<cfset zipPath = getBundle() & "sitefiles.zip" />
-				<cfset variables.zipTool.Extract(zipFilePath="#zipPath#",extractPath=siteRoot, overwriteFiles=true, extractDirs="includes#variables.fileDelim#themes#variables.fileDelim##arguments.themeDir#")>
+				<cfset variables.zipTool.Extract(zipFilePath="#zipPath#",extractPath=siteRoot, overwriteFiles=true, extractDirs="includes/themes/#arguments.themeDir#")>
 			</cfif>
 		</cfif>
 		
@@ -364,12 +369,12 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 					</cfquery>
 					
 					<cfif qCheck.recordcount and len(qCheck.directory)>
-						<cfset pluginDir=variables.configBean.getPluginDir() & variables.fileDelim & qCheck.directory>
+						<cfset pluginDir=variables.configBean.getPluginDir() & '/' & qCheck.directory>
 					<cfelse>
-						<cfset pluginDir=variables.configBean.getPluginDir() & variables.fileDelim & rstplugins.directory>
+						<cfset pluginDir=variables.configBean.getPluginDir() & '/' & rstplugins.directory>
 					</cfif>
 				
-					<cfset variables.utility.copyDir( getBundle() & "plugins" & variables.fileDelim & rstplugins.directory, pluginDir )>
+					<cfset variables.utility.copyDir( getBundle() & "plugins" & '/' & rstplugins.directory, pluginDir )>
 			
 				</cfif>
 			</cfloop>
@@ -380,7 +385,6 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 	<cffunction name="bundle" returntype="any">
 		<cfargument name="siteID" type="string" default="" required="true">
-		<cfargument name="dsn" type="string" default="#variables.configBean.getDatasource()#" required="true">
 		<cfargument name="includeVersionHistory" type="boolean" default="true" required="true">
 		<cfargument name="includeTrash" type="boolean" default="true" required="true">
 		<cfargument name="includeMetaData" type="boolean" default="true" required="true">
@@ -421,6 +425,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfset var rstclassextendattributes=""/>
 		<cfset var rstclassextenddata=""/>
 		<cfset var rstclassextenddatauseractivity="">
+		<cfset var tclassextendrcsets="">
 		<cfset var rstchangesets=""/>
 		<cfset var rstpluginmodules=""/>
 		<cfset var rstplugins=""/>
@@ -455,6 +460,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfset var rstadplacementcategories="">
 		<cfset var rstformresponsepackets="">
 		<cfset var rsCleanDir="">
+		<cfset var rstclassextendrcsets="">
 
 		<cfsetting requestTimeout = "7200">
 		
@@ -498,7 +504,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		</cfif>
 	
 		<cfif len(arguments.siteID)>	
-			<cfquery datasource="#arguments.dsn#" name="rstcontent">
+			<cfquery name="rstcontent">
 				select * from tcontent where siteid = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#"/> 
 				and type <>'Module'
 				<cfif not arguments.includeVersionHistory>
@@ -511,7 +517,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 			<cfset setValue("rstcontent",rstcontent)>
 													
-			<cfquery datasource="#arguments.dsn#" name="rstcontentobjects">
+			<cfquery name="rstcontentobjects">
 				select * from tcontentobjects where siteid = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#"/>
 				<cfif not arguments.includeVersionHistory>
 				and contenthistID in 
@@ -535,7 +541,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	
 			<cfset setValue("rstcontentobjects",rstcontentobjects)>
 	
-			<cfquery datasource="#arguments.dsn#" name="rstcontenttags">
+			<cfquery name="rstcontenttags">
 				select * from tcontenttags where siteid = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#"/>
 				<cfif not arguments.includeVersionHistory>
 				and contenthistID in
@@ -558,7 +564,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	
 			<cfset setValue("rstcontenttags",rstcontenttags)>
 	
-			<cfquery datasource="#arguments.dsn#" name="rstsystemobjects">
+			<cfquery name="rstsystemobjects">
 				select * from tsystemobjects where siteid = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#"/>
 			</cfquery>
 	
@@ -566,13 +572,13 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	
 			<cfif arguments.includeUsers>
 			<!--- BEGIN INCLUDE USERS only supported by full bundles--->
-			<cfquery datasource="#arguments.dsn#" name="rstpermissions">
+			<cfquery name="rstpermissions">
 				select * from tpermissions where siteid = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#"/>
 			</cfquery>
 	
 			<cfset setValue("rstpermissions",rstpermissions)>
 	
-			<cfquery datasource="#arguments.dsn#" name="rstusers">
+			<cfquery name="rstusers">
 				select * from tusers where 
 				(
 					(
@@ -598,7 +604,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfset setValue("rstusers",rstusers)>
 			
 			<cfif rstusers.recordcount>
-				<cfquery datasource="#arguments.dsn#" name="rstusersmemb">
+				<cfquery name="rstusersmemb">
 					select * from tusersmemb where
 					userID in (
 								select userID from tusers where 
@@ -626,7 +632,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		
 				<cfset setValue("rstusersmemb",rstusersmemb)>
 				
-				<cfquery datasource="#arguments.dsn#" name="rstuseraddresses">
+				<cfquery name="rstuseraddresses">
 					select * from tuseraddresses where
 					userID in (
 								select userID from tusers where 
@@ -653,7 +659,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 				
 				<cfset setValue("rstuseraddresses",rstuseraddresses)>
 				
-				<cfquery datasource="#arguments.dsn#" name="rstusersinterests">
+				<cfquery name="rstusersinterests">
 					select * from tusersinterests where
 					userID in (
 								select userID from tusers where 
@@ -682,7 +688,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 				
 				<cfset setValue("rstusersinterests",rstusersinterests)>
 				
-				<cfquery datasource="#arguments.dsn#" name="rstuserstags">
+				<cfquery name="rstuserstags">
 					select * from tuserstags where
 					userID in (
 								select userID from tusers where 
@@ -711,7 +717,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 				
 				<cfset setValue("rstuserstags",rstuserstags)>
 				
-				<cfquery datasource="#arguments.dsn#" name="rstusersfavorites">
+				<cfquery name="rstusersfavorites">
 					select * from tusersfavorites where
 					userID in (
 								select userID from tusers where 
@@ -747,11 +753,11 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			
 			<!--- BEGIN ADVERTISING --->
 			<!--- removed until further evaluation 
-			<cfquery datasource="#arguments.dsn#" name="rsSettings">
+			<cfquery name="rsSettings">
 				select advertiserUserPoolID from tsettings where siteid = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#"/>
 			</cfquery>
 	
-			<cfquery datasource="#arguments.dsn#" name="rstadcampaigns">
+			<cfquery name="rstadcampaigns">
 				select * from tadcampaigns
 				where userID in 
 				(select userID from tusers where
@@ -761,7 +767,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	
 			<cfset setValue("rstadcampaigns",rstadcampaigns)>
 					
-			<cfquery datasource="#arguments.dsn#" name="rstadcreatives">
+			<cfquery name="rstadcreatives">
 				select * from tadcreatives
 				where userID in 
 				(select userID from tusers where
@@ -771,32 +777,32 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	
 			<cfset setValue("rstadcampaigns",rstadcampaigns)>
 	
-			<cfquery datasource="#arguments.dsn#" name="rstadipwhitelist">
+			<cfquery name="rstadipwhitelist">
 				select * from tadipwhitelist where siteid = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#"/>
 			</cfquery>
 	
 			<cfset setValue("rstadipwhitelist",rstadipwhitelist)>
 	
-			<cfquery datasource="#arguments.dsn#" name="rstadzones">
+			<cfquery name="rstadzones">
 				select * from tadzones where siteid = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#"/>
 			</cfquery>
 	
 			<cfset setValue("rstadzones",rstadzones)>
 	
-			<cfquery datasource="#arguments.dsn#" name="rstadplacements">
+			<cfquery name="rstadplacements">
 				select * from tadplacements where adzoneid in (select adzoneid from tadzones where siteid = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#"/>)
 			</cfquery>
 	
 			<cfset setValue("rstadplacements",rstadplacements)>
 	
-			<cfquery datasource="#arguments.dsn#" name="rstadplacementdetails">
+			<cfquery name="rstadplacementdetails">
 				select * from tadplacementdetails where placementid in (select placementid from tadplacements where adzoneid in (select adzoneid from tadzones where siteid = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#"/>))
 			</cfquery>
 	
 			<cfset setValue("rstadplacementdetails",rstadplacementdetails)>
 				
 			<!--- rstadplacementcategories --->
-			<cfquery datasource="#arguments.dsn#" name="rstadplacementcategories">
+			<cfquery name="rstadplacementcategories">
 				select * from tadplacementcategoryassign where placementid in (select placementid from tadplacements where adzoneid in (select adzoneid from tadzones where siteid = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#"/>))
 			</cfquery>
 	
@@ -806,7 +812,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			
 			
 			<!--- tcontentcategoryassign --->
-			<cfquery datasource="#arguments.dsn#" name="rstcontentcategoryassign">
+			<cfquery name="rstcontentcategoryassign">
 				select * from tcontentcategoryassign where siteid = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#"/>
 				<cfif not arguments.includeVersionHistory>
 				and contentHistID in
@@ -831,7 +837,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfset setValue("rstcontentcategoryassign",rstcontentcategoryassign)>
 	
 			<!--- tcontentfeeds --->
-			<cfquery datasource="#arguments.dsn#" name="rstcontentfeeds">
+			<cfquery name="rstcontentfeeds">
 				select * from tcontentfeeds where siteid = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#"/>
 				<cfif isDate(arguments.sinceDate)>
 				and lastUpdate >=<cfqueryparam cfsqltype="cf_sql_timestamp" value="#arguments.sinceDate#">
@@ -841,7 +847,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfset setValue("rstcontentfeeds",rstcontentfeeds)>
 	
 			<!--- tcontentfeeditems --->
-			<cfquery datasource="#arguments.dsn#" name="rstcontentfeeditems">
+			<cfquery name="rstcontentfeeditems">
 				select * from tcontentfeeditems where feedID in (select feedID from tcontentfeeds where siteid = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#"/>)
 				<cfif isDate(arguments.sinceDate)>
 					<cfif rstcontentfeeds.recordcount>
@@ -858,7 +864,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfset setValue("rstcontentfeeditems",rstcontentfeeditems)>
 	
 			<!--- tcontentfeedadvancedparams --->
-			<cfquery datasource="#arguments.dsn#" name="rstcontentfeedadvancedparams">
+			<cfquery name="rstcontentfeedadvancedparams">
 				select * from tcontentfeedadvancedparams where feedID in (select feedID from tcontentfeeds where siteid = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#"/>)
 				<cfif isDate(arguments.sinceDate)>
 					<cfif rstcontentfeeds.recordcount>
@@ -875,7 +881,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfset setValue("rstcontentfeedadvancedparams",rstcontentfeedadvancedparams)>
 	
 			<!--- tcontentrelated --->
-			<cfquery datasource="#arguments.dsn#" name="rstcontentrelated">
+			<cfquery name="rstcontentrelated">
 				select * from tcontentrelated where siteid = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#"/>
 				<cfif not arguments.includeVersionHistory>
 				and contenthistID in 
@@ -900,7 +906,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfset setValue("rstcontentrelated",rstcontentrelated)>
 	
 			<!--- tmailinglist --->
-			<cfquery datasource="#arguments.dsn#" name="rstmailinglist">
+			<cfquery name="rstmailinglist">
 				select * from tmailinglist where siteid = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#"/>
 				<cfif isDate(arguments.sinceDate)>
 				and lastUpdate >=<cfqueryparam cfsqltype="cf_sql_timestamp" value="#arguments.sinceDate#">
@@ -911,7 +917,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			
 			<cfif arguments.includeMailingListMembers>
 			<!--- tmailinglistmembers only support for full archives--->
-			<cfquery datasource="#arguments.dsn#" name="rstmailinglistmembers">
+			<cfquery name="rstmailinglistmembers">
 				select * from tmailinglistmembers where siteid = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#"/>
 			</cfquery>
 	
@@ -919,7 +925,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			</cfif>
 			
 			<!--- tfiles --->
-			<cfquery datasource="#arguments.dsn#" name="rstfiles">
+			<cfquery name="rstfiles">
 				select * from tfiles where siteid = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#"/>
 				and moduleid in ('00000000000000000000000000000000000','00000000000000000000000000000000003'<cfif len(arguments.moduleID)>,<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.moduleID#" list="true"></cfif><cfif arguments.includeUsers>,'00000000000000000000000000000000008'</cfif><cfif arguments.includeFormData>,'00000000000000000000000000000000004'</cfif>)
 				<cfif not arguments.includeVersionHistory>
@@ -983,7 +989,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfset setValue("hasmetadata",arguments.includeMetaData)>
 			
 			<cfif arguments.includeMetaData>
-			<cfquery datasource="#arguments.dsn#" name="rstcontentstats">
+			<cfquery name="rstcontentstats">
 				select * from tcontentstats where siteid = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#"/>
 				<cfif isDate(arguments.sinceDate)>
 					<cfif rstcontent.recordcount>
@@ -999,7 +1005,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	
 			<cfset setValue("rstcontentstats",rstcontentstats)>
 
-			<cfquery datasource="#arguments.dsn#" name="rstcontentcomments">
+			<cfquery name="rstcontentcomments">
 				select * from tcontentcomments where siteid = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#"/>
 				<cfif isDate(arguments.sinceDate)>
 				and entered >=<cfqueryparam cfsqltype="cf_sql_timestamp" value="#arguments.sinceDate#">
@@ -1011,7 +1017,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	
 			<cfset setValue("rstcontentcomments",rstcontentcomments)>
 	
-			<cfquery datasource="#arguments.dsn#" name="rstcontentratings">
+			<cfquery name="rstcontentratings">
 				select * from tcontentratings where siteid = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#"/>
 				<cfif isDate(arguments.sinceDate)>
 				and entered >=<cfqueryparam cfsqltype="cf_sql_timestamp" value="#arguments.sinceDate#">
@@ -1023,7 +1029,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			
 			</cfif>
 			
-			<cfquery datasource="#arguments.dsn#" name="rstclassextend">
+			<cfquery name="rstclassextend">
 				select * from tclassextend where siteid = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#"/>
 				<cfif not arguments.includeUsers>
 				and type not in ('1','2','User','Group')
@@ -1032,7 +1038,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	
 			<cfset setValue("rstclassextend",rstclassextend)>
 	
-			<cfquery datasource="#arguments.dsn#" name="rstclassextendsets">
+			<cfquery name="rstclassextendsets">
 				select * from tclassextendsets 
 				where siteid = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#"/>
 				<cfif rstclassextend.recordcount>
@@ -1043,8 +1049,20 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			</cfquery>
 		
 			<cfset setValue("rstclassextendsets",rstclassextendsets)>
+
+			<cfquery name="rstclassextendrcsets">
+				select * from tclassextendrcsets 
+				where siteid = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#"/>
+				<cfif rstclassextend.recordcount>
+					and subTypeID in (<cfqueryparam cfsqltype="cf_sql_varchar" value="#valueList(rstclassextend.subtypeID)#" list="true">)
+				<cfelse>
+					and 0=1
+				</cfif>
+			</cfquery>
 		
-			<cfquery datasource="#arguments.dsn#" name="rstclassextendattributes">
+			<cfset setValue("tclassextendrcsets",rstclassextendrcsets)>
+		
+			<cfquery name="rstclassextendattributes">
 				select * from tclassextendattributes where siteid = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#"/>
 				<cfif rstclassextendsets.recordcount>
 					and extendsetID in (<cfqueryparam cfsqltype="cf_sql_varchar" value="#valueList(rstclassextendsets.extendsetID)#" list="true">)
@@ -1055,7 +1073,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		
 			<cfset setValue("rstclassextendattributes",rstclassextendattributes)>
 		
-			<cfquery datasource="#arguments.dsn#" name="rstclassextenddata">
+			<cfquery name="rstclassextenddata">
 				select tclassextenddata.baseID, tclassextenddata.attributeID, tclassextenddata.attributeValue, 
 				tclassextenddata.siteID, tclassextenddata.stringvalue, tclassextenddata.numericvalue, tclassextenddata.datetimevalue, tclassextenddata.remoteID from tclassextenddata 
 				inner join tcontent on (tclassextenddata.baseid=tcontent.contenthistid)
@@ -1084,7 +1102,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfset setValue("rstclassextenddata",rstclassextenddata)>
 				
 			<cfif arguments.includeUsers>
-				<cfquery datasource="#arguments.dsn#" name="rstclassextenddatauseractivity">
+				<cfquery name="rstclassextenddatauseractivity">
 					select * from tclassextenddatauseractivity
 					where siteID= <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#"/>
 					and attributeID in (select attributeID from tclassextendattributes)
@@ -1094,7 +1112,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			</cfif>
 				
 			<!--- tcontentcategories --->
-			<cfquery datasource="#arguments.dsn#" name="rstcontentcategories">
+			<cfquery name="rstcontentcategories">
 				select * from tcontentcategories where siteid = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#"/>
 				<cfif isDate(arguments.sinceDate)>
 					and lastUpdate >=<cfqueryparam cfsqltype="cf_sql_timestamp" value="#arguments.sinceDate#">
@@ -1104,7 +1122,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfset setValue("rstcontentcategories",rstcontentcategories)>	
 			
 			<!--- tchangesets --->
-			<cfquery datasource="#arguments.dsn#" name="rstchangesets">
+			<cfquery name="rstchangesets">
 				select * from tchangesets where siteid = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#"/>
 				<cfif not arguments.includeVersionHistory>
 				and published=0
@@ -1118,7 +1136,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			
 			<cfif arguments.includeTrash or isDate(arguments.sinceDate)>
 			<!--- ttrash --->
-			<cfquery datasource="#arguments.dsn#" name="rsttrash">
+			<cfquery name="rsttrash">
 				select * from ttrash where siteid = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#"/>
 				<!--- We don't want user data in trash --->
 				<cfif not arguments.includeUsers>
@@ -1133,8 +1151,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			
 			<!--- deleted files --->
 			<cfif isDate(arguments.sinceDate)>
-			<cfquery datasource="#arguments.dsn#" name="rsttrashfiles">
-				select * from tfiles where siteid = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#"/>
+			<cfquery name="rsttrashfiles">
+				select * from tfiles where siteid = <cfqueryparam cfsqltype="cf_sql_varchar" value="#getBean('siteManager').getSite(arguments.siteID).getFilePoolID()#"/>
 				and moduleid in ('00000000000000000000000000000000000','00000000000000000000000000000000003'<cfif len(arguments.moduleID)>,<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.moduleID#" list="true"></cfif><cfif arguments.includeUsers>,'00000000000000000000000000000000008'</cfif><cfif arguments.includeFormData>,'00000000000000000000000000000000004'</cfif>)
 				and deleted=1
 			</cfquery>
@@ -1144,21 +1162,23 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			
 			</cfif>
 			
-			<cfquery datasource="#arguments.dsn#" name="rssite">
+			<cfquery name="rssite">
 				select domain,siteid,theme,
 				largeImageWidth,largeImageHeight,
 				smallImageWidth,smallImageHeight,
 				mediumImageWidth,mediumImageHeight,
-				columnCount,columnNames,primaryColumn,baseID
+				columnCount,columnNames,primaryColumn,baseID,customtaggroups
 			    from tsettings where siteid = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#"/> 
 			</cfquery>
 			
 			<cfset setValue("rssite",rssite)>
 
-			<cfquery datasource="#arguments.dsn#" name="rstimagesizes">
+			<cfquery name="rstimagesizes">
 				select *
 			    from timagesizes where siteid = <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#"/> 
 			</cfquery>	
+
+			<cfset setValue("rstimagesizes",rstimagesizes)>
 
 			<cfset setValue("assetPath",application.configBean.getAssetPath())>
 			<cfset setValue("context",application.configBean.getContext())>
@@ -1167,7 +1187,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<!--- BEGIN PLUGINS --->
 		
 		<!--- Modules--->
-		<cfquery datasource="#arguments.dsn#" name="rstpluginmodules">
+		<cfquery name="rstpluginmodules">
 			select moduleID from tcontent where 
 			1=1
 			<cfif len(arguments.siteID)>
@@ -1183,7 +1203,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfset setValue("rstpluginmodules",rstpluginmodules)>
 		
 		<!--- Plugins --->
-		<cfquery datasource="#arguments.dsn#" name="rstplugins">
+		<cfquery name="rstplugins">
 			select * from tplugins
 			where
 			1=1 
@@ -1200,7 +1220,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfset setValue("rstplugins",rstplugins)>
 		
 		<cfloop query="rstplugins">
-			<cfif fileExists(expandPath("/plugins/#rstplugins.directory#/plugin/plugin.cfc"))>	
+			<cfif fileExists(variables.configBean.getPluginDir() & "/#rstplugins.directory#/plugin/plugin.cfc")>	
 				<cfset pluginConfig=getPlugin(ID=rstplugins.moduleID, siteID="", cache=false)>
 				<cfset pluginCFC= createObject("component","plugins.#rstplugins.directory#.plugin.plugin") />
 						
@@ -1208,14 +1228,14 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 				<cfif structKeyExists(pluginCFC,"init")>
 					<cfset pluginCFC.init(pluginConfig)>
 					<cfif structKeyExists(pluginCFC,"toBundle")>
-						<cfset pluginCFC.toBundle(pluginConfig=pluginConfig,Bundle=this, siteID=arguments.siteID)>
+						<cfset pluginCFC.toBundle(pluginConfig=pluginConfig,Bundle=this, siteID=arguments.siteID,includeVersionHistory=arguments.includeVersionHistory)>
 					</cfif>
 				</cfif>
 			</cfif>
 		</cfloop>	
 		
 		<!--- Scripts --->
-		<cfquery datasource="#arguments.dsn#" name="rstpluginscripts">
+		<cfquery name="rstpluginscripts">
 			select * from tpluginscripts where
 			1=1
 			<cfif len(arguments.siteID)>
@@ -1231,7 +1251,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfset setValue("rstpluginscripts",rstpluginscripts)>
 		
 		<!--- Display Objects --->
-		<cfquery datasource="#arguments.dsn#" name="rstplugindisplayobjects">
+		<cfquery name="rstplugindisplayobjects">
 			select * from tplugindisplayobjects where
 			1=1
 			<cfif len(arguments.siteID)>
@@ -1247,7 +1267,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfset setValue("rstplugindisplayobjects",rstplugindisplayobjects)>
 		
 		<!--- Settings --->
-		<cfquery datasource="#arguments.dsn#" name="rstpluginsettings">
+		<cfquery name="rstpluginsettings">
 			select * from tpluginsettings where
 			1=1
 			<cfif len(arguments.siteID)>
@@ -1266,14 +1286,14 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		
 		<!--- BEGIN FORM DATA --->
 		<cfif arguments.includeFormData and not isDate(arguments.sinceDate)>
-				<cfquery datasource="#arguments.dsn#" name="rstformresponsepackets">
+				<cfquery name="rstformresponsepackets">
 					select * from tformresponsepackets
 					where siteID= <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#"/>
 				</cfquery>
 		
 				<cfset setValue("rstformresponsepackets",rstformresponsepackets)>
 				
-				<cfquery datasource="#arguments.dsn#" name="rstformresponsequestions">
+				<cfquery name="rstformresponsequestions">
 					select * from tformresponsequestions
 					where formid in (
 									select distinct formID from tformresponsepackets 
@@ -1285,7 +1305,19 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		</cfif>
 		
 		<!--- END FORM DATA --->
-		
+
+		<!--- BEGIN BUNDLEABLE CUSTOM OBJECTS --->
+		<cfif len(arguments.siteid) and not len(arguments.moduleID)>
+			<cfset setValue("bundleablebeans",application.objectMappings.bundleablebeans)>
+			
+			<cfif len(application.objectMappings.bundleablebeans)>
+				<cfloop list="#application.objectMappings.bundleablebeans#" index="local.b">
+					<cfset getBean(beanName=local.b,siteid=arguments.siteid).toBundle(bundle=this,siteid=arguments.siteid,includeVersionHistory=arguments.includeVersionHistory)>
+				</cfloop>
+			</cfif>
+		</cfif>
+		<!--- END BUNDLEABLE CUSTOM OBJECTS --->
+
 		<cfset setValue("sincedate",arguments.sincedate)>
 		<cfset setValue("bundledate",now())>
 		
@@ -1370,6 +1402,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfargument name="name" type="string" required="true">
 		<cfargument name="value" type="any" required="true">
 		<cfset var temp="">
+		<cfset var i = "">
 		
 		<cfif isQuery(arguments.value) and application.configBean.getDBType() eq "Oracle">
 			<cfset arguments.value=variables.utility.fixOracleClobs(arguments.value)>
@@ -1377,6 +1410,12 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		
 		<cfset variables.data["#name#"]=arguments.value>
 		<cfwddx action="cfml2wddx" input="#arguments.value#" output="temp">
+		
+		<!--- replace lower, non-printable ascii chars --->
+		<cfloop from="1" to="31" index="i">
+			<cfset temp = replace(temp, chr(i), "", "all")>
+		</cfloop>
+		
 		<cffile action="write" output="#temp#" file="#variables.backupDir#wddx_#arguments.name#.xml"  charset="utf-8">
 	</cffunction>
 

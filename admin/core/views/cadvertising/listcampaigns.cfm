@@ -46,20 +46,20 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 --->
 <cfoutput>
 <form class="form-inline" novalidate="novalidate" id="siteSearch" name="siteSearch" method="get"> 
-	<!--- <input name="keywords" value="#HTMLEditFormat(rc.keywords)#" type="text" class="text" /> <input type="button" class="btn" onclick="submitForm(document.forms.siteSearch);" value="#application.rbFactory.getKeyValue(session.rb,'advertising.search')#" /> --->
+	<!--- <input name="keywords" value="#esapiEncode('html_attr',rc.keywords)#" type="text" class="text" /> <input type="button" class="btn" onclick="submitForm(document.forms.siteSearch);" value="#application.rbFactory.getKeyValue(session.rb,'advertising.search')#" /> --->
 	<div class="input-append">
-	    <input name="keywords" value="#HTMLEditFormat(session.keywords)#" type="text" class="text" />
-	    <button type="button" class="btn" onclick="submitForm(document.forms.siteSearch);" /><i class="icon-search"></i></button>
+	    <input name="keywords" value="#esapiEncode('html_attr',session.keywords)#" type="text" class="text" />
+	    <button type="button" class="btn" onclick="submitForm(document.forms.siteSearch);"><i class="icon-search"></i></button>
 	</div>	
 	<input type="hidden" name="muraAction" value="cAdvertising.listCampaigns">
-	<input type="hidden" name="siteid" value="#HTMLEditFormat(rc.siteid)#">
+	<input type="hidden" name="siteid" value="#esapiEncode('html_attr',rc.siteid)#">
 </form>
 
 <h1>#application.rbFactory.getKeyValue(session.rb,'advertising.viewcampaigns')#</h1>
 
 <cfinclude template="dsp_secondary_menu.cfm">
 
-<table class="table table-striped table-condensed table-bordered mura-table-grid">
+<table class="mura-table-grid">
 <tr>
 	<th class="var-width">#application.rbFactory.getKeyValue(session.rb,'advertising.campaign')#</th>
 	<th>#application.rbFactory.getKeyValue(session.rb,'advertising.advertiser')#</th>
@@ -71,7 +71,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfif rc.rslist.recordcount>
 <cfoutput query="rc.rslist">
 	<tr>
-		<td class="var-width"><a title="#application.rbFactory.getKeyValue(session.rb,'advertising.edit')#" href="index.cfm?muraAction=cAdvertising.editCampaign&userid=#rc.rslist.userid#&campaignid=#rc.rslist.campaignid#&siteid=#URLEncodedFormat(rc.siteid)#">#name#</a></td>
+		<td class="var-width"><a title="#application.rbFactory.getKeyValue(session.rb,'advertising.edit')#" href="./?muraAction=cAdvertising.editCampaign&userid=#rc.rslist.userid#&campaignid=#rc.rslist.campaignid#&siteid=#esapiEncode('url',rc.siteid)#">#name#</a></td>
 		<td>#company#</td>
 		<td>#LSDateFormat(startdate,session.dateKeyFormat)#</td>
 		<td>#LSDateFormat(enddate,session.dateKeyFormat)#</td>
@@ -84,7 +84,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<span>#application.rbFactory.getKeyValue(session.rb,'advertising.#yesnoformat(isActive)#')#</span>
 		</td>
 		<td class="actions"><ul>
-		<li class="edit"><a title="#application.rbFactory.getKeyValue(session.rb,'advertising.edit')#" href="index.cfm?muraAction=cAdvertising.editCampaign&userid=#rc.rslist.userid#&campaignid=#rc.rslist.campaignid#&siteid=#URLEncodedFormat(rc.siteid)#"><i class="icon-pencil"></i></a></li><li class="view-report"><a title="#application.rbFactory.getKeyValue(session.rb,'advertising.viewcampaignreport')#" href="index.cfm?muraAction=cAdvertising.viewReportByCampaign&campaignid=#rc.rsList.campaignid#&userid=#rc.rslist.userid#&siteid=#URLEncodedFormat(rc.siteid)#"><i class="icon-bar-chart"></i></a></li></ul>
+		<li class="edit"><a title="#application.rbFactory.getKeyValue(session.rb,'advertising.edit')#" href="./?muraAction=cAdvertising.editCampaign&userid=#rc.rslist.userid#&campaignid=#rc.rslist.campaignid#&siteid=#esapiEncode('url',rc.siteid)#"><i class="icon-pencil"></i></a></li><li class="view-report"><a title="#application.rbFactory.getKeyValue(session.rb,'advertising.viewcampaignreport')#" href="./?muraAction=cAdvertising.viewReportByCampaign&campaignid=#rc.rsList.campaignid#&userid=#rc.rslist.userid#&siteid=#esapiEncode('url',rc.siteid)#"><i class="icon-bar-chart"></i></a></li></ul>
 		</td></tr>
 </cfoutput>
 <cfelse>

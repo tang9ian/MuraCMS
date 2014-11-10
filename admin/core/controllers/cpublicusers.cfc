@@ -154,21 +154,21 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfif len(arguments.rc.returnurl)>	
 			<cflocation url="#arguments.rc.returnurl#" addtoken="false">
 		<cfelse>
-			<cfset variables.fw.redirect(action="cPublicUsers.list",append="siteid")>
+			<cfset variables.fw.redirect(action="cPublicUsers.list",append="siteid",path="./")>
 		</cfif>
 	</cfif>
 	<cfif arguments.rc.routeid eq 'adManager' and arguments.rc.action neq 'delete'>
-		<cfset variables.fw.redirect(action="cAdvertising.viewAdvertiser",append="siteid,userid")>
+		<cfset variables.fw.redirect(action="cAdvertising.viewAdvertiser",append="siteid,userid",path="./")>
 	</cfif>
 	<cfif arguments.rc.routeid eq 'adManager' and arguments.rc.action eq 'delete'>
-		<cfset variables.fw.redirect(action="cAdvertising.listAdvertisers",append="siteid,")>
+		<cfset variables.fw.redirect(action="cAdvertising.listAdvertisers",append="siteid",path="./")>
 	</cfif>
 	<cfif arguments.rc.routeid neq '' and arguments.rc.routeid neq 'adManager'>
 		<cfset arguments.rc.userid=rc.routeid>
-		<cfset variables.fw.redirect(action="cPublicUsers.editgroup",append="siteid,userid")>
+		<cfset variables.fw.redirect(action="cPublicUsers.editgroup",append="siteid,userid",path="./")>
 	</cfif>
 	
-	<cfset variables.fw.redirect(action="cPublicUsers.list",append="siteid")>
+	<cfset variables.fw.redirect(action="cPublicUsers.list",append="siteid",path="./")>
 		
 </cffunction>
 
@@ -178,7 +178,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset arguments.rc.rslist=variables.userManager.getSearch(arguments.rc.search,arguments.rc.siteid,1) />
 	<cfif arguments.rc.rslist.recordcount eq 1>
 		<cfset arguments.rc.userID=rc.rslist.userid>
-		<cfset variables.fw.redirect(action="cPublicUsers.editUser",append="siteid,userid")>
+		<cfset variables.fw.redirect(action="cPublicUsers.editUser",append="siteid,userid",path="./")>
 	</cfif>
 	<cfset arguments.rc.nextn=variables.utility.getNextN(arguments.rc.rsList,15,arguments.rc.startrow) />
 </cffunction>
@@ -219,29 +219,30 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	
 	  <cfset request.newImageIDList="">
 
-	  <cfif arguments.rc.action eq 'Update'>
-	  	<cfset arguments.rc.userBean=variables.userManager.update(arguments.rc) />
-	  </cfif>
-   
-	  <cfif arguments.rc.action eq 'Delete'>
-	  	<cfset variables.userManager.delete(arguments.rc.userid,arguments.rc.type) />
-	  </cfif>
-  
-	  <cfif arguments.rc.action eq 'Add'>
-	  	<cfset arguments.rc.userBean=variables.userManager.create(arguments.rc)/> 
-	  </cfif>
+	  <cfif rc.$.validateCSRFTokens(context=rc.userid)>
+		  <cfif arguments.rc.action eq 'Update'>
+		  	<cfset arguments.rc.userBean=variables.userManager.update(arguments.rc) />
+		  </cfif>
+	   
+		  <cfif arguments.rc.action eq 'Delete'>
+		  	<cfset variables.userManager.delete(arguments.rc.userid,arguments.rc.type) />
+		  </cfif>
 	  
-	   <cfif arguments.rc.action eq 'Add' and structIsEmpty(arguments.rc.userBean.getErrors())>
-	   	<cfset arguments.rc.userid=rc.userBean.getUserID() />
-	   </cfif>
-	 
+		  <cfif arguments.rc.action eq 'Add'>
+		  	<cfset arguments.rc.userBean=variables.userManager.create(arguments.rc)/> 
+		  </cfif>
+		  
+		   <cfif arguments.rc.action eq 'Add' and structIsEmpty(arguments.rc.userBean.getErrors())>
+		   	<cfset arguments.rc.userid=rc.userBean.getUserID() />
+		   </cfif>
+	 	</cfif>
 	   <cfset arguments.rc.siteID=origSiteID>
 	 
 
 	   <cfif len(request.newImageIDList)>
-			<cfset rc.fileid=request.newImageIDList>
-			<cfset rc.userid=arguments.rc.userBean.getUserID()>
-			<cfset variables.fw.redirect(action="cArch.imagedetails",append="userid,siteid,fileid,compactDisplay")>
+			<cfset arguments.rc.fileid=request.newImageIDList>
+			<cfset arguments.rc.userid=arguments.rc.userBean.getUserID()>
+			<cfset variables.fw.redirect(action="cArch.imagedetails",append="userid,siteid,fileid,compactDisplay",path="./")>
 	   </cfif>
 
 	  <cfif (arguments.rc.action neq 'delete' and structIsEmpty(arguments.rc.userBean.getErrors())) or arguments.rc.action eq 'delete'>
@@ -249,10 +250,10 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	  </cfif>
 	 
 	  <cfif arguments.rc.action neq 'delete' and  not structIsEmpty(arguments.rc.userBean.getErrors()) and arguments.rc.type eq 1>
-	  	<cfset variables.fw.redirect(action="cPublicUsers.editgroup",preserve="all")>
+	  	<cfset variables.fw.redirect(action="cPublicUsers.editgroup",preserve="all",path="./")>
 	  <cfelseif arguments.rc.action neq  'delete' and not structIsEmpty(arguments.rc.userBean.getErrors()) and arguments.rc.type eq 2>
 	  	<cfset session.mura.editBean=arguments.rc.userBean>
-	    <cfset variables.fw.redirect(action="cPublicUsers.edituser",preserve="all")>
+	    <cfset variables.fw.redirect(action="cPublicUsers.edituser",preserve="all",path="./")>
 	  </cfif>
 </cffunction>
 
@@ -270,7 +271,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	  	<cfset variables.userManager.createAddress(arguments.rc) /> 
 	  </cfif>
 	  
-	  <cfset variables.fw.redirect(action="cPublicUsers.edituser",preserve="siteid,userid,routeid")>
+	  <cfset variables.fw.redirect(action="cPublicUsers.edituser",preserve="siteid,userid,routeid",path="./")>
 </cffunction>
 	
 </cfcomponent>

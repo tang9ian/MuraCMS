@@ -51,7 +51,9 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfset variables.dataType="" />
 <cfset variables.condition="" />
 <cfset variables.criteria="" />
+<cfset variables.orderBy="" />
 <cfset variables.isValid=true />
+<cfset variables.grouprelationships="(,and (,or (,),openGrouping,orOpenGrouping,andOpenGrouping,closeGrouping">
 
 <cffunction name="init" returntype="any" access="public">
 	<cfargument name="relationship" default="">
@@ -70,13 +72,16 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfset setDataType(arguments.dataType) />
 	<cfset setCondition(arguments.condition) />
 	<cfset setCriteria(arguments.criteria,arguments.condition) />
+
 	<cfset validate()>
 	<cfreturn this>
 </cffunction>
 
 <cffunction name="setRelationship">
 	<cfargument name="relationship">
-	<cfset variables.relationship=arguments.relationship />
+	<cfif listFindNoCase("or,and," & variables.grouprelationships,arguments.relationship)>
+		<cfset variables.relationship=arguments.relationship />
+	</cfif>
 </cffunction>
 
 <cffunction name="getRelationship">
@@ -85,16 +90,20 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 <cffunction name="setField">
 	<cfargument name="field">
+	
+	<cfset arguments.field=rereplacenocase(arguments.field, '[^\w\.]+', '', 'all')>
 
-	<cfset variables.field=arguments.field />
 	<cfif arguments.field eq '' or arguments.field eq 'Select Field'>
 		<cfset variables.field=""/>
 		<cfset setIsValid(false) />
+	<cfelse>
+		<cfset variables.field=arguments.field />
 	</cfif>
 </cffunction>
 
 <cffunction name="setColumn">
 	<cfargument name="column">
+
 	<cfset setField(arguments.column) />
 </cffunction>
 
@@ -102,49 +111,58 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfreturn variables.field />
 </cffunction>
 
+<cffunction name="getFieldStatement">
+	<cfif variables.condition eq 'like' and application.configBean.getDbCaseSensitive()>
+		<cfreturn "upper(" & variables.field & ")"/>
+	<cfelse>
+		<cfreturn variables.field />
+	</cfif>
+</cffunction>
+
 <cffunction name="getColumn">
-	<cfreturn variables.field />
+	<cfreturn getField() />
+</cffunction>
+
+<cffunction name="getColumnStatment">
+	<cfreturn getFieldStatement() />
 </cffunction>
 
 <cffunction name="setCondition">
 	<cfargument name="condition">
 	
-		<cfswitch expression="#arguments.condition#">
-	 		<cfcase value="Equals,EQ,IS">
-	 			<cfset variables.condition="=" />
-	 		</cfcase>
-	 		<cfcase value="GT">
-	 			<cfset variables.condition=">" />
-	 		</cfcase>
-	 		<cfcase value="IN">
-	 			<cfset variables.condition="in" />
-	 		</cfcase>
-	 		<cfcase value="NOTIN,NOT IN">
-	 			<cfset variables.condition="not in" />
-	 		</cfcase>
-	 		<cfcase value="NEQ">
-	 			<cfset variables.condition="!=" />
-	 		</cfcase>
-	 		<cfcase value="GTE">
-	 			<cfset variables.condition=">=" />
-	 		</cfcase>
-	 		<cfcase value="LT">
-	 			<cfset variables.condition="<" />
-	 		</cfcase>
-	 		<cfcase value="LTE">
-	 			<cfset variables.condition="<=" />
-	 		</cfcase>
-	 		<cfcase value="Begins,Contains,Like">
-		 		<cfif getDataType() eq "varchar">
-					<cfset variables.condition="like" />
-				<cfelse>
-					<cfset variables.condition="=" />
-				</cfif>
-	 		</cfcase>
-	 		<cfdefaultcase>
-			 	<cfset variables.condition=arguments.condition />
-			</cfdefaultcase>
-	 	</cfswitch>
+	<cfswitch expression="#arguments.condition#">
+ 		<cfcase value="Equals,EQ,IS,=">
+ 			<cfset variables.condition="=" />
+ 		</cfcase>
+ 		<cfcase value="GT,>">
+ 			<cfset variables.condition=">" />
+ 		</cfcase>
+ 		<cfcase value="IN">
+ 			<cfset variables.condition="in" />
+ 		</cfcase>
+ 		<cfcase value="NOTIN,NOT IN">
+ 			<cfset variables.condition="not in" />
+ 		</cfcase>
+ 		<cfcase value="NEQ,!=">
+ 			<cfset variables.condition="!=" />
+ 		</cfcase>
+ 		<cfcase value="GTE,>=">
+ 			<cfset variables.condition=">=" />
+ 		</cfcase>
+ 		<cfcase value="LT,<">
+ 			<cfset variables.condition="<" />
+ 		</cfcase>
+ 		<cfcase value="LTE,<=">
+ 			<cfset variables.condition="<=" />
+ 		</cfcase>
+ 		<cfcase value="Begins,Contains,Like">
+	 		<cfif getDataType() eq "varchar">
+				<cfset variables.condition="like" />
+			<cfelse>
+				<cfset variables.condition="=" />
+			</cfif>
+ 		</cfcase>
+ 	</cfswitch>
 	
 </cffunction>
 
@@ -156,15 +174,23 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	</cfif>
 </cffunction>
 
+<cffunction name="getAllValues" output="false">
+	<cfreturn variables>
+</cffunction>
+
 <cffunction name="setCriteria">
 	<cfargument name="criteria">
 	<cfargument name="condition">
 	<cfset var tmp="" />
-	
+
 	<cftry>
 		<cfset tmp=getContentRenderer().setDynamicContent(arguments.criteria) />
 	<cfcatch><cfset tmp=arguments.criteria /></cfcatch>
 	</cftry>
+
+	<cfif not len(getDataType()) and len(tmp) and (LSIsDate(tmp) or IsDate(tmp))>
+		<cfset setDataType('datetime') />
+	</cfif>
 
 	<cfif tmp eq "null">
 		<cfset variables.criteria="null">
@@ -175,7 +201,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 				<cfcase value="Begins" >
 					<cfset variables.criteria="#tmp#%" />
 				</cfcase>
-				<cfcase value="Contains" >
+				<cfcase value="Contains,Like" >
 					<cfset variables.criteria="%#tmp#%" />
 				</cfcase>
 				<cfdefaultcase>
@@ -195,12 +221,18 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 				<cfset setIsValid(false) />
 			</cfif>
 		</cfcase>
-		<cfcase value="timestamp" >
+		<cfcase value="timestamp,datetime">
 			<cfif lsIsDate(tmp)>
-				<cfset tmp=lsParseDateTime(tmp)>
+				<cftry>
+					<cfset tmp=lsParseDateTime(tmp)>
+					<cfcatch><!--- already parsed ---></cfcatch>
+				</cftry>
 				<cfset variables.criteria=createODBCDateTime(createDateTime(year(tmp),month(tmp),day(tmp),hour(tmp),minute(tmp),0)) />
 			<cfelseif isDate(tmp)>
-				<cfset tmp=parseDateTime(tmp)>
+				<cftry>
+					<cfset tmp=parseDateTime(tmp)>
+					<cfcatch><!--- already parsed ---></cfcatch>
+				</cftry>
 				<cfset variables.criteria=createODBCDateTime(createDateTime(year(tmp),month(tmp),day(tmp),hour(tmp),minute(tmp),0)) />
 			<cfelse>
 				<cfset variables.criteria="" />
@@ -225,15 +257,25 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		</cfcase>
 		</cfswitch>
 	</cfif>
-	
 </cffunction>
 
 <cffunction name="getCriteria">
-	<cfreturn variables.criteria />
+	<cfif variables.condition eq 'like' and application.configBean.getDbCaseSensitive()>
+		<cfreturn ucase(variables.criteria) />
+	<cfelse>
+		<cfreturn variables.criteria />
+	</cfif>
 </cffunction>
 
 <cffunction name="setDataType">
 	<cfargument name="dataType">
+	
+	<cfif arguments.datatype eq 'datetime'>
+		<cfset arguments.datatype="timestamp">
+	<cfelse>
+		<cfset arguments.datatype=rereplacenocase(arguments.datatype, '\W', '', 'all')>
+	</cfif>
+
 	<cfset variables.dataType=arguments.dataType />
 </cffunction>
 
@@ -253,8 +295,12 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfreturn variables.isValid />
 </cffunction>
 
+<cffunction name="isGroupingParam" output="false">
+	<cfreturn listFindNoCase(variables.grouprelationships,getRelationship()) >
+</cffunction>
+
 <cffunction name="validate">
-	<cfif not listFindNoCase("(,and (,or (,),openGrouping,orOpenGrouping,andOpenGrouping,closeGrouping",getRelationship()) 
+	<cfif not isGroupingParam() 
 		and (variables.field eq '' or variables.field eq 'Select Field')>
 		<cfset variables.field=""/>
 		<cfset setIsValid(false) />
@@ -275,6 +321,64 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfreturn getBean("contentRenderer")>
 	</cfif>
 	
+</cffunction>
+
+<cffunction name="isListParam" output="false">
+	<cfreturn listFindNoCase("IN,NOT IN",getCondition())>
+</cffunction>
+
+<cffunction name="getExtendedIDList" output="false">
+	<cfargument name="table">
+	<cfargument name="siteid">
+	<cfargument name="tableModifier" default="">
+	<cfset var maxrows=2100>
+	<cfset var rs="">
+	<cfset var castfield="attributeValue">
+
+	<cfif application.configBean.getDbType() eq 'Oracle'>
+		<cfset maxrows=990>
+	</cfif>
+
+	<cfset var isList=isListParam()>
+
+	<cfquery attributeCollection="#application.configBean.getReadOnlyQRYAttrs(name='rs',maxrows=maxrows)#">
+			select #arguments.table#.baseID from #arguments.table# #arguments.tableModifier#
+			<cfif isNumeric(getField())>
+				where #arguments.table#.attributeID=<cfqueryparam cfsqltype="cf_sql_numeric" value="#getField()#">
+			<cfelse>
+				inner join tclassextendattributes on (#arguments.table#.attributeID = tclassextendattributes.attributeID)
+				where tclassextendattributes.siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteid#">
+				and tclassextendattributes.name=<cfqueryparam cfsqltype="cf_sql_varchar" value="#getField()#">	
+			</cfif>
+			and 
+			<cfif variables.condition neq "like">
+				<cfset castfield=application.configBean.getClassExtensionManager().getCastString(getField(),arguments.siteid)>
+			</cfif> 
+			<cfif variables.condition eq "like" and application.configBean.getDbCaseSensitive()>
+				upper(#castfield#)
+			<cfelse>
+				#castfield#
+			</cfif>
+			#getCondition()# 
+			<cfif isList>
+				(
+			</cfif>
+			<cfqueryparam cfsqltype="cf_sql_#getDataType()#" value="#getCriteria()#" list="#iif(isList,de('true'),de('false'))#" null="#iif(getCriteria() eq 'null',de('true'),de('false'))#">
+			<cfif isList>
+				)
+			</cfif>
+	</cfquery>
+
+	<cfreturn valuelist(rs.baseid)>
+</cffunction>
+
+<cffunction name="setOrderBy">
+	<cfargument name="orderby">
+	<cfset variables.orderby=arguments.orderby />
+</cffunction>
+
+<cffunction name="getOrderBy" output="false">
+	<cfreturn variables.orderby />	
 </cffunction>
 
 </cfcomponent>

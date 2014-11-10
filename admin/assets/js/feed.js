@@ -49,6 +49,7 @@ var feedManager = {
 		var pars = 'muraAction=cFeed.loadSite&compactDisplay=true&siteid=' + siteid + '&keywords=' + keywords + '&isNew=' + isNew + '&cacheid=' + Math.random();
 		var d = $('#selectFilter');
 		d.html('<div class="load-inline"></div>');
+		$('#selectFilter .load-inline').spin(spinnerArgs2); 
 		$.get(url + "?" + pars, function(data) {
 			$("#selectFilter").html(data);
 		});
@@ -113,6 +114,7 @@ var feedManager = {
 		var pars = 'muraAction=cFeed.siteParents&compactDisplay=true&siteid=' + siteid + '&parentid=' + parentid + '&keywords=' + keywords + '&isNew=' + isNew + '&cacheid=' + Math.random();
 		var d = $('#move');
 		d.html('<div class="load-inline"><inut type=hidden name=parentid value=' + parentid + ' ></div>');
+		$('#move .load-inline').spin(spinnerArgs2);
 		$.get(url + "?" + pars, function(data) {
 			$("#move").html(data);
 		});
@@ -125,11 +127,11 @@ var feedManager = {
 			resizable: false,
 			modal: true,
 			buttons: {
-				'YES': function() {
+				'Yes': function() {
 					$(this).dialog('close');
 					submitForm(document.forms.contentForm, 'Import');
 				},
-				'NO': function() {
+				'No': function() {
 					$(this).dialog('close');
 				}
 			}

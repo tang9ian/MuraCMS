@@ -72,13 +72,18 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 </cffunction>
 
 <cffunction name="getNextN" returntype="struct" access="public" output="false">
-	<cfargument name="data" type="query" />
+	<cfargument name="data" />
 	<cfargument name="RecordsPerPage" type="numeric" />
 	<cfargument name="startRow" type="numeric" />
 	<cfargument name="pageBuffer" type="numeric" default="5" />
 	<cfset var nextn=structnew() />
 	
-	<cfset nextn.TotalRecords=arguments.data.RecordCount>
+	<cfif isNumeric(arguments.data)>
+		<cfset nextn.TotalRecords=arguments.data>
+	<cfelse>
+		<cfset nextn.TotalRecords=arguments.data.RecordCount>
+	</cfif>
+	
 	<cfset nextn.RecordsPerPage=arguments.RecordsPerPage> 
 	<cfset nextn.NumberOfPages=Ceiling(nextn.TotalRecords/nextn.RecordsPerPage)>
 	<cfset nextn.CurrentPageNumber=Ceiling(arguments.StartRow/nextn.RecordsPerPage)> 
@@ -90,23 +95,29 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	</cfif>
 	
 	<cfset nextN.lastPage =nextn.firstPage + (2 * arguments.pageBuffer) + 1/>
+	
 	<cfif nextn.NumberOfPages lt nextN.lastPage>
 		<cfset nextN.lastPage=nextn.NumberOfPages />
 	</cfif>
 	
 	<cfset nextn.next=nextn.CurrentPageNumber+1 />
-	<cfif nextn.next gt nextn.NumberOfPages>
-		<cfset nextn.next=1 />
-	</cfif>
+	
 	<cfset nextn.next=(nextn.next*nextN.recordsperpage) - nextn.RecordsPerPage +1 />
 	
 	<cfset nextn.previous=nextn.CurrentPageNumber-1 />
+	
 	<cfif nextn.previous lt 1>
 		<cfset nextn.previous=1 />
 	</cfif>
+	
 	<cfset nextn.previous=(nextn.previous*nextN.recordsperpage) - nextn.RecordsPerPage +1 />
 	
-	<cfset nextn.through=iif(nextn.totalRecords lt nextn.next,nextn.totalrecords,nextn.next-1)> 
+	<cfset nextn.through=iif(nextn.totalRecords lt nextn.next,nextn.totalrecords,nextn.next-1)>
+
+	<cfif nextn.next gt nextn.totalrecords>
+		<cfset nextn.next=1 />
+	</cfif>
+
 	<cfset nextn.startrow=arguments.startrow>
 	
 	<cfreturn nextn />
@@ -121,7 +132,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<CFLOOP collection="#str#" item="a" >
 	<cftry>
 		<cfif str[a] neq "">
-			<CFSET "str.#a#"  = replaceNoCase(evaluate("str.#a#"), arguments.badwords,  "****" ,  "ALL")/>
+			<CFSET "str.#a#"  = replaceNoCase(str[a], arguments.badwords,  "****" ,  "ALL")/>
 		</cfif>
 	<cfcatch></cfcatch></cftry>
 	</CFLOOP>
@@ -131,6 +142,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 <cffunction name="createRequiredSiteDirectories" returntype="void" output="false" access="public">
 <cfargument name="siteid" type="string" default="" required="yes"/>
+<cfargument name="displaypoolid" type="string" default="" required="yes"/>
 	<cfset var webroot=expandPath('/muraWRM')>
 
 	<!--- make sure that the file cache directory exists, for node level files --->
@@ -152,24 +164,38 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfset variables.fileWriter.createDir(directory="#variables.configBean.getAssetDir()##variables.configBean.getFileDelim()##arguments.siteid##variables.configBean.getFileDelim()#assets")>
 	</cfif>
 
-	<cfif not fileExists("#webroot#/#arguments.siteid#/includes/contentRenderer.cfc")> 
-		<cfset variables.fileWriter.copyFile(source="#webroot#/config/templates/site/contentRenderer.template.cfc", destination="#webroot#/#arguments.siteid#/includes/contentRenderer.cfc")>
+	<cfif variables.configBean.getSiteIDInURLS() and not fileExists("#webroot#/#arguments.siteid#/index.cfm")> 
+		<cfset variables.fileWriter.copyFile(source="#webroot#/config/templates/site/index.template.cfm", destination="#webroot#/#arguments.siteid#/index.cfm")>
 	</cfif>
 
-	<cfif not fileExists("#webroot#/#arguments.siteid#/includes/Application.cfc")> 
-		<cfset variables.fileWriter.copyFile(source="#webroot#/config/templates/site/application.template.cfc", destination="#webroot#/#arguments.siteid#/includes/Application.cfc")>
+	<cfset var basedir="#webroot#/#arguments.siteid#/includes">
+
+	<cfif not directoryExists(basedir) and arguments.displaypoolid neq arguments.siteid>
+		<cfset basedir="#webroot#/#arguments.displaypoolid#/includes">
 	</cfif>
 
-	<cfif not fileExists("#webroot#/#arguments.siteid#/includes/eventHandler.cfc")> 
-		<cfset variables.fileWriter.copyFile(source="#webroot#/config/templates/site/eventHandler.template.cfc", destination="#webroot#/#arguments.siteid#/includes/eventHandler.cfc")>
+	<cfif not directoryExists(basedir)> 
+		<cfset variables.fileWriter.createDir(directory=basedir)>
 	</cfif>
 
-	<cfif not directoryExists("#webroot#/#arguments.siteid#/includes/email")> 
-		<cfset variables.fileWriter.createDir(directory="#webroot#/#arguments.siteid#/includes/email")>
+	<cfif not fileExists("#basedir#/contentRenderer.cfc")> 
+		<cfset variables.fileWriter.copyFile(source="#webroot#/config/templates/site/contentRenderer.template.cfc", destination="#basedir#/contentRenderer.cfc")>
 	</cfif>
 
-	<cfif not fileExists("#webroot#/#arguments.siteid#/includes/email/inc_email.cfm")> 
-		<cfset variables.fileWriter.copyFile(source="#webroot#/config/templates/site/email.template.cfm", destination="#webroot#/#arguments.siteid#/includes/email/inc_email.cfm")>
+	<cfif not fileExists("#basedir#/Application.cfc")> 
+		<cfset variables.fileWriter.copyFile(source="#webroot#/config/templates/site/application.template.cfc", destination="#basedir#/Application.cfc")>
+	</cfif>
+
+	<cfif not fileExists("#basedir#/eventHandler.cfc")> 
+		<cfset variables.fileWriter.copyFile(source="#webroot#/config/templates/site/eventHandler.template.cfc", destination="#basedir#/eventHandler.cfc")>
+	</cfif>
+
+	<cfif not directoryExists("#basedir#/email")> 
+		<cfset variables.fileWriter.createDir(directory="#basedir#/email")>
+	</cfif>
+
+	<cfif not fileExists("#basedir#/email/inc_email.cfm")> 
+		<cfset variables.fileWriter.copyFile(source="#webroot#/config/templates/site/email.template.cfm", destination="#basedir#/email/inc_email.cfm")>
 	</cfif>
 	
 </cffunction>
@@ -182,13 +208,14 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 <cfset var msg=arguments.text />
 <cfset var user = "Anonymous" />
+<cfset var remoteAddr = StructKeyExists(request, 'remoteAddr') ? request.remoteAddr : CGI.REMOTE_ADDR />
 
-<cfif isBoolean(variables.configBean.getLogEvents()) and variables.configBean.getLogEvents()>
-<cfif session.mura.isLoggedIn>
-<cfset user=session.mura.fname & " " & session.mura.lname />
-</cfif>
+<cfif isBoolean(variables.configBean.getLogEvents()) and variables.configBean.getLogEvents() and isdefined('session.mura')>
+	<cfif session.mura.isLoggedIn>
+		<cfset user=session.mura.fname & " " & session.mura.lname />
+	</cfif>
 
-<cfset msg="#msg# By #user# from #request.remoteAddr#" />
+	<cfset msg="#msg# By #user# from #remoteAddr#" />
 
 	<cflog 
 		text="#msg#"
@@ -203,7 +230,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfif cgi.HTTP_REFERER neq ''>
 		<cflocation url="#cgi.HTTP_REFERER#" addtoken="no">
 	<cfelse>
-		<cflocation url="index.cfm" addtoken="no">
+		<cflocation url="./" addtoken="no">
 	</cfif>
 
 </cffunction>
@@ -214,73 +241,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfargument name="excludeList" default="" required="true" />
 	<cfargument name="sinceDate" default="" required="true" />
 	<cfargument name="excludeHiddenFiles" default="true" required="true" />
-	<cfset var rsAll = "">
-	<cfset var rs = "">
-	<cfset var i="">
-	<cfset var errors=arrayNew(1)>
-	<cfset var copyItem="">
-	
-	<cfif arguments.baseDir neq arguments.destDir>	
-		<cfdirectory directory="#arguments.baseDir#" name="rsAll" action="list" recurse="true" />
-		<!--- filter out Subversion hidden folders --->
-		<cfquery name="rsAll" dbtype="query">
-			SELECT * FROM rsAll
-			WHERE 
-			1=1
-			<cfif arguments.excludeHiddenFiles>
-				and directory NOT LIKE '%#variables.configBean.getFileDelim()#.svn%'
-				and directory NOT LIKE '%#variables.configBean.getFileDelim()#.git%'
-				and name not like '.%'
-			</cfif>
-			<cfif len(arguments.excludeList)>
-				<cfloop list="#arguments.excludeList#" index="i">
-					and directory NOT LIKE '%#i#%'
-				</cfloop>
-			</cfif>
-			
-			<cfif isDate(arguments.sinceDate)>
-				and dateLastModified >= #createODBCDateTime(arguments.sinceDate)#
-			</cfif>
-		</cfquery>
-
-		<cfset copyItem=arguments.destDir>
-		<cftry>
-			<cfset variables.fileWriter.createDir(directory=copyItem)>
-			<cfcatch><!---<cfset arrayAppend(errors,copyItem)>---></cfcatch>
-		</cftry>
-		
-		<cfquery name="rs" dbtype="query">
-			select * from rsAll where lower(type) = 'dir'
-		</cfquery>
-		
-		<cfloop query="rs">
-			<cfset copyItem="#replace('#rs.directory##variables.configBean.getFileDelim()#',arguments.baseDir,arguments.destDir)##rs.name##variables.configBean.getFileDelim()#">
-			<cfif not DirectoryExists(copyItem)>
-			<cftry>
-				<cfset variables.fileWriter.createDir(directory=copyItem)>
-				<cfcatch><!---<cfset arrayAppend(errors,copyItem)>---></cfcatch>
-			</cftry>
-			</cfif>
-		</cfloop>
-		
-		<cfquery name="rs" dbtype="query">
-			select * from rsAll where lower(type) = 'file'
-		</cfquery>
-		
-		<cfloop query="rs">
-			<cfset copyItem="#replace('#rs.directory##variables.configBean.getFileDelim()#',arguments.baseDir,arguments.destDir)#">
-			<cfif fileExists(copyItem)>
-				<cffile action="delete" file="#copyItem#">
-			</cfif>
-			
-			<cftry>
-				<cfset variables.fileWriter.copyFile(source="#rs.directory##variables.configBean.getFileDelim()##rs.name#", destination=copyItem, sinceDate=arguments.sinceDate)>
-				<cfcatch><cfset arrayAppend(errors,copyItem)></cfcatch>
-			</cftry>
-		</cfloop>
-	</cfif>
-	
-	<cfreturn errors>
+	<cfreturn variables.fileWriter.copyDir(argumentCollection=arguments)>
 </cffunction>
 
 <cffunction name="deleteDir">
@@ -355,15 +316,25 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 </cffunction>
 
 <cffunction name="isHTTPS" output="false" returnType="boolean">
-	<cfif len(cgi.HTTPS) and listFindNoCase("Yes,On,True",cgi.HTTPS)>
-		<cfreturn true>
-	<cfelseif isBoolean(cgi.SERVER_PORT_SECURE) and cgi.SERVER_PORT_SECURE>
-		<cfreturn true>
-	<cfelseif len(cgi.SERVER_PORT) and cgi.SERVER_PORT eq "443">
-		<cfreturn true>
-	<cfelse>
-		<cfreturn false>
-	</cfif>
+	<cfreturn getRequestProtocol() eq 'https'>
+</cffunction>
+
+<cffunction name="getRequestProtocol" output="false">
+	<cftry>
+	<cfreturn listFirst(getPageContext().getRequest().getRequestURL(),":")>
+	<cfcatch>
+		<!--- Legacy --->
+		<cfif len(cgi.HTTPS) and listFindNoCase("Yes,On,True",cgi.HTTPS)>
+			<cfreturn "https">
+		<cfelseif isBoolean(cgi.SERVER_PORT_SECURE) and cgi.SERVER_PORT_SECURE>
+			<cfreturn "https">
+		<cfelseif len(cgi.SERVER_PORT) and cgi.SERVER_PORT eq "443">
+			<cfreturn "https">
+		<cfelse>
+			<cfreturn "http">
+		</cfif>
+	</cfcatch>
+	</cftry>
 </cffunction>
 
 <cffunction name="listFix" output="false" returntype="any">
@@ -494,22 +465,39 @@ QuerySetCell( myQuery , colName[ c ] , myArray[ r ][colName[ c ] ] , r );
 Author: John Mason, mason@fusionlink.com
 Blog: www.codfusion.com--->
 <cffunction name="isValidCFVariableName" output="false" access="public" returntype="Any">
-		<cfargument name="text" required="true" type="String">
-		<cfset var local = StructNew()/>	
-		<cfset local.result = true/>
+	<cfargument name="text" required="true" type="String">
+	<cfset var local = StructNew()/>	
+	<cfset local.result = true/>
 
-		<cfif len(arguments.text) eq 0>
-			<cfset local.result = false/>
-		<cfelseif FindNoCase(".",arguments.text) gt 0>
-			<cfset local.result = false/>
-		<cfelseif FindNoCase(" ",arguments.text) gt 0>
-			<cfset local.result = false/>
-		<cfelseif ReFindNoCase("^[A-Za-z][A-Za-z0-9_]*",arguments.text) eq 0>
-			<cfset local.result = false/>
+	<cfif len(arguments.text) eq 0>
+		<cfset local.result = false/>
+	<cfelseif FindNoCase(".",arguments.text) gt 0>
+		<cfset local.result = false/>
+	<cfelseif FindNoCase(" ",arguments.text) gt 0>
+		<cfset local.result = false/>
+	<cfelseif ReFindNoCase("^[A-Za-z][A-Za-z0-9_]*",arguments.text) eq 0>
+		<cfset local.result = false/>
+	</cfif>
+
+	<cfreturn local.result/>
+</cffunction>
+
+<cffunction name="setSessionCookies">
+	<cfif application.configBean.getSecureCookies()>
+		<cfif isdefined('session.CFID')>
+			<cfif server.coldfusion.productname eq "Railo">
+				<cfset setCookie('cfid', session.CFID, "never", "", "/", true, true, true)>
+				<cfset setCookie('cftoken', session.CFTOKEN, "never", "", "/", true, true, true)>
+			<cfelse>
+				<cfcookie name="CFID" value="#session.CFID#" expires="never" secure="true" httpOnly="true"/>
+				<cfcookie name="CFTOKEN" value="#session.CFTOKEN#" expires="never" secure="true" httpOnly="true"/>
+			</cfif>
 		</cfif>
-
-		<cfreturn local.result/>
-	</cffunction>
+		<cfif isdefined('session.jsessionid')>
+			<cfcookie name="JSESSIONID" value="#session.jsessionid#" expires="never" secure="true" httpOnly="true"/>
+		</cfif>
+	</cfif>
+</cffunction>
 
 <!--- 
 Blog:http://www.modernsignal.com/coldfusionhttponlycookie--->
@@ -521,15 +509,18 @@ Blog:http://www.modernsignal.com/coldfusionhttponlycookie--->
     <cfargument name="path" type="string" default="/">
     <cfargument name="secure" type="boolean" default="false">
     <cfargument name="httponly" type="boolean" default="false">
+    <cfargument name="maintainCase" type="boolean" default="false">
     <cfset var c = "">
     <cfset var expDate = "">
-	
-	<cfif server.coldfusion.productname eq "BlueDragon">
+
+	<cfif arguments.maintainCase>
+		<cfset c = "#name#=#value#;">
+	<cfelseif server.coldfusion.productname eq "BlueDragon">
 		<cfset c = "#LCase(name)#=#value#;">
 	<cfelse>
 		<cfset c = "#UCase(name)#=#value#;">
 	</cfif>
-	
+
     <cfswitch expression="#Arguments.expires#">
         <cfcase value="">
         </cfcase>
@@ -566,22 +557,69 @@ Blog:http://www.modernsignal.com/coldfusionhttponlycookie--->
     <cfheader name="Set-Cookie" value="#c#" />
 </cffunction>
 
+<cffunction name="fixQueryPaths" output="false">
+	<cfargument name="rsDir">
+	<cfargument name="path" default="directory">
+	<cfloop query="rsDir">
+		<cfset querySetCell(rsDir,arguments.path,pathFormat(rsDir[arguments.path][rsDir.currentrow]),rsDir.currentrow)>
+	</cfloop>
+	<cfreturn rsDir>
+</cffunction>
+
+<cffunction name="getCryptoSalt" returntype="string" output="false">
+    <cfargument name="logRounds" default="#variables.configBean.getBCryptLogRounds()#">
+    <cfargument name="reseedFrequency" default="#variables.configBean.getBCryptReseedFrequency()#" hint="How often to re-seed." >
+    <cfif structKeyExists(variables, "cryptoSaltSct") >
+            
+            <cfset var minutesSinceSaltCreated = 
+                    dateDiff(
+                            "n",
+                            variables.cryptoSaltSct.dateTimeCreated,
+                            now()
+                    )
+            />
+            
+            <cfif minutesSinceSaltCreated GTE reseedFrequency >
+                    <cfset this.setCryptoSalt(arguments.logRounds) />
+            </cfif>
+            
+    <cfelse>
+            
+            <cfset this.setCryptoSalt(arguments.logRounds) />
+            
+    </cfif>
+    
+    <cfreturn variables.cryptoSaltSct.salt />
+        
+</cffunction>
+
+<cffunction name="setCryptoSalt" returntype="void" output="true" >
+        <cfargument name="logRounds" default="#variables.configBean.getBCryptLogRounds()#">
+        <cfset variables.cryptoSaltSct.salt =
+                variables.bCrypt.gensalt(JavaCast('int',arguments.logRounds))
+        />
+        <cfset variables.cryptoSaltSct.dateTimeCreated = now() />
+</cffunction>
+
 <cffunction name="toBCryptHash" output="false">
-	<cfargument name="string">
-	<cfargument name="logRounds" default="#variables.configBean.getBCryptLogRounds()#">
-	<cfreturn variables.bCrypt.hashpw(JavaCast('string',arguments.string), variables.bCrypt.gensalt(JavaCast('int',arguments.logRounds)))>
+        <cfargument name="string">
+        <cfargument name="logRounds" default="#variables.configBean.getBCryptLogRounds()#">        
+        <cfset var hash = variables.bCrypt.hashpw(JavaCast('string',arguments.string), this.getCryptoSalt(logRounds=arguments.logRounds) )>
+        <cfreturn hash >
 </cffunction>
 
 <cffunction name="checkBCryptHash" output="false">
-	<cfargument name="string">
-	<cfargument name="hash">
-	<cftry>
-	<cfreturn variables.bCrypt.checkpw(JavaCast('string',arguments.string), JavaCast('string',arguments.hash))>
-	<cfcatch>
-		<cfreturn false>
-	</cfcatch>
-	</cftry>
-</cffunction>		
+        <cfargument name="string">
+        <cfargument name="hash">
+        <cfset var match = "" />
+        <cftry>
+        <cfset match = variables.bCrypt.checkpw(JavaCast('string',arguments.string), JavaCast('string',arguments.hash))>
+        <cfcatch>
+                <cfset match = false>
+        </cfcatch>
+        </cftry>
+        <cfreturn match />
+</cffunction>            		
 
 <cffunction name="checkForInstanceOf" output="false">
 	<cfargument name="obj">
@@ -593,9 +631,10 @@ Blog:http://www.modernsignal.com/coldfusionhttponlycookie--->
 	<cfset var trace="">
 	<cfset var i=0>
 	<cfset var tracePoint="">
+	<cfset var total=0>
 	<cfsavecontent variable="trace">
 		<cfoutput>
-			<div id="mura-stacktrace">
+			<div id="mura-stacktrace" class="mura-stacktrace">
 			<h3>Stack Trace</h3>
 			<ol>
 				<cfloop from="1" to="#arrayLen(request.muraTraceRoute)#" index="i">
@@ -603,7 +642,8 @@ Blog:http://www.modernsignal.com/coldfusionhttponlycookie--->
 					<li>#HTMLEditFormat(tracePoint.detail)# <span class="duration">(<cfif isDefined("tracePoint.duration")>#tracePoint.duration#<cfelse>ERROR</cfif> | <cfif isDefined("tracePoint.total")>#tracePoint.total#<cfelse>ERROR</cfif>)</span></li>
 				</cfloop>
 			</ol>
-			<p>Total: <strong>#evaluate((getTickCount()-request.muraRequestStart))# milliseconds</strong></p>
+			<cfset total=getTickCount()-request.muraRequestStart>
+			<p>Total: <strong>#total# milliseconds</strong></p>
 			</div>
 		</cfoutput>
 	</cfsavecontent>
@@ -634,5 +674,68 @@ Blog:http://www.modernsignal.com/coldfusionhttponlycookie--->
 		</cfif>
 	<cfreturn arguments.rs>
 </cffunction>
+
+ <cffunction name="textPreview" access="public" returntype="string" output="false">
+		<cfargument name="str" type="string" required="true">
+		<cfargument name="maxlen" type="numeric" required="false" default="100" hint="Maximum length">
+		<cfargument name="finishlist" type="string" required="false" default=".|?|!" hint="List of finish symbols">
+		<cfargument name="finishdelim" type="string" required="false" default="|" hint="Deliemiter for List of finish symbols">
+ 
+		<cfset var sOutText = "">
+ 		<cfset var sLastSym = "">
+ 		<cfset var iFinish="">
+ 		<cfset var idx="">
+ 		<cfset var iTemp="">
+
+		<cfset sOutText = ReReplace(arguments.str, "<[^>]*>","","all") />
+ 
+		<CFIF Find('[break]', sOutText)>
+			<CFSET sOutText = Left(sOutText, Find('[break]', sOutText)-1)>
+		<CFELSE>
+			<CFSET sLastSym = Mid(sOutText, Arguments.maxlen-1, 1)>
+			<CFIF ListFind(Arguments.finishlist, sLastSym, Arguments.finishdelim)>
+				<CFSET sOutText = Left(sOutText, Arguments.maxlen)>
+			<CFELSE>
+				<CFSET iFinish = Len(sOutText)>
+				<CFLOOP index="idx" list="#Arguments.finishlist#" delimiters="#Arguments.finishdelim#">
+					<CFSET iTemp = ReFind('\#idx#[\s\<]', sOutText, Arguments.maxlen)>
+					<CFIF iTemp AND iTemp LT iFinish>
+						<CFSET iFinish = iTemp>
+					</CFIF>
+				</CFLOOP>
+				<CFTRY>
+					<CFSET sOutText = Left(sOutText, iFinish)>
+					<CFCATCH TYPE="ANY"><CFRETURN sOutText></CFCATCH>
+				</CFTRY>
+			</CFIF>
+		</CFIF>
+ 
+		<CFRETURN sOutText>
+	</cffunction>
+
+	<cffunction name="suppressDebugging" output="false">
+		<cfsetting showdebugoutput="no">
+	</cffunction>
+
+	<cffunction name="queryAppend" access="public" returntype="void" output="false"
+		hint="This takes two queries and appends the second one to the first one. This actually updates the first query and does not return anything.">
+		<cfargument name="QueryOne" type="query" required="true" />
+		<cfargument name="QueryTwo" type="query" required="true" />
+		<cfset var LOCAL = StructNew() />
+		<!--- Get the column list (as an array for faster access. --->
+		<cfset LOCAL.Columns = ListToArray( ARGUMENTS.QueryTwo.ColumnList ) />
+		<!--- Loop over the second query. --->
+		<cfloop query="ARGUMENTS.QueryTwo">
+			<!--- Add a row to the first query. --->
+			<cfset QueryAddRow( ARGUMENTS.QueryOne ) />
+			<!--- Loop over the columns. --->
+			<cfloop index="LOCAL.Column" from="1" to="#ArrayLen( LOCAL.Columns )#" step="1">
+				<!--- Get the column name for easy access. --->
+				<cfset LOCAL.ColumnName = LOCAL.Columns[ LOCAL.Column ] />
+				<!--- Set the column value in the newly created row. --->
+				<cfset ARGUMENTS.QueryOne[ LOCAL.ColumnName ][ ARGUMENTS.QueryOne.RecordCount ] = ARGUMENTS.QueryTwo[ LOCAL.ColumnName ][ ARGUMENTS.QueryTwo.CurrentRow ] />
+			</cfloop>
+		</cfloop>
+	</cffunction>
 
 </cfcomponent>

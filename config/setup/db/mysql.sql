@@ -1,7 +1,7 @@
 -- MySQL Administrator dump 1.4
 --
 -- ------------------------------------------------------
--- Server version	4.1.14-nt
+-- Server version 4.1.14-nt
 
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -1006,7 +1006,7 @@ CREATE TABLE `tsettings` (
 
 /*!40000 ALTER TABLE `tsettings` DISABLE KEYS */;
 INSERT INTO `tsettings` (`SiteID`,`Site`,`MaxNestLevel`,`PageLimit`,`Locking`,`Domain`,`exportLocation`,`FileDir`,`Contact`,`MailserverIP`,`MailServerUsername`,`MailServerPassword`,`EmailBroadcaster`,`Extranet`,`ExtranetPublicReg`,`ExtranetPublicRegNotify`,`ExtranetSSL`,`Cache`,`ViewDepth`,`NextN`,`DataCollection`,`columnCount`,`columnNames`,`primaryColumn`,`publicSubmission`,`AdManager`,`archiveDate`,`contactName`,`contactAddress`,`contactCity`,`contactState`,`contactZip`,`contactEmail`,`contactPhone`,`privateUserPoolID`,`publicUserPoolID`,`advertiserUserPoolID`,`orderNo`,`emailBroadcasterLimit`,`feedManager`,`displayPoolID`,`galleryMainScaleBy`,`galleryMainScale`,`gallerySmallScaleBy`,`gallerySmallScale`,`galleryMediumScaleBy`,`galleryMediumScale`,`sendLoginScript`,`mailingListConfirmScript`,`publicSubmissionApprovalScript`,`reminderScript`,`loginURL`,`editProfileURL`,`CommentApprovalDefault`,`deploy`,`lastDeployment`,`accountActivationScript`,`useDefaultSMTPServer`) VALUES 
- ('default','Default',NULL,1000,'none','localhost',NULL,NULL,'info@getmura.com','mail.server.com','username@server.com','password',1,1,1,NULL,0,0,1,20,1,3,'Left Column^Main Content^Right Column',2,0,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'default','default','default',1,0,1,'default','y',500,'s',100,'y',250,NULL,NULL,NULL,NULL,'?display=login','?display=editProfile',1,0,NULL,NULL,0);
+ ('default','Default',NULL,1000,'none','localhost',NULL,NULL,'info@getmura.com','mail.server.com','username@server.com','password',0,1,0,NULL,0,0,1,20,1,3,'Left Column^Main Content^Right Column',2,0,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'default','default','default',1,0,1,'default','y',500,'s',100,'y',250,NULL,NULL,NULL,NULL,'?display=login','?display=editProfile',1,0,NULL,NULL,0);
 /*!40000 ALTER TABLE `tsettings` ENABLE KEYS */;
 
 
@@ -1038,7 +1038,6 @@ INSERT INTO `tsystemobjects` (`Object`,`SiteID`,`Name`,`OrderNo`) VALUES
  ('seq_nav','default','Sequential Nav',8),
  ('rater','default','Content Rater',16),
  ('favorites','default','User Favorites',17),
- ('dragable_feeds','default','Dragable Feeds',18),
  ('related_content','default','Related Content',19),
  ('user_tools','default','User Tools',20),
  ('tag_cloud','default','Tag Cloud',21),
@@ -1149,7 +1148,7 @@ INSERT INTO `tusers` (`UserID`,`GroupName`,`Fname`,`Lname`,`UserName`,`Password`
 CREATE TABLE `tusersfavorites` (
   `favoriteID` char(35) NOT NULL default '',
   `userID` char(35) NOT NULL default '',
-  `favoriteName` varchar(100) default NULL,
+  `favoriteName` varchar(255) default NULL,
   `favorite` mediumtext,
   `type` varchar(30) NOT NULL default '',
   `siteID` varchar(35) default NULL,
@@ -1242,78 +1241,78 @@ ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `tclassextenddatauseractivity`  (
-	`dataID` INTEGER NOT NULL AUTO_INCREMENT,	
-	`baseID` char (35)  NOT NULL ,
-	`attributeID`INTEGER NOT NULL ,
-	`siteID` varchar (25)  NULL ,
-	`attributeValue` longtext,
-	INDEX `Index_2`(`baseID`),
-	INDEX `Index_3`(`attributeID`),
-	PRIMARY KEY (`dataID`)
+  `dataID` INTEGER NOT NULL AUTO_INCREMENT, 
+  `baseID` char (35)  NOT NULL ,
+  `attributeID`INTEGER NOT NULL ,
+  `siteID` varchar (25)  NULL ,
+  `attributeValue` longtext,
+  INDEX `Index_2`(`baseID`),
+  INDEX `Index_3`(`attributeID`),
+  PRIMARY KEY (`dataID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `tclassextenddata`  (
-	`dataID` INTEGER NOT NULL AUTO_INCREMENT,
-	`baseID` char (35)  NOT NULL ,
-	`attributeID` INTEGER NOT NULL ,
-	`siteID` varchar (25)  NULL ,
-	`attributeValue` longtext,
-	INDEX `Index_2`(`baseID`),
-	INDEX `Index_3`(`attributeID`),
-	PRIMARY KEY (`dataID`)
+  `dataID` INTEGER NOT NULL AUTO_INCREMENT,
+  `baseID` char (35)  NOT NULL ,
+  `attributeID` INTEGER NOT NULL ,
+  `siteID` varchar (25)  NULL ,
+  `attributeValue` longtext,
+  INDEX `Index_2`(`baseID`),
+  INDEX `Index_3`(`attributeID`),
+  PRIMARY KEY (`dataID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `tclassextend` (
-	`subTypeID` char (35)  NOT NULL ,
-	`siteID` varchar (25)  NULL ,
-	`baseTable` varchar (50) NULL ,
-	`baseKeyField` varchar (50) NULL ,
-	`dataTable` varchar (50) NULL ,
-	`type` varchar (50) NULL ,
-	`subType` varchar (50) NULL ,
-	`isActive` tinyint(3) NULL ,
-	`notes` longtext ,
-	`lastUpdate` datetime NULL ,
-	`dateCreated` datetime NULL ,
-	`lastUpdateBy` varchar (100)  NULL ,
-	PRIMARY KEY (`subTypeID`)
+  `subTypeID` char (35)  NOT NULL ,
+  `siteID` varchar (25)  NULL ,
+  `baseTable` varchar (50) NULL ,
+  `baseKeyField` varchar (50) NULL ,
+  `dataTable` varchar (50) NULL ,
+  `type` varchar (50) NULL ,
+  `subType` varchar (50) NULL ,
+  `isActive` tinyint(3) NULL ,
+  `notes` longtext ,
+  `lastUpdate` datetime NULL ,
+  `dateCreated` datetime NULL ,
+  `lastUpdateBy` varchar (100)  NULL ,
+  PRIMARY KEY (`subTypeID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `tclassextendattributes` (
-	`attributeID` INTEGER NOT NULL AUTO_INCREMENT,	
-	`extendSetID` char (35)  NULL ,
-	`siteID` varchar (25) NULL ,
-	`name` varchar (100) NULL ,
-	`label` text  NULL ,
-	`hint` text  NULL ,
-	`type` varchar (100) NULL ,
-	`orderno` int NULL ,
-	`isActive` tinyint(3) NULL ,
-	`required` varchar(50) NULL ,
-	`validation` varchar (50) NULL ,
-	`regex` text  NULL ,
-	`message` text  NULL ,
-	`defaultValue` varchar (100) NULL ,
-	`optionList` longtext ,
-	`optionLabelList` longtext,
-	INDEX `Index_2`(`extendSetID`),
-	PRIMARY KEY (`attributeID`)
+  `attributeID` INTEGER NOT NULL AUTO_INCREMENT,  
+  `extendSetID` char (35)  NULL ,
+  `siteID` varchar (25) NULL ,
+  `name` varchar (100) NULL ,
+  `label` text  NULL ,
+  `hint` text  NULL ,
+  `type` varchar (100) NULL ,
+  `orderno` int NULL ,
+  `isActive` tinyint(3) NULL ,
+  `required` varchar(50) NULL ,
+  `validation` varchar (50) NULL ,
+  `regex` text  NULL ,
+  `message` text  NULL ,
+  `defaultValue` varchar (100) NULL ,
+  `optionList` longtext ,
+  `optionLabelList` longtext,
+  INDEX `Index_2`(`extendSetID`),
+  PRIMARY KEY (`attributeID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `tclassextendsets` (
-	`extendSetID` char(35) NOT NULL ,
-	`subTypeID` char(35) NULL ,
-	`categoryID` longtext ,
-	`siteID` varchar (25) NULL ,
-	`name` varchar(50)  NULL ,
-	`orderno` int NULL ,
-	`isActive` tinyint(3) NULL,
-	INDEX `Index_2`(`subTypeID`),
-	PRIMARY KEY (`extendSetID`)
+  `extendSetID` char(35) NOT NULL ,
+  `subTypeID` char(35) NULL ,
+  `categoryID` longtext ,
+  `siteID` varchar (25) NULL ,
+  `name` varchar(50)  NULL ,
+  `orderno` int NULL ,
+  `isActive` tinyint(3) NULL,
+  INDEX `Index_2`(`subTypeID`),
+  PRIMARY KEY (`extendSetID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;

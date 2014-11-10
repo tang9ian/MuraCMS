@@ -43,20 +43,54 @@
 	For clarity, if you create a modified version of Mura CMS, you are not obligated to grant this special exception for your 
 	modified version; it is your choice whether to do so, or to make such modified version available under the GNU General Public License 
 	version 2 without this exception.  You may, if you choose, apply this exception to your own modified versions of Mura CMS. */
+if(window.Prototype) {
+    delete Object.prototype.toJSON;
+    delete Array.prototype.toJSON;
+    delete Hash.prototype.toJSON;
+    delete String.prototype.toJSON;
+}
 
+if(!this.JSON){JSON=function(){function f(n){return n<10?'0'+n:n;}
+Date.prototype.toJSON=function(key){return this.getUTCFullYear()+'-'+
+f(this.getUTCMonth()+1)+'-'+
+f(this.getUTCDate())+'T'+
+f(this.getUTCHours())+':'+
+f(this.getUTCMinutes())+':'+
+f(this.getUTCSeconds())+'Z';};var cx=/[\u0000\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g,escapeable=/[\\\"\x00-\x1f\x7f-\x9f\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g,gap,indent,meta={'\b':'\\b','\t':'\\t','\n':'\\n','\f':'\\f','\r':'\\r','"':'\\"','\\':'\\\\'},rep;function quote(string){escapeable.lastIndex=0;return escapeable.test(string)?'"'+string.replace(escapeable,function(a){var c=meta[a];if(typeof c==='string'){return c;}
+return'\\u'+('0000'+
+(+(a.charCodeAt(0))).toString(16)).slice(-4);})+'"':'"'+string+'"';}
+function str(key,holder){var i,k,v,length,mind=gap,partial,value=holder[key];if(value&&typeof value==='object'&&typeof value.toJSON==='function'){value=value.toJSON(key);}
+if(typeof rep==='function'){value=rep.call(holder,key,value);}
+switch(typeof value){case'string':return quote(value);case'number':return isFinite(value)?String(value):'null';case'boolean':case'null':return String(value);case'object':if(!value){return'null';}
+gap+=indent;partial=[];if(typeof value.length==='number'&&!(value.propertyIsEnumerable('length'))){length=value.length;for(i=0;i<length;i+=1){partial[i]=str(i,value)||'null';}
+v=partial.length===0?'[]':gap?'[\n'+gap+
+partial.join(',\n'+gap)+'\n'+
+mind+']':'['+partial.join(',')+']';gap=mind;return v;}
+if(rep&&typeof rep==='object'){length=rep.length;for(i=0;i<length;i+=1){k=rep[i];if(typeof k==='string'){v=str(k,value,rep);if(v){partial.push(quote(k)+(gap?': ':':')+v);}}}}else{for(k in value){if(Object.hasOwnProperty.call(value,k)){v=str(k,value,rep);if(v){partial.push(quote(k)+(gap?': ':':')+v);}}}}
+v=partial.length===0?'{}':gap?'{\n'+gap+partial.join(',\n'+gap)+'\n'+
+mind+'}':'{'+partial.join(',')+'}';gap=mind;return v;}}
+return{stringify:function(value,replacer,space){var i;gap='';indent='';if(typeof space==='number'){for(i=0;i<space;i+=1){indent+=' ';}}else if(typeof space==='string'){indent=space;}
+rep=replacer;if(replacer&&typeof replacer!=='function'&&(typeof replacer!=='object'||typeof replacer.length!=='number')){throw new Error('JSON.stringify');}
+return str('',{'':value});},parse:function(text,reviver){var j;function walk(holder,key){var k,v,value=holder[key];if(value&&typeof value==='object'){for(k in value){if(Object.hasOwnProperty.call(value,k)){v=walk(value,k);if(v!==undefined){value[k]=v;}else{delete value[k];}}}}
+return reviver.call(holder,key,value);}
+cx.lastIndex=0;if(cx.test(text)){text=text.replace(cx,function(a){return'\\u'+('0000'+
+(+(a.charCodeAt(0))).toString(16)).slice(-4);});}
+if(/^[\],:{}\s]*$/.test(text.replace(/\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g,'@').replace(/"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g,']').replace(/(?:^|:|,)(?:\s*\[)+/g,''))){j=eval('('+text+')');return typeof reviver==='function'?walk({'':j},''):j;}
+throw new SyntaxError('JSON.parse');}};}();}
 
-var dtCh= "/";
-var dtCh= "/";
-var minYear=1900;
-var maxYear=2100;
-var dtFormat =[0,1,2];
-var dtExample ="12/31/2014";
+var mura={dtCh: "/",
+		minYear:1900,
+		maxYear:2100,
+		dtFormat:[0,1,2],
+		dtExample:"12/31/2017",
+		context:""
+	}
 
 
 function noSpam(user,domain) {
 	locationstring = "mailto:" + user + "@" + domain;
 	window.location = locationstring;
-	}
+}
 
 function isInteger(s){
 	var i;
@@ -117,6 +151,7 @@ function daysInFebruary (year){
     // EXCEPT for centurial years which are not also divisible by 400.
     return (((year % 4 == 0) && ( (!(year % 100 == 0)) || (year % 400 == 0))) ? 29 : 28 );
 }
+
 function DaysArray(n) {
 	for (var i = 1; i <= n; i++) {
 		this[i] = 31
@@ -128,15 +163,15 @@ function DaysArray(n) {
 
 function isDate(dtStr,fldName){
 	var daysInMonth = DaysArray(12);
-	var dtArray= dtStr.split(dtCh);
+	var dtArray= dtStr.split(mura.dtCh);
 	
 	if (dtArray.length != 3){
 		//alert("The date format for the "+fldName+" field should be : short")
 		return false
 	}
-	var strMonth=dtArray[dtFormat[0]];
-	var strDay=dtArray[dtFormat[1]];
-	var strYear=dtArray[dtFormat[2]];
+	var strMonth=dtArray[mura.dtFormat[0]];
+	var strDay=dtArray[mura.dtFormat[1]];
+	var strYear=dtArray[mura.dtFormat[2]];
 	
 	/*
 	if(strYear.length == 2){
@@ -163,11 +198,11 @@ function isDate(dtStr,fldName){
 		//alert("Please enter a valid day  in the "+fldName+" field")
 		return false
 	}
-	if (strYear.length != 4 || year==0 || year<minYear || year>maxYear){
-		//alert("Please enter a valid 4 digit year between "+minYear+" and "+maxYear +" in the "+fldName+" field")
+	if (strYear.length != 4 || year==0 || year<mura.minYear || year>mura.maxYear){
+		//alert("Please enter a valid 4 digit year between "+mura.minYear+" and "+mura.maxYear +" in the "+fldName+" field")
 		return false
 	}
-	if (isInteger(stripCharsInBag(dtStr, dtCh))==false){
+	if (isInteger(stripCharsInBag(dtStr, mura.dtCh))==false){
 		//alert("Please enter a valid date in the "+fldName+" field")
 		return false
 	}
@@ -210,11 +245,11 @@ function getValidationIsRequired(theField){
 
 function getValidationMessage(theField, defaultMessage){
 	if(theField.getAttribute('data-message') != undefined){
-		return theField.getAttribute('data-message') + '\n';
+		return theField.getAttribute('data-message');
 	} else if(theField.getAttribute('message') != undefined){
-		return theField.getAttribute('message') + '\n';
+		return theField.getAttribute('message') ;
 	} else {
-		return getValidationFieldName(theField).toUpperCase() + defaultMessage + '\n';
+		return getValidationFieldName(theField).toUpperCase() + defaultMessage;
 	}	
 }
 
@@ -270,100 +305,90 @@ function getValidationRegex(theField){
 	}
 }
 
-function validateForm(theForm) {
+function validateForm(frm,customaction) {
+		var theForm=frm;
 		var errors="";
 		var setFocus=0;
 		var started=false;
 		var startAt;
 		var firstErrorNode;
 		var validationType='';
+		var validations={properties:{}};
 		var frmInputs = theForm.getElementsByTagName("input");	
-		for (f=0; f < frmInputs.length; f++) {
-		 theField=frmInputs[f];
-		 validationType=getValidationType(theField);
-		 
+		var rules=new Array();
+		var data={};
+		var $customaction=customaction;
+		
+		for (var f=0; f < frmInputs.length; f++) {
+		 var theField=frmInputs[f];
+		 validationType=getValidationType(theField).toUpperCase();
+		
+			rules=new Array();
+	
 			if(theField.style.display==""){
-				if(getValidationIsRequired(theField) && theField.value == "" )
+				if(getValidationIsRequired(theField))
 					{	
-						if (!started) {
-						started=true;
-						startAt=f;
-						firstErrorNode="input";
-						}
+						rules.push({
+							required: true,
+							message: getValidationMessage(theField,' is required.')
+						});
 						
-						errors += getValidationMessage(theField,' is required.');
 						 			
 					}
-				else if(validationType != ''){
+				if(validationType != ''){
 						
-					if(validationType=='EMAIL' && theField.value != '' && !isEmail(theField.value))
+					if(validationType=='EMAIL' && theField.value != '')
 					{	
-						if (!started) {
-						started=true;
-						startAt=f;
-						firstErrorNode="input";
-						}
+						rules.push({
+							dataType: 'EMAIL',
+							message: getValidationMessage(theField,' must be a valid email address.')
+						});
 						
-						errors += getValidationMessage(theField,' must be a valid email address.');
 								
 					}
 	
-					else if(validationType=='NUMERIC' && isNaN(theField.value))
+					else if(validationType=='NUMERIC' && theField.value != '')
 					{	
-						if(!isNaN(theField.value.replace(/\$|\,|\%/g,'')))
-						{
-							theField.value=theField.value.replace(/\$|\,|\%/g,'');
-	
-						} else {
-							if (!started) {
-							started=true;
-							startAt=f;
-							firstErrorNode="input";
-							}
-						
-							 errors += getValidationMessage(theField,' must be numeric.');
-						}					
+						rules.push({
+							dataType: 'NUMERIC',
+							message: getValidationMessage(theField,' must be numeric.')
+						});
+									
 					}
 					
 					else if(validationType=='REGEX' && theField.value !='' && hasValidationRegex(theField))
 					{	
-						var re = new RegExp(getValidationRegex(theField));
-						if(!theField.value.match(re))
-						{
-							if (!started) {
-							started=true;
-							startAt=f;
-							firstErrorNode="input";
-							}
-						
-							 errors += getValidationMessage(theField,' is not valid.');
-						}					
+						rules.push({
+							regex: getValidationRegex(theField),
+							message: getValidationMessage(theField,' is not valid.')
+						});
+										
 					}
+					
 					else if(validationType=='MATCH' 
 							&& hasValidationMatchField(theField) && theField.value != theForm[getValidationMatchField(theField)].value)
 					{	
-						if (!started) {
-						started=true;
-						startAt=f;
-						firstErrorNode="input";
-						}
-						
-						errors += getValidationMessage(theField, ' must match' + getValidationMatchField(theField) + '.' );
+						rules.push({
+							eq: theForm[getValidationMatchField(theField)].value,
+							message: getValidationMessage(theField, ' must match' + getValidationMatchField(theField) + '.' )
+						});
 									
 					}
-					else if(validationType=='DATE' && theField.value != '' && !isDate(theField.value))
+					
+					else if(validationType=='DATE' && theField.value != '')
 					{
-						if (!started) {
-						started=true;
-						startAt=f;
-						firstErrorNode="input";
-						}
-						
-						errors += getValidationMessage(theField, ' must be a valid date [MM/DD/YYYY].' );
+						rules.push({
+							dataType: 'DATE',
+							message: getValidationMessage(theField, ' must be a valid date [MM/DD/YYYY].' )
+						});
 						 
 					}
 				}
-					
+				
+				if(rules.length){
+					validations.properties[theField.getAttribute('name')]=rules;
+					data[theField.getAttribute('name')]=theField.value;
+				}
 			}
 		}
 		var frmTextareas = theForm.getElementsByTagName("textarea");	
@@ -372,32 +397,32 @@ function validateForm(theForm) {
 			
 				theField=frmTextareas[f];
 				validationType=getValidationType(theField);
+
+				rules=new Array();
 				 
-				if(theField.style.display=="" && getValidationIsRequired(theField) && theField.value == "" )
+				if(theField.style.display=="" && getValidationIsRequired(theField))
 				{	
-					if (!started) {
-					started=true;
-					startAt=f;
-					firstErrorNode="textarea";
-					}
+					rules.push({
+						required: true,
+						message: getValidationMessage(theField, ' is required.' )
+					});
 					
-					errors += getValidationMessage(theField, ' is required.' );		
 				}	
+
 				else if(validationType != ''){
 					if(validationType=='REGEX' && theField.value !='' && hasValidationRegex(theField))
 					{	
-						var re = new RegExp(getValidationRegex(theField));
-						if(!theField.value.match(re))
-						{
-							if (!started) {
-							started=true;
-							startAt=f;
-							firstErrorNode="input";
-							}
-						
-							errors += getValidationMessage(theField, ' is not valid.' );
-						}					
+						rules.push({
+							regex: getValidationRegex(theField),
+							message: getValidationMessage(theField, ' is not valid.' )
+						});
+										
 					}
+				}
+
+				if(rules.length){
+					validations.properties[theField.getAttribute('name')]=rules;
+					data[theField.getAttribute('name')]=theField.value;
 				}
 		}
 		
@@ -405,36 +430,69 @@ function validateForm(theForm) {
 		for (f=0; f < frmSelects.length; f++) {
 				theField=frmSelects[f];
 				validationType=getValidationType(theField);
-				if(theField.style.display=="" && getValidationIsRequired(theField) && theField.options[theField.selectedIndex].value == "")
+
+				rules=new Array();
+
+				if(theField.style.display=="" && getValidationIsRequired(theField))
 				{	
-					if (!started) {
-					started=true;
-					startAt=f;
-					firstErrorNode="select";
-					}
-					
-					errors += getValidationMessage(theField, ' is required.' );	
+					rules.push({
+						required: true,
+						message: getValidationMessage(theField, ' is required.' )
+					});
+				}
+
+				if(rules.length){
+					validations.properties[theField.getAttribute('name')]=rules;
+					data[theField.getAttribute('name')]=theField.value;
 				}	
 		}
-		
-		if(errors != ""){	
-			alert(errors);
-			if(firstErrorNode=="input"){
-				frmInputs[startAt].focus();
-			}
-			else if (firstErrorNode=="textarea"){
-				frmTextareas[startAt].focus();
-			}
-			else if (firstErrorNode=="select"){
-				frmSelects[startAt].focus();
-			}
-			return false;
-		}
-		else
-		{
-			return true;
+
+		try{
+			//alert(JSON.stringify(validations));
+
+			jQuery.ajax(
+				{
+					type: 'post',
+					url: mura.context + '/tasks/validate/remote.cfc?method=validate',
+					dataType: 'text',
+					data: {
+							data: escape(JSON.stringify(data)),
+							validations: escape(JSON.stringify(validations)),
+							version: 4
+						},
+					success: function(resp) {
+ 				 		var data=eval('(' + resp + ')');
+ 				 		
+ 				 		if(jQuery.isEmptyObject(data)){
+ 				 			if(typeof $customaction == 'function'){
+ 				 				$customaction(theForm);
+ 				 			} else {
+ 				 				theForm.submit();
+ 				 			}
+ 				 		} else {
+	 				 		var msg='';
+	 				 		for(var e in data){
+	 				 			msg=msg + data[e] + '\n';
+	 				 		}
+
+	 				 		alert(msg);
+ 				 		}
+					},
+					error: function(resp) {
+ 				 		
+ 				 		alert(JSON.stringify(resp));
+					}
+
+				}		 
+			);
+		} 
+		catch(err){ 
+			console.log(err);
+
 		}
 
+	return false;
+		
 }
 
 function submitForm(frm,action,theClass){
@@ -518,16 +576,16 @@ function muraLoginCheck(e){
 	
 	if (aux.indexOf('2776') != -1 && location.search.indexOf("display=login") == -1) {
 		
-		if(typeof(loginURL) == "undefined"){
+		if(typeof(mura.loginURL) == "undefined"){
 			lu="?display=login";
 		} else{
-			lu=loginURL;
+			lu=mura.loginURL;
 		}
 		
-		if(typeof(returnURL) == "undefined"){
+		if(typeof(mura.returnURL) == "undefined"){
 			ru=location.href;
 		} else{
-			ru=returnURL;
+			ru=mura.returnURL;
 		}
 		pressed_keys = "";
 		
@@ -551,11 +609,11 @@ function setHTMLEditors(height,width,config) {
 	var editors = new Array();
 	for (i = 0; i < allPageTags.length; i++) {
 		if (allPageTags[i].className.toLowerCase() == "htmleditor") {
-			if (htmlEditorType=='fckeditor') {
+			if (mura.htmlEditorType=='fckeditor') {
 				var oFCKeditor = new FCKeditor(allPageTags[i].id);
 				oFCKeditor.ToolbarSet			= "htmlEditor";
-				oFCKeditor.Config.EditorAreaCSS	= themepath + '/css/editor.css';
-				oFCKeditor.Config.StylesXmlPath = themepath + '/css/fckstyles.xml';
+				oFCKeditor.Config.EditorAreaCSS	= mura.themepath + '/css/editor.css';
+				oFCKeditor.Config.StylesXmlPath = mura.themepath + '/css/fckstyles.xml';
 				oFCKeditor.BasePath = context + '/wysiwyg/';
 				oFCKeditor.Height = height;
 				oFCKeditor.Width = width;
@@ -591,7 +649,7 @@ var HTMLEditorLoadCount=0;
 
 function htmlEditorOnComplete( editorInstance ) { 	
 	
-	if( htmlEditorType=='fckeditor'){
+	if( mura.htmlEditorType=='fckeditor'){
 		editorInstance.ResetIsDirty();
 		var totalIntances=FCKeditorAPI.Instances;
 	}else{
@@ -617,7 +675,25 @@ function getHTMLEditorConfig(customConfig) {
 	return htmlEditorConfig;
 }
 
+function extendObject(obj1,obj2){
+	for (var attrname in obj2) { obj1[attrname] = obj2[attrname]; }
+	return obj1;
+}
+
+function setLowerCaseKeys(obj) {
+  var keys = Object.keys(obj);
+  var n = keys.length;
+  while (n--) {
+    var key = keys[n]; // "cache" it, for less lookups to the array
+    if (key !== key.toLowerCase()) { // might already be in its lower case version
+        obj[key.toLowerCase()] = obj[key] // swap the value to a new lower case key
+        delete obj[key] // delete the old key
+    }
+   	if(typeof obj[key.toLowerCase()] == 'object'){
+   		setLowerCaseKeys(obj[key.toLowerCase()]);
+   	}
+  }
+  return (obj);
+}
+
 $(document).ready(setMuraLoginCheck);
-
-//Event.observe(window, 'load', setKeyCheck, false);
-
