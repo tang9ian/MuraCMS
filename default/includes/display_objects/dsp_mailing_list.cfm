@@ -98,7 +98,7 @@
 		<cfelse>
 
 			<!--- THE FORM --->
-			<form role="form" class="#this.mailingListFormClass#" name="frmMailingList" action="?nocache=1" method="post" onsubmit="return validate(this);" novalidate="novalidate" >
+			<form role="form" class="#this.mailingListFormClass#" name="frmMailingList" action="?nocache=1" method="post" onsubmit="return mura.validateForm(this);" novalidate="novalidate" >
 				<fieldset>
 					<legend>#HTMLEditFormat(variables.rslist.name)#</legend>
 
@@ -164,7 +164,7 @@
 						<input type="hidden" name="isVerified" value="1" />
 						<!--- Subscribe --->
 						<div class="#this.mailingListFormGroupWrapperClass#">
-							<div class="#this.mailingListCheckboxWrapperClass#">
+							<div class="#this.mailingListSubmitWrapperClass#">
 								<input type="submit" class="#this.mailingListSubmitClass#" value="#HTMLEditFormat(variables.$.rbKey('mailinglist.subscribe'))#" />
 							</div>
 						</div>
@@ -173,7 +173,7 @@
 						<input type="hidden" name="isVerified" value="1"  />
 						<!--- Unsubscribe --->
 						<div class="#this.mailingListFormGroupWrapperClass#">
-							<div class="#this.mailingListCheckboxWrapperClass#">
+							<div class="#this.mailingListSubmitWrapperClass#">
 								<input type="submit" class="#this.mailingListSubmitClass#" value="#HTMLEditFormat(variables.$.rbKey('mailinglist.unsubscribe'))#" />
 							</div>
 						</div>

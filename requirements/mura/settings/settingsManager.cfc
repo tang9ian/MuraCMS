@@ -240,6 +240,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfset bean.getRazunaSettings().set(arguments.data).save()>
 		<cfset variables.DAO.update(bean) />
 
+		<cfset validateDisplayPool(bean) />
+
 		<cfset checkForBundle(arguments.data,bean.getErrors())>
 		<cfset setSites() />
 		<cfset application.appInitialized=false>
@@ -322,14 +324,10 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		
 		<cfset var fileDelim=variables.configBean.getFileDelim()>
 
-		<cfset variables.utility.copyDir(
-			baseDir="#variables.configBean.getWebRoot()##fileDelim#default#fileDelim#",
-			destDir="#variables.configBean.getWebRoot()##fileDelim##bean.getSiteID()##fileDelim#",
-			excludeList="#variables.configBean.getWebRoot()##fileDelim#default#fileDelim#cache,#variables.configBean.getWebRoot()##fileDelim#default#fileDelim#assets"
-		)>
+		<cfset validateDisplayPool(bean) />
 	
 		<cfif variables.configBean.getCreateRequiredDirectories()>
-			<cfset variables.utility.createRequiredSiteDirectories(bean.getSiteID()) />
+			<cfset variables.utility.createRequiredSiteDirectories(bean.getSiteID(),bean.getDisplayPoolID()) />
 		</cfif>
 
 		<cfset checkForBundle(arguments.data,bean.getErrors())>
@@ -343,11 +341,32 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfreturn bean />
 </cffunction>
 
+<cffunction name="validateDisplayPool" access="public" output="false" returntype="void">
+	<cfargument name="bean" required="true" >
+
+	<cfset var fileDelim=variables.configBean.getFileDelim()>
+
+	<cfif bean.getSiteID() eq bean.getDisplayPoolID() and !directoryExists('#variables.configBean.getWebRoot()##fileDelim##bean.getSiteID()##fileDelim#')>
+
+		<cfset variables.utility.copyDir(
+				baseDir="#variables.configBean.getWebRoot()##fileDelim#default#fileDelim#",
+				destDir="#variables.configBean.getWebRoot()##fileDelim##bean.getSiteID()##fileDelim#",
+				excludeList="#variables.configBean.getWebRoot()##fileDelim#default#fileDelim#cache,#variables.configBean.getWebRoot()##fileDelim#default#fileDelim#assets"
+			)>
+	</cfif>
+</cffunction>
+
 <cffunction name="setSites" access="public" output="false" returntype="void">
 	<cfargument name="missingOnly" default="false">
 	<cfset var rs="" />
 	<cfset var builtSites=structNew()>
-	<cfobjectcache action="clear"/>
+
+	<cftry>
+		<cfobjectcache action="clear"/>
+		<cfcatch></cfcatch>
+	</cftry>
+
+	
 	<cfset rs=getList() />
 
 	<cfloop query="rs">
@@ -600,6 +619,16 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfreturn rs.recordcount>
 </cffunction>	
 
+<cffunction name="isPartialBundle" output="false">
+	<cfargument name="BundleFile">
+	<cfset var rs=createObject("component","mura.Zip").List(zipFilePath="#arguments.BundleFile#")>
+
+	<cfquery name="rs" dbType="query">
+		select entry from rs where entry in ('assetfiles.zip')
+	</cfquery>
+	<cfreturn rs.recordcount>
+</cffunction>	
+
 <cffunction name="createCacheFactory" output="false">
 	<cfargument name="capacity" required="true" default="0">
 	<cfargument name="freeMemoryThreshold" required="true" default="60">
@@ -645,6 +674,45 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cffunction name="remoteReload" output="false">
 		<cfset application.appInitialized=false>
 		<cfset application.broadcastInit=false>
+</cffunction>
+
+<cffunction name="getAccessControlOriginList">
+	<cfscript>
+		if(!isDefined("variables.AccessControlOriginList")){
+			lock name="originlist#application.instanceid#" type="exclusive" timeout="10"{
+				if(!isDefined("variables.AccessControlOriginList")){
+					variables.AccessControlOriginList='';
+
+					var admindomain=variables.configBean.getAdminDomain();
+					
+					if(len(admindomain)){
+						variables.AccessControlOriginList=listAppend(variables.AccessControlOriginList,"http://#admindomain#");
+						variables.AccessControlOriginList=listAppend(variables.AccessControlOriginList,"https://#admindomain#");
+					}
+
+					var sites=getSites();
+					var originArray=[];
+					var origin='';
+					
+					for(var site in sites){
+						if(sites[site].getJSONApi()){
+							originArray=listToArray(sites[site].getAccessControlOriginList());
+							if(arrayLen(originArray)){
+								for(origin in originArray){
+									if(!listFind(variables.AccessControlOriginList,origin)){
+										variables.AccessControlOriginList=listAppend(variables.AccessControlOriginList,origin);
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		return variables.AccessControlOriginList;
+
+	</cfscript>
 </cffunction>
 
 </cfcomponent>

@@ -58,6 +58,13 @@ component
 
 	}
 
+	// I define the given key as a date. Returns serializer.
+	public any function asUTCDate( required string key ) {
+
+		return( defineKey( dateKeyList, key, "utcdate" ) );
+
+	}
+
 
 	// I define the given key as a float / decimal. Returns serializer.
 	public any function asFloat( required string key ) {
@@ -127,6 +134,8 @@ component
 
 		if ( structKeyExists( fullKeyList, key ) ) {
 
+			return this;
+			
 			throw( 
 				type = "DuplicateKey",
 				message = "The key [#key#] has already been defined within the serializer.",
@@ -205,8 +214,13 @@ component
 
 			} else if ( ( hint == "date" ) && ( isDate( input ) || isNumericDate( input ) ) ) {
 
+				writeOutput( """" & dateFormat( input, "yyyy-mm-dd" ) & "T" & timeFormat( input, "HH:mm:ss" ) & """" );
+
+			} else if ( ( hint == "utcdate" ) && ( isDate( input ) || isNumericDate( input ) ) ) {
+
 				// Write the date in ISO 8601 time string format. We're going to assume that the 
 				// date is already in the dezired timezone. 
+				input=DateConvert('local2utc',input);
 				writeOutput( """" & dateFormat( input, "yyyy-mm-dd" ) & "T" & timeFormat( input, "HH:mm:ss.l" ) & "Z""" );
 
 			} else {
@@ -266,8 +280,11 @@ component
 				// If the given key is unknown, just pass through the most recent hint as 
 				// it may be defining the type for an entire sturcture.
 				} else {
-
-					serializeInput( input[ key ], hint );
+					if(isNull(input[ key ])){
+						writeOutput( "null" );
+					} else {
+						serializeInput( input[ key ], hint );
+					}
 
 				}
 

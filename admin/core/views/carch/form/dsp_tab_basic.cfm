@@ -73,7 +73,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<div class="controls" >
 				<div class="alert help-block">
 					<p>#application.rbFactory.getKeyValue(session.rb,"sitemanager.content.fields.AdditionalTitlesnote")#</p><br />
-					<button id="resetTitles" name="resetTitles" class="btn">#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.clearseotitles')#</button>
+					<button type="button" id="resetTitles" name="resetTitles" class="btn">#application.rbFactory.getKeyValue(session.rb,'sitemanager.content.clearseotitles')#</button>
 				</div>
 				
 				<script>
@@ -160,7 +160,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		</script>
 	</cfif>
 
-	<cfif listFindNoCase('Form,Gallery,Calendar,Component,Page,Folder',rc.type)>    	
+	<cfif listFindNoCase(rc.$.getBean('contentManager').HTMLBodyList,rc.type)>    	
 		<cfset rsPluginEditor=application.pluginManager.getScripts("onHTMLEdit",rc.siteID)>
 		<div id="bodyContainer" class="body-container controls" style="display:none;">
 			<div class="control-group">
@@ -204,7 +204,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 					
 					function FCKeditor_OnComplete( editorInstance ) { 	
 						<cfif rc.preview eq 1>
-					   	preview('http://#application.settingsManager.getSite(rc.siteid).getDomain(mode="preview")##application.configBean.getServerPort()##application.configBean.getContext()##$.getURLStem(rc.siteid,'')#?previewid=#rc.contentBean.getcontenthistid()#','#rc.contentBean.getTargetParams()#');
+					   	preview('#rc.contentBean.getURL(complete=1,queryString="previewid=#rc.contentBean.getcontenthistid()#")#','');
 						</cfif> 
 						htmlEditorOnComplete(editorInstance); 
 					}
@@ -262,9 +262,9 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 						<cfif rc.preview eq 1>
 							if(!previewLaunched){
 						<cfif listFindNoCase("File",rc.type)>
-							preview('http://#application.settingsManager.getSite(rc.siteid).getDomain(mode="preview")##application.configBean.getServerPort()##application.configBean.getContext()##$.siteConfig().getContentRenderer().getURLStem(rc.siteid,'')#?previewid=#rc.contentBean.getcontenthistid()#&siteid=#rc.contentBean.getsiteid()#');
+							preview('#rc.contentBean.getURL(secure=rc.$.getBean("utility").isHTTPs(),complete=1,queryString="previewid=#rc.contentBean.getcontenthistid()#")#');
 						<cfelse>
-							openPreviewDialog('#application.utility.getRequestProtocol()#://#application.settingsManager.getSite(rc.siteid).getDomain(mode="preview")##application.configBean.getServerPort()##application.configBean.getContext()##$.siteConfig().getContentRenderer().getURLStem(rc.siteid,'')#?previewid=#rc.contentBean.getcontenthistid()#&siteid=#rc.contentBean.getsiteid()#');
+							openPreviewDialog('#rc.contentBean.getURL(secure=rc.$.getBean("utility").isHTTPs(),complete=1,queryString="previewid=#rc.contentBean.getcontenthistid()#")#');
 						</cfif>
 							previewLaunched=true;
 							}

@@ -127,29 +127,32 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 </cffunction>
 
 <cffunction name="getContentRenderer" output="false" returntype="any">
-	<cfif not isObject(event("contentRenderer"))>
-		<cfif structKeyExists(request,"contentRenderer") and request.contentRenderer.getValue('siteid') eq event('siteid')>
-			<cfset event("contentRenderer",request.contentRenderer)>
-		<cfelseif len(event('siteid'))>
-			<!-- temp fix, may become permanent--->
-			<cfif globalConfig().getValue(property='alwaysUseLocalRenderer',defaultValue=false)>
-				<cfset event("contentRenderer",createObject("component","#event('siteid')#.includes.contentRenderer") )>
+	<cfargument name="force" default="false">
+	<cfif arguments.force or not isObject(event("contentRenderer"))>
+		<cfif len(event('siteid'))>
+			<cfif not arguments.force and structKeyExists(request,"contentRenderer") and request.contentRenderer.getValue('siteid') eq event('siteid')>
+				<cfset event("contentRenderer",request.contentRenderer)>
 			<cfelse>
-				<cfset event("contentRenderer",createObject("component","#siteConfig().getAssetMap()#.includes.contentRenderer") )>
+				<!-- temp fix, may become permanent--->
+				<cfif globalConfig().getValue(property='alwaysUseLocalRenderer',defaultValue=false)>
+					<cfset event("contentRenderer",createObject("component","#event('siteid')#.includes.contentRenderer") )>
+				<cfelse>
+					<cfset event("contentRenderer",createObject("component","#siteConfig().getAssetMap()#.includes.contentRenderer") )>
+				</cfif>
+				<!-- end temp fix --->
+				<cfset event("contentRenderer").init(event=event(),$=event("muraScope"),mura=event("muraScope") )>
+				<cfif fileExists(expandPath(siteConfig().getThemeIncludePath()) & "/contentRenderer.cfc" )>
+					<cfset var themeRenderer=createObject("component","#siteConfig().getThemeAssetMap()#.contentRenderer")>
+					<cfset themeRenderer.injectMethod('$',event("muraScope")).injectMethod('mura',event("muraScope")).injectMethod('event',event())>
+					<cfset themeRenderer.init(event=event(),$=event("muraScope"),mura=event("muraScope") )>
+					<cfset var siteRenderer=event("contentRenderer")>
+	         		<cfset var key=''>
+	         		<cfloop collection="#themeRenderer#" item="key">
+	          			<cfset siteRenderer.injectMethod('#key#',themeRenderer[key])>
+	         		</cfloop>
+				</cfif>
+				<cfset event("contentRenderer").setValue('siteid',event('siteid'))>
 			</cfif>
-			<!-- end temp fix --->
-			<cfset event("contentRenderer").init(event=event(),$=event("muraScope"),mura=event("muraScope") )>
-			<cfif fileExists(expandPath(siteConfig().getThemeIncludePath()) & "/contentRenderer.cfc" )>
-				<cfset var themeRenderer=createObject("component","#siteConfig().getThemeAssetMap()#.contentRenderer")>
-				<cfset themeRenderer.injectMethod('$',event("muraScope")).injectMethod('mura',event("muraScope")).injectMethod('event',event())>
-				<cfset themeRenderer.init(event=event(),$=event("muraScope"),mura=event("muraScope") )>
-				<cfset var siteRenderer=event("contentRenderer")>
-         		<cfset var key=''>
-         		<cfloop collection="#themeRenderer#" item="key">
-          			<cfset siteRenderer.injectMethod('#key#',themeRenderer[key])>
-         		</cfloop>
-			</cfif>
-			<cfset event("contentRenderer").setValue('siteid',event('siteid'))>
 		<cfelseif structKeyExists(application,"contentRenderer")>
 			<cfset event("contentRenderer",getBean('contentRenderer'))>
 		</cfif>
@@ -248,7 +251,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 				<cfreturn getContentBean().getValue(arguments.property)>
 			</cfif>
 		<cfelse>
-			<cfthrow message="The content is not set ine the Mura Scope.">
+			<cfthrow message="The content is not set in the Mura Scope.">
 		</cfif>
 	<cfelse>
 		<cfreturn getContentBean()>
@@ -269,7 +272,6 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfelse>
 		<cfreturn getCurrentUser()>
 	</cfif>
-	
 </cffunction>
 
 <cffunction name="siteConfig" output="false" returntype="any">
@@ -277,7 +279,11 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfargument name="propertyValue">
 	<cfset var site="">
 	<cfset var theValue="">
-	<cfset var siteID=event('siteid')>
+	<cfset var siteID = Len(event('siteid')) 
+		? event('siteid') 
+		: IsDefined('session') && StructKeyExists(session, 'siteid') 
+			? session.siteid 
+			: '' />
 	
 	<cfif len(siteid)>
 		<cfset site=application.settingsManager.getSite(siteid)>
@@ -287,20 +293,21 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 				<cfset site.setValue(arguments.property,arguments.propertyValue)>
 				<cfreturn this>
 			<cfelse>
-				<cfreturn site.getValue(arguments.property)>
+				<cfreturn (IsSimpleValue(site.getValue(arguments.property)) and Len(site.getValue(arguments.property))) || !IsSimpleValue(site.getValue(arguments.property))
+					? site.getValue(arguments.property)
+					: globalConfig(arguments.property) />
 			</cfif>
 		<cfelse>
 			<cfreturn site>
 		</cfif>
+
 	<cfelse>
-		<cfthrow message="The siteid is not set in the current Mura Scope event.">
-	</cfif>
-	
+		<cfthrow message="The SiteID is not set in the current Mura Scope event.">
+	</cfif>	
 </cffunction>
 
 <cffunction name="globalConfig" output="false" returntype="any">
 	<cfargument name="property">
-	<cfset var site="">
 	<cfset var theValue="">
 	
 	<cfif structKeyExists(arguments,"property")>
@@ -316,7 +323,6 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfelse>
 		<cfreturn application.configBean>
 	</cfif>
-	
 </cffunction>
 
 <cffunction name="component" output="false" returntype="any">
@@ -343,7 +349,6 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfelse>
 		<cfthrow message="No component has been set in the Mura Scope.">
 	</cfif>
-	
 </cffunction>
 
 <cffunction name="currentURL" output="false" returntype="any">
@@ -403,7 +408,20 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 <cffunction name="rbKey" output="false" returntype="any">
 	<cfargument name="key">
-	<cfreturn siteConfig("RBFactory").getKey(arguments.key)>
+	<cfargument name="locale" type="string" required="false" default="">
+	<cfif isDefined('request.muraAdminRequest') and request.muraAdminRequest>
+		<cfif len(arguments.locale)>
+			<cfreturn application.rbFactory.getKeyValue(arguments.locale,arguments.key)>
+		<cfelse>
+			<cfreturn application.rbFactory.getKeyValue(session.rb,arguments.key)>
+		</cfif>
+	<cfelse>
+		<cfif len(arguments.locale)>
+			<cfreturn siteConfig("RBFactory").getKeyValue(arguments.locale,arguments.key)>
+		<cfelse>
+			<cfreturn siteConfig("RBFactory").getKey(arguments.key)>
+		</cfif>
+	</cfif>
 </cffunction>
 
 <cffunction name="setCustomMuraScopeKey" output="false">
@@ -561,7 +579,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfargument name="type" default="">
 
 	<cfif len(event('siteid'))>
-		<cfif len(arguments.type) and arguments.type neq 'error'>
+		<cfif len(arguments.type) and !ListFindNoCase('error,warning,success,info', arguments.type)>
 			<cfset arguments.type=''>
 		</cfif>
 		<cfparam name="session.mura.alerts" default="#structNew()#">

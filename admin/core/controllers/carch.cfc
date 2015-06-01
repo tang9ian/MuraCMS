@@ -86,12 +86,62 @@
 			<cfparam name="session.topID" default="00000000000000000000000000000000001">
 			<cfset arguments.rc.topid=session.topID>
 		<cfelseif (left(arguments.rc.topID,10) neq "0000000000" or arguments.rc.topID eq "00000000000000000000000000000000001")
-			and not listFindNoCase("Form,Component", arguments.rc.type)>
+			and not listFindNoCase("Form,Component,Variation", arguments.rc.type) and rc.moduleid neq "00000000000000000000000000000000099">
 			<cfset session.topID=arguments.rc.topid>
 		</cfif>
 	</cfif>
 	
 </cffunction>
+
+	<cffunction name="export" output="false">
+		<cfargument name="rc" />
+		<cfscript>
+			var local = {};
+
+			local.currentBean = getBean("content").loadBy(contentID=arguments.rc.contentID, siteID= arguments.rc.siteid);
+
+			if ( local.currentBean.getIsNew() ) {
+				rc.moduleid = '00000000000000000000000000000000000';
+				variables.fw.redirect(action='cArch.list', append='siteid,moduleid', path='./');
+			} else if ( !local.currentBean.getKidsIterator().getRecordCount() ) {
+				variables.fw.redirect(action='cArch.exportcontent', append='contentid,siteid', path='./');
+			}
+
+			arguments.rc.crumbdata = variables.contentManager.getCrumbList(arguments.rc.contentID,arguments.rc.siteid,true);
+		</cfscript>
+	</cffunction>
+
+
+<cffunction name="exportcontent" output="false">
+	<cfargument name="rc">
+
+	<cfset var settingsBundle = rc.$.getBean('settingsBundle') />
+	<cfset var contentBean = rc.$.getBean('content').loadBy(siteid=session.siteid,contentid=arguments.rc.contentID) />
+	<cfparam name="rc.doChildrenOnly" default="0" />
+	
+	<cfset settingsBundle.bundle(siteid=session.siteid,parentid=arguments.rc.contentID,bundlename='export_#rereplace(contentBean.getValue('filename'),"[^[:alnum:]]{1,}","_","all")#',doChildrenOnly=rc.doChildrenOnly) />
+</cffunction>
+
+<cffunction name="importcontent" output="false">
+	<cfargument name="rc">
+
+	<cfset var contentUtility = arguments.rc.$.getBean('contentUtility') />
+	<cfset var hasChangesets = rc.$.getBean('settingsManager').getSite(rc.$.event('siteID')).getValue('hasChangesets') />
+	<cfset var enforceChangesets = rc.$.getBean('settingsManager').getSite(rc.$.event('siteID')).getValue('enforceChangesets') />
+
+	<cfif (arguments.rc.import_status eq "Changeset" or enforceChangesets) and (not structKeyExists(arguments.rc,"changeset_name") or not len(arguments.rc.changeset_name))>
+		<cfset arguments.rc.changeset_name = "partial_import_#dateformat(now(),"dd_mm_yyyy")#_#timeformat(now(),"hh_mm_ss")#" />
+		<cfset arguments.rc.import_status = "Changeset" />
+	</cfif>
+
+	<cfif structKeyExists(arguments.rc,"newfile") and len(arguments.rc.newfile)>
+		<cfset contentUtility.deployPartialBundle(siteid=session.siteid,parentid=arguments.rc.contentid,bundlefile="newFile",importstatus=rc.import_status,changesetname=rc.changeset_name) />
+		<cfset variables.fw.redirect(action="cArch.list",append="siteid,moduleid",path="./")>
+	<cfelse>
+		<cfset variables.fw.redirect(action="cArch.import",append="contentid,moduleid,siteid",path="./")>
+ 	</cfif>
+</cffunction>
+
 
 <cffunction name="list" output="false">
 	<cfargument name="rc">
@@ -276,7 +326,7 @@
 
 		<cfif rc.$.validateCSRFTokens(context=arguments.rc.contentBean.getContentHistID() & "add")>
 			<cfset arguments.rc.contentBean=arguments.rc.contentBean.save()>
-			<cfif not arguments.rc.ajaxrequest and len(request.newImageIDList) and not arguments.rc.murakeepediting>
+			<cfif application.configBean.getValue(property='autopreviewimages',defaultValue=true) and not arguments.rc.ajaxrequest and len(request.newImageIDList) and not arguments.rc.murakeepediting>
 				<cfset arguments.rc.fileid=request.newImageIDList>
 				<cfset arguments.rc.contenthistid=arguments.rc.contentBean.getContentHistID()>
 				<cfset variables.fw.redirect(action="cArch.imagedetails",append="contenthistid,siteid,fileid,compactDisplay",path="./")>
@@ -326,15 +376,15 @@
 					<cfset variables.fw.redirect(action="cChangesets.assignments",append="changesetID,siteid",path="./")>
 				</cfif>
 				
-				<cfif structIsEmpty(rc.contentBean.getErrors())>
+				<cfif structIsEmpty(arguments.rc.contentBean.getErrors())>
 					<cfset structDelete(session.mura,"editBean")>
 					<cfif arguments.rc.preview eq 0 and not arguments.rc.murakeepediting>
 						<cfset variables.fw.redirect(action="cArch.list",append="topid,siteid,startrow,moduleid",path="./")>
 					<cfelse>
-						<cfset arguments.rc.parentid=rc.contentBean.getParentID()>
-						<cfset arguments.rc.type=rc.contentBean.getType()>
-						<cfset arguments.rc.contentid=rc.contentBean.getContentID()>
-						<cfset arguments.rc.contenthistid=rc.contentBean.getContentHistID()>
+						<cfset arguments.rc.parentid=arguments.rc.contentBean.getParentID()>
+						<cfset arguments.rc.type=arguments.rc.contentBean.getType()>
+						<cfset arguments.rc.contentid=arguments.rc.contentBean.getContentID()>
+						<cfset arguments.rc.contenthistid=arguments.rc.contentBean.getContentHistID()>
 						<cfset arguments.rc.preview=arguments.rc.preview>
 						<cfset variables.fw.redirect(action="cArch.edit",append="contenthistid,contentid,type,parentid,topid,siteid,moduleid,preview,startrow,return,compactDisplay",path="./")>
 					</cfif>
@@ -468,7 +518,7 @@
 		<cfif listFindNoCase("author,editor",local.perm)
 			or listFindNoCase(session.mura.memberships,"s2")>
 				<cfset local.contentBean.getStats().setLockID(session.mura.userID).setLockType('file').save()>
-				<cflocation url="#variables.configBean.getContext()#/tasks/render/file/index.cfm?fileid=#local.contentBean.getFileID()#&method=attachment">
+				<cflocation url="#variables.configBean.getContext()#/index.cfm/_api/render/file/?fileid=#local.contentBean.getFileID()#&method=attachment">
 		</cfif>
 	</cfif>
 	<cfabort>
@@ -529,5 +579,15 @@
 	<cfabort>
 		
 </cffunction>
+
+<cffunction name="getImageSizeURL" output="true">
+	<cfargument name="rc">
+
+	<cfcontent type="application/json">
+	<cfoutput>#createObject("component","mura.json").encode(rc.$.getURLForImage(fileID=rc.fileid,size=rc.size))#</cfoutput>
+	<cfabort>
+		
+</cffunction>
+
 
 </cfcomponent>

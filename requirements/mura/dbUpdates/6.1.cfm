@@ -16,7 +16,7 @@
 	getBean('changesetTagAssignment').checkSchema();
 
 	dbUtility.setTable("tfiles");
-	if(getDbType() == 'MySQL'){
+	if(getDbType() == 'MySQL'  && dbUtility.version().database_productname=='MySQL'){
 		if(!dbUtility.columnExists('caption')){
 			new Query().execute(sql="ALTER TABLE tfiles
 				ADD COLUMN caption text DEFAULT null,
@@ -173,7 +173,7 @@
 </cfscript>
 
 <cfquery name="rsCheck">
-select moduleID from tcontent where moduleID='00000000000000000000000000000000015'
+select moduleID from tcontent where type='Module' and moduleID='00000000000000000000000000000000015'
 </cfquery>
 
 <cfif not rsCheck.recordcount>
@@ -243,7 +243,7 @@ select moduleID from tcontent where moduleID='0000000000000000000000000000000001
 			,searchExclude
 			,path
 		) VALUES  (
-			'default'
+			<cfqueryparam cfsqltype="cf_sql_varchar" value="#rsCheck.siteid#">
 			,'00000000000000000000000000000000015'
 			,'00000000000000000000000000000000END'
 			,'00000000000000000000000000000000015'

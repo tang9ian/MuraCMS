@@ -90,8 +90,15 @@
 		//this.showMemberToolBar=false;
 		//this.showEditableObjects=false;
 		//this.showInlineEditor=true;
-		//this.siteIDInURLS=0;
-		//this.indexFileInURLS=1;
+
+		//With asyncObjects set to true some display objects are loaded via ajax
+		//this.asyncObjects=true;
+
+		//Set these to a boolean value to override settings.ini.cfm value
+		//this.siteIDInURLS="";
+		//this.indexFileInURLS="";
+		//this.hashURLS="";
+
 		//this.renderHTMLHead=true;
 		//this.renderHTMLQueues=true;
 		//this.listFormat="dl"; //deprecated
@@ -297,6 +304,7 @@
 		this.searchFormSubmitClass="";
 		
 		//dsp_search_results.cfm
+		this.searchShowNumbers=1;
 		this.searchResultWrapperClass="";
 		this.searchResultInnerClass="";
 		this.searchResultsRowClass="";

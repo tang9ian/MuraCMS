@@ -212,41 +212,28 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 
 	<cfif listFindNoCase(extendedList,rc.type)>
 		<cfset rsSubTypes=application.classExtensionManager.getSubTypes(siteID=rc.siteID,activeOnly=true) />
-		<!---
-		<cfif rc.compactDisplay neq "true" and listFindNoCase("#pageLevelList#",rc.type)>
-		--->
-			<cfquery name="rsSubTypes" dbtype="query">
-			select * from rsSubTypes
-			where 
-				<cfif not len(subtypefilter)>
-					type in (<cfqueryparam cfsqltype="cf_sql_varchar" list="true" value="#extendedList#"/>)
-					or type='Base'
-				<cfelse>
-					1=1 AND
-					<cfloop list="#subtypefilter#" index="i">
-						<cfif i neq listFirst(subtypefilter)>
-							OR
-						</cfif>
-						(
-								type=<cfqueryparam cfsqltype="cf_sql_varchar" list="true" value="#listFirst(i,'/')#"/>
-								and subtype=<cfqueryparam cfsqltype="cf_sql_varchar" list="true" value="#listLast(i,'/')#"/>
-						)
-					</cfloop>
-				</cfif>
-			</cfquery>
-		<!---
-		<cfelse>
-			<cfquery name="rsSubTypes" dbtype="query">
-			select * from rsSubTypes
-			where 
-				type = <cfqueryparam cfsqltype="cf_sql_varchar" value="#rc.type#"/>
-				<!---<cfif listFindNocase("Link,File",rc.type)>--->
-					or type='Base'
-				<!---</cfif>--->
-			</cfquery>
-		</cfif>
-		--->
-		<cfif listFindNoCase("Component,File,Link,Form",rc.type)>
+		
+		<cfquery name="rsSubTypes" dbtype="query">
+		select * from rsSubTypes
+		where 
+			<cfif not len(subtypefilter) or not listFind(nodeLevelList,rc.type)>
+				type in (<cfqueryparam cfsqltype="cf_sql_varchar" list="true" value="#extendedList#"/>)
+				or type='Base'
+			<cfelse>
+				1=1 AND
+				<cfloop list="#subtypefilter#" index="i">
+					<cfif i neq listFirst(subtypefilter)>
+						OR
+					</cfif>
+					(
+							type=<cfqueryparam cfsqltype="cf_sql_varchar" list="true" value="#listFirst(i,'/')#"/>
+							and subtype=<cfqueryparam cfsqltype="cf_sql_varchar" list="true" value="#listLast(i,'/')#"/>
+					)
+				</cfloop>
+			</cfif>
+		</cfquery>
+		
+		<cfif listFindNoCase("Component,File,Link,Form,Variation",rc.type)>
 			<cfset baseTypeList=rc.type>
 		<cfelse>
 			<cfset baseTypeList=pageLevelList>
@@ -255,18 +242,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<!--- If the node is new check to see if the parent type has a matching sub type. --->
 		<cfif rc.contentBean.getIsNew() and structKeyExists(rc,"subType") and len(rc.subtype)>
 			<cfset rc.contentBean.setSubType(rc.subtype)>
-		<!---
-		<cfelseif rc.contentBean.getIsNew()>
-			<cfquery name="rsParentSubType" dbtype="query">
-			select * from rsSubTypes
-			where 
-			type = <cfqueryparam cfsqltype="cf_sql_varchar" value="#rc.type#"/>
-			and subtype = <cfqueryparam cfsqltype="cf_sql_varchar" value="#$.getBean('content').loadBy(contentID=rc.parentID, siteID=rc.siteID).getSubType()#"/>
-			</cfquery>
-			<cfif rsParentSubType.recordcount>
-				<cfset rc.contentBean.setSubType(rsParentSubType.subType)>
-			</cfif>
-		--->
+		
 		</cfif>
 		
 		<cfif rsSubTypes.recordCount>
@@ -275,8 +251,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 			<cfset isExtended=false/>
 		</cfif>
 	</cfif>
-	
-	<cfif ListFindNoCase("Page,Folder,Calendar,Link,File,Gallery",rc.type)>
+
+	<cfif ListFindNoCase(rc.$.getBean('contentManager').TreeLevelList,rc.type)>
 		<cfset pluginEventMappings=duplicate($.getBean('pluginManager').getEventMappings(eventName='onContentEdit',siteid=rc.siteid))>
 		<cfif arrayLen(pluginEventMappings)>
 			<cfloop from="1" to="#arrayLen(pluginEventMappings)#" index="i">
@@ -343,7 +319,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
  				var shifted=false;
  				var lockedbysomeonelse=false;
 
- 				chechForSave=function(e) {	  
+ 				checkForSave=function(e) {	  
 				  	if (e.keyCode == 83 && (navigator.platform.match("Mac") ? e.metaKey : e.ctrlKey)) {
 				    	e.preventDefault();
 					   	if(!lockedbysomeonelse){
@@ -376,21 +352,33 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 					}	
 				}
 
-				try{
-					window.top.document.addEventListener("keydown", chechForSave , false);
-				} catch (e){};
+				//try{
+					window.top.document.addEventListener("keydown", checkForSave , false);
+				//} catch (e){};
 		</script>
 		<cfif listFindNoCase("Page,Folder,Calendar,Gallery",rc.type)>
 		<button type="button" class="btn" onclick="document.contentForm.approved.value=0;document.contentForm.preview.value=1;if(siteManager.ckContent(draftremovalnotice)){submitForm(document.contentForm,'add');}"><i class="icon-eye-open"></i> #esapiEncode('html',application.rbFactory.getKeyValue(session.rb,"sitemanager.content.savedraftandpreview"))#</button>
 		</cfif>
 		<cfif assignChangesets>
-			<button type="button" class="btn" onclick="document.contentForm.approved.value=0;saveToChangeset('#rc.contentBean.getChangesetID()#','#esapiEncode('html',rc.siteID)#','');return false;"> 
+			<button type="button" class="btn<cfif not currentChangeset.getIsNew()> btn-danger</cfif>" onclick="document.contentForm.approved.value=0;saveToChangeset('#rc.contentBean.getChangesetID()#','#esapiEncode('html',rc.siteID)#','');return false;"> 
 				<cfif requiresApproval>
 					<i class="icon-list"></i> #esapiEncode('html',application.rbFactory.getKeyValue(session.rb,"sitemanager.content.savetochangesetandsendforapproval"))#
 				<cfelse>
 					<i class="icon-list"></i> #esapiEncode('html',application.rbFactory.getKeyValue(session.rb,"sitemanager.content.savetochangeset"))#
 				</cfif>
-				</button>	
+			</button>	
+
+			<!---
+			<cfif not currentChangeset.getIsNew()>
+				<button type="button" class="btn" onclick="document.contentForm.approved.value=0;document.contentForm.removePreviousChangeset.value='true';document.contentForm.changesetID.value='#rc.contentBean.getChangesetID()#';if(siteManager.ckContent(draftremovalnotice)){submitForm(document.contentForm,'add');}">
+				<cfif requiresApproval>
+					<i class="icon-list"></i> #esapiEncode('html',application.rbFactory.getKeyValue(session.rb,"sitemanager.content.savetoexistingchangesetandsendforapproval"))#
+				<cfelse>
+					<i class="icon-list"></i> #esapiEncode('html',application.rbFactory.getKeyValue(session.rb,"sitemanager.content.savetoexistingchangeset"))#
+				</cfif>
+				</button>		
+			</cfif>
+			--->
 		</cfif>
 		<cfif rc.perm eq 'editor' and not $.siteConfig('EnforceChangesets')>
 			<button type="button" class="btn" onclick="document.contentForm.approved.value=1;if(siteManager.ckContent(draftremovalnotice)){submitForm(document.contentForm,'add');}">
@@ -413,6 +401,8 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<h1>#application.rbFactory.getKeyValue(session.rb,"sitemanager.content.editcomponent")#</h1>
 	<cfelseif rc.type eq "Form">
 		<h1>#application.rbFactory.getKeyValue(session.rb,"sitemanager.content.editform")#</h1>
+	<cfelseif rc.type eq "Variation">
+		<h1>#application.rbFactory.getKeyValue(session.rb,"sitemanager.content.editvariation")#</h1>
 	<cfelse>
 		<h1>#application.rbFactory.getKeyValue(session.rb,"sitemanager.content.editcontent")#</h1>
 	</cfif>
@@ -420,7 +410,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfif rc.compactDisplay neq "true">
 		<ul class="metadata-horizontal">
 			<cfif not rc.contentBean.getIsNew()>
-				<cfif listFindNoCase('Page,Folder,Calendar,Gallery,Link,File',rc.type)>
+				<cfif listFindNoCase(rc.$.getBean('contentManager').TreeLevelList,rc.type)>
 					<cfset rsRating=application.raterManager.getAvgRating(rc.contentBean.getcontentID(),rc.contentBean.getSiteID()) />
 					<cfif rsRating.recordcount>
 					<li>#application.rbFactory.getKeyValue(session.rb,"sitemanager.content.votes")#: <strong><cfif rsRating.recordcount>#rsRating.theCount#<cfelse>0</cfif></strong></li>
@@ -465,7 +455,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfinclude template="dsp_secondary_menu.cfm">
 	</cfif>
 	
-	<cfif rc.compactDisplay eq "true" and not ListFindNoCase(nodeLevelList,rc.type)>
+	<cfif rc.compactDisplay eq "true" and not ListFindNoCase(nodeLevelList & ",Variation",rc.type)>
 		<p class="alert">#application.rbFactory.getKeyValue(session.rb,"sitemanager.content.globallyappliednotice")#</p>
 	</cfif>
 	
@@ -502,7 +492,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	
 	<!--- This is plugin message targeting --->	
 	<span id="msg">
-	<cfif not listFindNoCase("Component,Form",rc.type)>#application.pluginManager.renderEvent("onContentEditMessageRender", pluginEvent)#</cfif>
+	<cfif not listFindNoCase("Component,Form,Variation",rc.type)>#application.pluginManager.renderEvent("onContentEditMessageRender", pluginEvent)#</cfif>
 	#application.pluginManager.renderEvent("on#rc.contentBean.getType()#EditMessageRender", pluginEvent)#
 	#application.pluginManager.renderEvent("on#rc.contentBean.getType()##rc.contentBean.getSubType()#EditMessageRender", pluginEvent)#
 	</span>
@@ -579,6 +569,16 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 				<input type="hidden" name="ommitRelatedContentTab" value="true">
 			</cfif>
 		</cfcase>
+		<cfcase value="Variation">
+			<cfif not len(tabAssignments) or listFindNocase(tabAssignments,'Categorization')>
+				<cfif application.categoryManager.getCategoryCount(rc.siteID)>
+					<cfinclude template="form/dsp_tab_categories.cfm">
+				</cfif>
+			</cfif>
+			<cfif not len(tabAssignments) or listFindNocase(tabAssignments,'Tags')>
+				<cfinclude template="form/dsp_tab_tags.cfm">
+			</cfif>		
+		</cfcase>
 		<cfcase value="Component">
 			<cfif not len(tabAssignments) or listFindNocase(tabAssignments,'Categorization')>
 				<cfif application.categoryManager.getCategoryCount(rc.siteID)>
@@ -611,14 +611,12 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		</cfcase>
 	</cfswitch>
 	
-	<cfswitch expression="#rc.type#">
-		<cfcase value="Page,Folder,Calendar,Gallery,Link,File,Component,Form">
-			<cfif not len(tabAssignments) or listFindNocase(tabAssignments,'Extended Attributes')>
+	<cfif listFindNoCase(rc.$.getBean('contentManager').ExtendableList,rc.type)>
+		<cfif not len(tabAssignments) or listFindNocase(tabAssignments,'Extended Attributes')>
 			<cfset extendSets=application.classExtensionManager.getSubTypeByName(rc.type,rc.contentBean.getSubType(),rc.siteid).getExtendSets(activeOnly=true) />
 			<cfinclude template="form/dsp_tab_extended_attributes.cfm">
-			</cfif>
-		</cfcase>
-	</cfswitch>
+		</cfif>
+	</cfif>
 		
 	<cfif not len(tabAssignments) or listFindNocase(tabAssignments,'Advanced')>
 		<cfif listFind(session.mura.memberships,'S2IsPrivate')>
@@ -631,7 +629,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfif arrayLen(pluginEventMappings)>
 		<cfoutput>
 		<cfloop from="1" to="#arrayLen(pluginEventMappings)#" index="i">
-			<cfset renderedEvent=$.getBean('pluginManager').renderEvent(eventToRender=pluginEventMappings[i].eventName,currentEventObject=$)>
+			<cfset renderedEvent=$.getBean('pluginManager').renderEvent(eventToRender=pluginEventMappings[i].eventName,currentEventObject=$,index=i)>
 			<cfif len(trim(renderedEvent))>
 				<cfset tabLabel = Len($.event('tabLabel')) ? $.event('tabLabel') : pluginEventMappings[i].pluginName />
 				<cfset tabLabelList=listAppend(tabLabelList, tabLabel)/>
@@ -691,7 +689,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	<cfif listFindNoCase("Page,Folder,Calendar,Gallery,Link,File,Component,Form",rc.contentBean.getType())>
 		<script type="text/javascript">
 		siteManager.tablist='#esapiEncode('javascript',lcase(tabList))#';
-		siteManager.loadExtendedAttributes('#rc.contentbean.getcontentHistID()#','#rc.type#','#rc.contentBean.getSubType()#','#rc.siteID#','#application.configBean.getContext()#','#application.settingsManager.getSite(rc.siteID).getThemeAssetPath()#');
+		siteManager.loadExtendedAttributes('#rc.contentBean.getcontentID()#','#rc.contentbean.getcontentHistID()#','#rc.type#','#rc.contentBean.getSubType()#','#rc.siteID#','#application.configBean.getContext()#','#application.settingsManager.getSite(rc.siteID).getThemeAssetPath()#');
 		</script>
 	</cfif>
 

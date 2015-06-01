@@ -190,7 +190,7 @@ tcontent.imageSize,tcontent.imageHeight,tcontent.imageWidth,tcontent.childTempla
 					tcontent.#arguments.sourceIterator.getRecordIdField()# in (<cfqueryparam cfsqltype="cf_sql_varchar" list="true" value="#arguments.sourceIterator.getPageIDList()#">)
 					#renderActiveClause("tcontent",arguments.siteID)#
 					and tcontent.siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
-					and type in ('Page','Folder','File','Calendar','Link','Gallery','Component','Form')
+					and type in ('Page','Folder','File','Calendar','Link','Gallery','Component','Form','Variation')
 				</cfquery>
 
 				<cfset arguments.sourceIterator.setPageQuery("page#arguments.sourceIterator.getPageIndex()#",rsPage)>
@@ -216,7 +216,7 @@ tcontent.imageSize,tcontent.imageHeight,tcontent.imageWidth,tcontent.childTempla
 					where tcontent.contentid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.contentID#" /> 
 					#renderActiveClause("tcontent",arguments.siteID)#
 					and tcontent.siteid=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
-					and type in ('Page','Folder','File','Calendar','Link','Gallery','Component','Form')
+					and type in ('Page','Folder','File','Calendar','Link','Gallery','Component','Form','Variation')
 				</cfquery>
 			</cfif>
 		</cfif>
@@ -278,7 +278,7 @@ tcontent.imageSize,tcontent.imageHeight,tcontent.imageWidth,tcontent.childTempla
 				<cfif len(arguments.type)>
 					and tcontent.type=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.type#" />
 				<cfelse>
-					and type in ('Page','Folder','File','Calendar','Link','Gallery','Component','Form')
+					and type in ('Page','Folder','File','Calendar','Link','Gallery','Component','Form','Variation')
 				</cfif>	
 			</cfquery>
 		</cfif>
@@ -348,7 +348,7 @@ tcontent.imageSize,tcontent.imageHeight,tcontent.imageWidth,tcontent.childTempla
 				<cfif len(arguments.type)>
 					and tcontent.type=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.type#" />
 				<cfelse>
-					and type in ('Page','Folder','File','Calendar','Link','Gallery','Component','Form')
+					and type in ('Page','Folder','File','Calendar','Link','Gallery','Component','Form','Variation')
 				</cfif>	
 			</cfquery>
 		</cfif>
@@ -418,7 +418,7 @@ tcontent.imageSize,tcontent.imageHeight,tcontent.imageWidth,tcontent.childTempla
 				<cfif len(arguments.type)>
 					and tcontent.type=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.type#" />
 				<cfelse>
-					and type in ('Page','Folder','File','Calendar','Link','Gallery','Component','Form')
+					and type in ('Page','Folder','File','Calendar','Link','Gallery','Component','Form','Variation')
 				</cfif>	
 			</cfquery>
 		</cfif>
@@ -495,7 +495,7 @@ tcontent.imageSize,tcontent.imageHeight,tcontent.imageWidth,tcontent.childTempla
 			<cfif len(arguments.type)>
 				and tcontent.type=<cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.type#" />
 			<cfelse>
-				and type in ('Page','Folder','File','Calendar','Link','Gallery','Component','Form')
+				and type in ('Page','Folder','File','Calendar','Link','Gallery','Component','Form','Variation')
 			</cfif>	
 		</cfquery>
 
@@ -726,6 +726,7 @@ tcontent.imageSize,tcontent.imageHeight,tcontent.imageWidth,tcontent.childTempla
 	where tcontent.siteid= <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" /> 
 	and tcontent.contentid= <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.contentID#" />
 	<!---and lastupdate < #createodbcdatetime(rsdate.lastupdate)#--->
+	and tcontent.active=0
 	and (
 		 		(tcontent.approved=0 and tcontent.changesetID is null)
 				 or 
@@ -792,6 +793,7 @@ tcontent.imageSize,tcontent.imageHeight,tcontent.imageWidth,tcontent.childTempla
 	left join tapprovalrequests on (tcontent.contenthistid=tapprovalrequests.contenthistid)
 	where tcontent.siteid= <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.siteID#" />
 	and tcontent.contentid= <cfqueryparam cfsqltype="cf_sql_varchar" value="#arguments.contentID#" />
+	and tcontent.active=0
 	and tcontent.approved=0 and tcontent.changesetID is null
 	and (tapprovalrequests.status !='Pending' or tapprovalrequests.status is null)
 	</cfquery>

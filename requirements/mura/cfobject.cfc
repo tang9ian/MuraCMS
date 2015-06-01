@@ -47,7 +47,7 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cfcomponent output="false">
 
 <cfscript>
-	if(structKeyExists(server,'railo')){
+	if(server.ColdFusion.ProductName != 'Coldfusion Server'){
 		backportdir='';
 		include "/mura/backport/backport.cfm";
 	} else {
@@ -56,8 +56,6 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 	}
 </cfscript>
 
-<cfset variables.translator=""/>
-
 <cffunction name="init" returntype="any" access="public" output="false">
 	<cfreturn this />
 </cffunction>	
@@ -65,9 +63,14 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 <cffunction name="setValue" returntype="any" access="public" output="false">
 <cfargument name="property"  type="string" required="true">
 <cfargument name="propertyValue" default="" >
-
 	<cfset variables["#arguments.property#"]=arguments.propertyValue />
 	<cfreturn this>
+</cffunction>
+
+<cffunction name="set" returntype="any" access="public" output="false">
+<cfargument name="property"  type="string" required="true">
+<cfargument name="propertyValue" default="" >
+	<cfreturn setValue(argumentCollection=arguments)>
 </cffunction>
 
 <cffunction name="getValue" returntype="any" access="public" output="false">
@@ -83,6 +86,12 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		<cfreturn "" />
 	</cfif>
 
+</cffunction>
+
+<cffunction name="get" returntype="any" access="public" output="false">
+<cfargument name="property"  type="string" required="true">
+<cfargument name="defaultValue">
+	<cfreturn getValue(argumentCollection=arguments)>
 </cffunction>
 
 <cffunction name="valueExists" returntype="any" access="public" output="false">
@@ -239,10 +248,40 @@ version 2 without this exception.  You may, if you choose, apply this exception 
 		throw("You have attempted to call the method #arguments.methodName# which does not exist in #getClassFullName()#");
 	}
 
-	function getQueryService(){
-		return new Query(argumentCollection=getBean('configBean').getReadOnlyQRYAttrs(argumentCollection=arguments));
+	function hasCustomDatasource(){
+		return len(getValue('customDatasource'));
 	}
 
+	function getQueryAttrs(readOnly=false){
+		if( hasCustomDatasource() ){
+			structAppend(arguments,
+				{datasource=getValue('customDatasource'),
+				username='',
+				password=''},
+				false);
+
+			if(!getBean('configBean').getValue(property='allowQueryCaching',defaultValue=true)){
+				structDelete(arguments,'cachedWithin');
+			}
+
+			structDelete(arguments,'readOnly');
+			
+			return arguments;
+		} else if (isDefined('arguments.readOnly')) {
+			if(arguments.readOnly){
+				return getBean('configBean').getReadOnlyQRYAttrs(argumentCollection=arguments);
+			} else {
+				structDelete(arguments,'readOnly');
+				return arguments;
+			}
+		} else {
+			return structNew();
+		}
+	}
+
+	function getQueryService(readOnly=false){
+		return new Query(argumentCollection=getQueryAttrs(argumentCollection=arguments));
+	}
 </cfscript>
 
 </cfcomponent>

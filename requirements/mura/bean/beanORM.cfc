@@ -68,7 +68,7 @@ component extends="mura.bean.bean" versioned=false {
 
 					if(structKeyExists(prop,"fieldType") and prop.fieldType eq "id"){
 						variables.instance[prop.column]=createUUID();
-					}else if (listFindNoCase("date,datetime,timestamp",prop.datatype)){
+					} else if (listFindNoCase('created,lastupdate',prop.column) and listFindNoCase("date,datetime,timestamp",prop.datatype) and !(structKeyExists(prop,"default") and prop.default != 'null')){
 						variables.instance[prop.column]=now();
 					} else if(structKeyExists(prop,"default")){
 						if(prop.default neq 'null'){
@@ -94,7 +94,7 @@ component extends="mura.bean.bean" versioned=false {
 
 				} 
 				else {
-					if(listFindNoCase("date,datetime,timestamp",prop.datatype)){
+					if(listFindNoCase('created,lastupdate',prop.column) and listFindNoCase("date,datetime,timestamp",prop.datatype) and !(structKeyExists(prop,"default") and prop.default != 'null')){
 						variables.instance[prop.column]=now();
 					} else if(structKeyExists(prop,"default")){
 						if(prop.default neq 'null'){
@@ -121,8 +121,17 @@ component extends="mura.bean.bean" versioned=false {
 		}
 	}
 	
-	function set(data){
-	
+	function set(property,propertyValue){
+		
+		if(!isDefined('arguments.data') ){
+			if(isSimpleValue(arguments.property)){
+				return setValue(argumentCollection=arguments);
+			}
+
+			//process complex object
+			arguments.data=property;
+		}
+		
 		preLoad();
 
 		super.set(argumentCollection=arguments);
@@ -243,27 +252,16 @@ component extends="mura.bean.bean" versioned=false {
 		return structKeyExists(application.objectMappings[variables.entityName],'datasource');
 	}
 
-	function getsCustomDatasource(){
+	function getCustomDatasource(){
 		return application.objectMappings[variables.entityName].datasource;
 	}
 
-	function getQueryAttrs(){
-		if( hasCustomDatasource() ){
-			structAppend(arguments,
-				{datasource=getsCustomDatasource(),
-				username='',
-				password=''},
-				false);
-			return arguments;
-		} else if (structKeyExists(arguments, "readOnly")) {
-			return getBean('configBean').getReadOnlyQRYAttrs(argumentCollection=arguments);
-		} else {
-			return structNew();
-		}
+	function getQueryAttrs(readOnly=getReadOnly()){
+		return super.getQueryAttrs(argumentCollection=arguments);
 	}
 
-	function getQueryService(){
-		return new Query(argumentCollection=getQueryAttrs(argumentCollection=arguments));
+	function getQueryService(readOnly=getReadOnly()){
+		return super.getQueryService(argumentCollection=arguments);
 	}
 
 	private function addQueryParam(qs,prop,value){
@@ -289,6 +287,7 @@ component extends="mura.bean.bean" versioned=false {
 
 			if(columns[arguments.prop.column].datatype eq 'datetime'){
 				paramArgs.cfsqltype='cf_sql_timestamp';
+				paramArgs.value=parseDateArg(paramArgs.value);
 			}
 
 			if(listFindNoCase('text,longtext',columns[arguments.prop.column].datatype)){
@@ -625,8 +624,8 @@ component extends="mura.bean.bean" versioned=false {
 		return this;
 	}
 
-	function loadBy(returnFormat="self"){
-		var qs=getQueryService(readOnly=true);
+	function loadBy(returnFormat="self",cachedWithin=createTimeSpan(0,0,0,0)){
+		var qs=getQueryService(readOnly=true,cachedWithin=arguments.cachedWithin);
 		var sql="";
 		var props=getProperties();
 		var prop="";
